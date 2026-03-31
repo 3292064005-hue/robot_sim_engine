@@ -24,8 +24,14 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
                 self.plotter.set_background("white")
                 self.plotter.add_axes()
                 self.plotter.add_text("Robot Sim Engine", font_size=10)
-            except Exception:
-                layout.addWidget(QLabel("PyVista / pyvistaqt 未安装，当前为占位 3D 视图。"))
+            except Exception as exc:
+                label = QLabel(
+                    "3D 视图依赖未安装或初始化失败，当前为占位视图。\n"
+                    "请在项目目录执行: pip install -e .[gui]\n"
+                    f"详细信息: {exc.__class__.__name__}: {exc}"
+                )
+                label.setWordWrap(True)
+                layout.addWidget(label)
         except Exception:
             self.plotter = None
 
