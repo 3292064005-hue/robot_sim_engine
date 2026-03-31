@@ -1,0 +1,1 @@
+from robot_sim.core.trajectory.quintic import QuinticTrajectoryPlanner

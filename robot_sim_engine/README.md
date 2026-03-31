@@ -1,0 +1,59 @@
+# Robot Sim Engine
+
+基于纯数学推导的多自由度机械臂运动学与轨迹规划仿真引擎。
+
+## 当前版本重点
+
+这一版已经从“数学内核骨架”升级到“可运行主线 + 播放闭环 + 导出闭环”的正式工程版本，核心变化包括：
+
+- 标准 D-H 建模、FK、中间变换缓存、解析几何 Jacobian
+- 数值 IK：Pseudo-inverse / DLS / 奇异位形自动回退 / position-only / 零空间二级目标
+- 四元数、SO(3) 对数映射、Slerp、五次多项式轨迹规划
+- PySide6 GUI 主窗体、Qt worker 线程编排器、可编辑 DH 表格模型
+- 轨迹播放系统：播放 / 暂停 / 单步 / 拖动 / 倍速 / 循环
+- PyVista 场景常驻 actor 更新策略、pyqtgraph 多标签曲线区与播放游标
+- YAML 机器人配置读写、session / trajectory / metrics 导出服务
+- pytest 单元测试 + 集成测试基线，当前 19 条测试通过
+
+## 快速开始
+
+```bash
+pip install -e .[dev]
+pytest
+```
+
+安装 GUI 依赖后可运行图形界面：
+
+```bash
+pip install -e .[gui,dev]
+python -m robot_sim.app.main
+```
+
+## 目录
+
+```text
+src/robot_sim/
+  app/            启动与依赖装配
+  model/          数据模型
+  core/           数学核心
+  application/    用例、服务与 worker
+  presentation/   Qt 控制器、线程编排、表格模型与界面
+  render/         3D / 2D 可视化封装
+  infra/          配置、日志、文件
+```
+
+## 当前可直接演示的链路
+
+- 加载样例机器人
+- 编辑 DH / home q 并保存 YAML
+- 执行 FK / IK
+- 生成轨迹并查看关节角、速度、加速度曲线
+- 播放轨迹并驱动 3D 机械臂与曲线游标联动
+- 导出 trajectory.csv 与 session.json
+
+## 说明
+
+- `core/` 不依赖 Qt
+- GUI 中的 IK / trajectory / playback 都通过 worker 任务运行
+- 3D 视图避免每次全量 `clear()`，改为 actor 持久更新
+- V1 主线仍聚焦在参数化建模、数学求解、稳定规划、可视化验证与测试

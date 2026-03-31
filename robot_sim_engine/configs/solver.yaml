@@ -1,0 +1,13 @@
+ik:
+  mode: "dls"
+  max_iters: 150
+  pos_tol: 1.0e-4
+  ori_tol: 1.0e-4
+  damping_lambda: 0.05
+  step_scale: 0.5
+  enable_nullspace: true
+  joint_limit_weight: 0.03
+  manipulability_weight: 0.0
+trajectory:
+  duration: 3.0
+  dt: 0.02
