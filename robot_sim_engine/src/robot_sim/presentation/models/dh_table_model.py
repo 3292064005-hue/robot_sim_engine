@@ -80,7 +80,7 @@ class DHTableModel(QAbstractTableModel):  # pragma: no cover - GUI shell
                     q_min=float(values[5]),
                     q_max=float(values[6]),
                 )
-        except Exception:
+        except (TypeError, ValueError):
             return False
         self.rows[index.row()] = new_row
         self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])

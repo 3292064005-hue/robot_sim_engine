@@ -1,9 +1,20 @@
 from __future__ import annotations
+
 import sys
+
 from robot_sim.app.bootstrap import bootstrap
 
+
 def main() -> int:
-    root = bootstrap()
+    """Launch the Qt application shell.
+
+    Returns:
+        int: Process exit code.
+
+    Raises:
+        None: Startup errors are handled and converted into exit codes.
+    """
+    root, container = bootstrap()
     try:
         from PySide6.QtWidgets import QApplication
     except Exception as exc:
@@ -12,10 +23,12 @@ def main() -> int:
         return 1
 
     from robot_sim.presentation.main_window import MainWindow
+
     app = QApplication(sys.argv)
-    w = MainWindow(root)
+    w = MainWindow(root, container=container)
     w.show()
     return app.exec()
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

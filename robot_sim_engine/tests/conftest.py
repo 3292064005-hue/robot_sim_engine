@@ -1,6 +1,5 @@
 from __future__ import annotations
 from pathlib import Path
-import numpy as np
 import pytest
 
 from robot_sim.application.services.robot_registry import RobotRegistry

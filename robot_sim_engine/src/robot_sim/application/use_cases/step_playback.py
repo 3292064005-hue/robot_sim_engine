@@ -6,8 +6,10 @@ from robot_sim.model.trajectory import JointTrajectory
 
 
 class StepPlaybackUseCase:
-    def __init__(self, service: PlaybackService | None = None) -> None:
-        self._service = service or PlaybackService()
+    def __init__(self, service: PlaybackService) -> None:
+        if service is None:
+            raise ValueError('StepPlaybackUseCase requires an explicit playback service')
+        self._service = service
 
     def current(self, trajectory: JointTrajectory, state: PlaybackState) -> PlaybackFrame:
         return self._service.frame(trajectory, state.frame_idx)

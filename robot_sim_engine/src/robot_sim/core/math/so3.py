@@ -46,3 +46,20 @@ def exp_so3(w: FloatArray) -> FloatArray:
 
 def rotation_error(R_target: FloatArray, R_current: FloatArray) -> FloatArray:
     return log_so3(R_target @ R_current.T)
+
+
+def orthonormalize_rotation(R: FloatArray) -> FloatArray:
+    M = np.asarray(R, dtype=float)
+    U, _, Vt = np.linalg.svd(M)
+    R_proj = U @ Vt
+    if np.linalg.det(R_proj) < 0.0:
+        U[:, -1] *= -1.0
+        R_proj = U @ Vt
+    return R_proj
+
+
+def is_rotation_matrix(R: FloatArray, *, atol: float = 1.0e-6) -> bool:
+    M = np.asarray(R, dtype=float)
+    if M.shape != (3, 3):
+        return False
+    return bool(np.allclose(M.T @ M, np.eye(3, dtype=float), atol=atol) and abs(np.linalg.det(M) - 1.0) <= atol)

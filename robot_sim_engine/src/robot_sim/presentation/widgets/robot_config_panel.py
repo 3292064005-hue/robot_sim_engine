@@ -1,17 +1,11 @@
 from __future__ import annotations
+
 from robot_sim.presentation.models.dh_table_model import DHTableModel
 
 try:
     from PySide6.QtWidgets import (
         QWidget,
-        QVBoxLayout,
         QLabel,
-        QPushButton,
-        QComboBox,
-        QHBoxLayout,
-        QTableView,
-        QGroupBox,
-        QFormLayout,
         QDoubleSpinBox,
     )
 except Exception:  # pragma: no cover
@@ -19,10 +13,9 @@ except Exception:  # pragma: no cover
 
 
 class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
-    def __init__(self, robot_names: list[str], parent=None):
+    def __init__(self, robot_entries, parent=None):
         super().__init__(parent)
         from PySide6.QtWidgets import (
-            QWidget,
             QVBoxLayout,
             QLabel,
             QPushButton,
@@ -31,7 +24,6 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
             QTableView,
             QGroupBox,
             QFormLayout,
-            QDoubleSpinBox,
         )
 
         layout = QVBoxLayout(self)
@@ -39,7 +31,7 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
 
         selector_row = QHBoxLayout()
         self.robot_combo = QComboBox()
-        self.robot_combo.addItems(robot_names)
+        self._set_robot_entries(robot_entries)
         self.load_button = QPushButton("加载")
         self.save_button = QPushButton("保存 YAML")
         selector_row.addWidget(self.robot_combo)
@@ -60,22 +52,42 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         self.home_form = QFormLayout(home_group)
         self.home_boxes: list[QDoubleSpinBox] = []
         self.home_row_labels: list[QLabel] = []
-        for i in range(8):
+        layout.addWidget(home_group)
+
+    def _set_robot_entries(self, robot_entries) -> None:
+        self.robot_combo.clear()
+        for entry in robot_entries:
+            if hasattr(entry, "label") and hasattr(entry, "name"):
+                label = str(entry.label)
+                if getattr(entry, "dof", None) is not None:
+                    label = f"{label} ({int(entry.dof)} DOF)"
+                self.robot_combo.addItem(label, str(entry.name))
+            else:
+                value = str(entry)
+                self.robot_combo.addItem(value, value)
+
+    def selected_robot_name(self) -> str:
+        data = self.robot_combo.currentData()
+        return str(data if data is not None else self.robot_combo.currentText())
+
+    def _ensure_home_boxes(self, dof: int) -> None:
+        from PySide6.QtWidgets import QLabel, QDoubleSpinBox
+
+        while len(self.home_boxes) < dof:
+            idx = len(self.home_boxes)
             box = QDoubleSpinBox()
             box.setRange(-999.0, 999.0)
             box.setDecimals(6)
-            box.setVisible(False)
-            label = QLabel(f"q{i}")
-            label.setVisible(False)
+            label = QLabel(f"q{idx}")
             self.home_boxes.append(box)
             self.home_row_labels.append(label)
             self.home_form.addRow(label, box)
-        layout.addWidget(home_group)
 
     def set_robot_spec(self, spec) -> None:
         desc = f" | {spec.description}" if getattr(spec, 'description', '') else ""
         self.info_label.setText(f"{spec.label} | DOF = {spec.dof}{desc}")
         self.table_model.set_rows(list(spec.dh_rows))
+        self._ensure_home_boxes(spec.dof)
         for i, box in enumerate(self.home_boxes):
             visible = i < spec.dof
             box.setVisible(visible)

@@ -28,7 +28,7 @@ def test_playback_service_frame_and_loop():
 
 
 def test_step_playback_use_case_advances_and_stops_without_loop():
-    uc = StepPlaybackUseCase()
+    uc = StepPlaybackUseCase(PlaybackService())
     traj = make_traj()
     state = PlaybackState(frame_idx=1, total_frames=3, loop_enabled=False)
     state2, frame2 = uc.next(traj, state)

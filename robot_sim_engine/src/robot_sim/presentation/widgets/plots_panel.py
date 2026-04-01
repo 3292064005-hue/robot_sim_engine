@@ -1,6 +1,6 @@
 from __future__ import annotations
 try:
-    from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTabWidget
+    from PySide6.QtWidgets import QWidget
 except Exception:  # pragma: no cover
     QWidget = object  # type: ignore
 
@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
 class PlotsPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
         super().__init__(parent)
-        from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTabWidget
+        from PySide6.QtWidgets import QVBoxLayout, QLabel, QTabWidget
         layout = QVBoxLayout(self)
         self.plot_widgets = {}
         try:
@@ -26,6 +26,6 @@ class PlotsPanel(QWidget):  # pragma: no cover - GUI shell
                 self.plot_widgets[key] = w
                 self.tabs.addTab(w, title)
             layout.addWidget(self.tabs)
-        except Exception:
+        except ImportError:
             self.tabs = None
             layout.addWidget(QLabel("pyqtgraph 未安装，当前为占位曲线区。"))

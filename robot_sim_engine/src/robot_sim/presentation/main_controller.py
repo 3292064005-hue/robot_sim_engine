@@ -1,243 +1,286 @@
 from __future__ import annotations
-from pathlib import Path
-import numpy as np
 
-from robot_sim.application.dto import FKRequest, IKRequest, TrajectoryRequest
-from robot_sim.application.services.export_service import ExportService
-from robot_sim.application.services.playback_service import PlaybackService, PlaybackFrame
-from robot_sim.application.services.robot_registry import RobotRegistry
-from robot_sim.application.use_cases.run_fk import RunFKUseCase
-from robot_sim.application.use_cases.run_ik import RunIKUseCase
-from robot_sim.application.use_cases.plan_trajectory import PlanTrajectoryUseCase
-from robot_sim.application.use_cases.save_session import SaveSessionUseCase
-from robot_sim.application.use_cases.step_playback import StepPlaybackUseCase
-from robot_sim.core.math.so3 import exp_so3
-from robot_sim.core.math.transforms import rot_x, rot_y, rot_z
-from robot_sim.domain.enums import IKSolverMode
-from robot_sim.model.playback_state import PlaybackState
-from robot_sim.model.pose import Pose
-from robot_sim.model.robot_spec import RobotSpec
-from robot_sim.model.solver_config import IKConfig
+from pathlib import Path
+
+from robot_sim.app.contracts import MainControllerContainerProtocol
+from robot_sim.domain.capabilities import CapabilityDescriptor
 from robot_sim.model.session_state import SessionState
-from robot_sim.presentation.validators.input_validator import InputValidator
+from robot_sim.presentation.controllers.benchmark_controller import BenchmarkController
+from robot_sim.presentation.controllers.diagnostics_controller import DiagnosticsController
+from robot_sim.presentation.controllers.export_controller import ExportController
+from robot_sim.presentation.controllers.ik_controller import IKController
+from robot_sim.presentation.controllers.playback_controller import PlaybackController
+from robot_sim.presentation.controllers.robot_controller import RobotController
+from robot_sim.presentation.controllers.trajectory_controller import TrajectoryController
+from robot_sim.presentation.facades import (
+    BenchmarkFacade,
+    ExportFacade,
+    PlaybackFacade,
+    RobotFacade,
+    RuntimeFacade,
+    SolverFacade,
+    TrajectoryFacade,
+)
 from robot_sim.presentation.state_store import StateStore
 
 
 class MainController:
-    def __init__(self, project_root: str | Path) -> None:
+    """Facade that exposes application services to the Qt layer.
+
+    The controller now owns a set of narrower façades used by the main window and task
+    coordinators. Legacy methods remain available and delegate to those façades to preserve
+    backward compatibility with existing tests and call sites.
+    """
+
+    def __init__(self, project_root: str | Path, *, container: MainControllerContainerProtocol) -> None:
+        """Create the main presentation controller.
+
+        Args:
+            project_root: Project root used to resolve configuration and exports.
+            container: Explicitly built application container.
+
+        Returns:
+            None: Initializes controller collaborators and state.
+
+        Raises:
+            ValueError: If ``container`` is not provided.
+        """
+        if container is None:
+            raise ValueError('MainController requires an explicit application container')
         self.project_root = Path(project_root)
-        self.registry = RobotRegistry(self.project_root / "configs" / "robots")
-        self.exporter = ExportService(self.project_root / "exports")
+        self.container = container
+        self.runtime_paths = getattr(self.container, 'runtime_paths', None)
+        self.config_service = self.container.config_service
+        self.app_settings = self.config_service.load_app_settings()
+        self.solver_settings = self.config_service.load_solver_settings()
+        self.app_config = self.app_settings.as_dict()
+        self.solver_config = self.solver_settings.as_dict()
+        self.registry = self.container.robot_registry
+        self.exporter = self.container.export_service
+        self.metrics_service = self.container.metrics_service
+        self.capability_service = self.container.capability_matrix_service
+        self.module_status_service = self.container.module_status_service
+        self.task_error_mapper = self.container.task_error_mapper
+        self.export_report_uc = self.container.export_report_uc
         self.state_store = StateStore(SessionState())
-        self.fk_uc = RunFKUseCase()
-        self.ik_uc = RunIKUseCase()
-        self.traj_uc = PlanTrajectoryUseCase()
-        self.save_session_uc = SaveSessionUseCase(self.exporter)
-        self.playback_service = PlaybackService()
-        self.playback_uc = StepPlaybackUseCase(self.playback_service)
+        self.fk_uc = self.container.fk_uc
+        self.ik_uc = self.container.ik_uc
+        self.traj_uc = self.container.traj_uc
+        self.benchmark_uc = self.container.benchmark_uc
+        self.save_session_uc = self.container.save_session_uc
+        self.playback_service = self.container.playback_service
+        self.playback_uc = self.container.playback_uc
+        self.export_package_uc = self.container.export_package_uc
+        self.import_robot_uc = self.container.import_robot_uc
+        self.diagnostics_controller = DiagnosticsController(self.state_store, self.metrics_service)
+
+        self.robot_controller = RobotController(self.state_store, self.registry, self.fk_uc)
+        self.ik_controller = IKController(self.state_store, self.solver_settings.ik.as_dict(), self.fk_uc, self.ik_uc)
+        self.trajectory_controller = TrajectoryController(
+            self.state_store,
+            self.traj_uc,
+            self.playback_service,
+            self.ik_controller.build_ik_request,
+        )
+        self.playback_controller = PlaybackController(self.state_store, self.playback_service, self.playback_uc)
+        self.benchmark_controller = BenchmarkController(self.state_store, self.benchmark_uc, self.ik_controller.build_ik_request)
+        self.export_controller = ExportController(
+            self.state_store,
+            self.exporter,
+            self.export_report_uc,
+            self.save_session_uc,
+            self.export_package_uc,
+        )
+
+        resource_root = self.project_root if self.runtime_paths is None else self.runtime_paths.resource_root
+        config_root = self.project_root / 'configs' if self.runtime_paths is None else self.runtime_paths.config_root
+        export_root = self.project_root / 'exports' if self.runtime_paths is None else self.runtime_paths.export_root
+        self.runtime_facade = RuntimeFacade(
+            project_root=self.project_root,
+            resource_root=resource_root,
+            config_root=config_root,
+            export_root=export_root,
+            app_config=self.app_config,
+            app_settings=self.app_settings,
+            state_store=self.state_store,
+            metrics_service=self.metrics_service,
+            task_error_mapper=self.task_error_mapper,
+            capability_service=self.capability_service,
+            module_status_service=self.module_status_service,
+        )
+        self.robot_facade = RobotFacade(self.registry, self.robot_controller)
+        self.solver_facade = SolverFacade(self.solver_config, self.solver_settings, self.ik_controller, self.ik_uc)
+        self.trajectory_facade = TrajectoryFacade(self.solver_config, self.solver_settings, self.trajectory_controller, self.traj_uc)
+        self.playback_facade = PlaybackFacade(self.playback_controller, self.playback_service)
+        self.benchmark_facade = BenchmarkFacade(self.benchmark_controller, self.benchmark_uc)
+        self.export_facade = ExportFacade(self.export_controller)
+
+        capability_matrix = self.capability_service.build_matrix(
+            solver_registry=self.container.solver_registry,
+            planner_registry=self.container.planner_registry,
+            importer_registry=self.container.importer_registry,
+        )
+        self.state_store.patch_capabilities(capability_matrix)
+        self.state_store.patch(module_statuses=self.module_status_service.snapshot())
 
     @property
     def state(self) -> SessionState:
+        """Return the current presentation session state snapshot."""
         return self.state_store.state
 
-    def robot_names(self) -> list[str]:
-        return self.registry.list_names()
+    def capabilities(self) -> list[CapabilityDescriptor]:
+        """Build capability descriptors for the current runtime container."""
+        matrix = self.capability_service.build_matrix(
+            solver_registry=self.container.solver_registry,
+            planner_registry=self.container.planner_registry,
+            importer_registry=self.container.importer_registry,
+        )
+        return [
+            CapabilityDescriptor(
+                'ik_solvers',
+                'IK solvers',
+                metadata={
+                    'ids': self.container.solver_registry.ids(),
+                    'descriptors': [
+                        {
+                            'id': desc.solver_id,
+                            'aliases': list(desc.aliases),
+                            'metadata': dict(desc.metadata),
+                            'source': getattr(desc, 'source', ''),
+                        }
+                        for desc in self.container.solver_registry.descriptors()
+                    ],
+                    'matrix': matrix.as_dict()['solvers'],
+                },
+            ),
+            CapabilityDescriptor(
+                'trajectory_planners',
+                'Trajectory planners',
+                metadata={
+                    'ids': self.container.planner_registry.ids(),
+                    'descriptors': [
+                        {
+                            'id': desc.planner_id,
+                            'aliases': list(desc.aliases),
+                            'metadata': dict(desc.metadata),
+                            'source': getattr(desc, 'source', ''),
+                        }
+                        for desc in self.container.planner_registry.descriptors()
+                    ],
+                    'matrix': matrix.as_dict()['planners'],
+                },
+            ),
+            CapabilityDescriptor(
+                'robot_importers',
+                'Robot importers',
+                metadata={
+                    'ids': self.container.importer_registry.ids(),
+                    'descriptors': [
+                        {
+                            'id': desc.importer_id,
+                            'aliases': list(desc.aliases),
+                            'metadata': dict(desc.metadata),
+                        }
+                        for desc in self.container.importer_registry.descriptors()
+                    ],
+                    'matrix': matrix.as_dict()['importers'],
+                },
+            ),
+            CapabilityDescriptor('package_export', 'Package export'),
+        ]
 
-    def available_specs(self) -> list[RobotSpec]:
-        return self.registry.list_specs()
+    def robot_names(self) -> list[str]:
+        return self.robot_facade.robot_names()
+
+    def robot_entries(self):
+        return self.robot_facade.robot_entries()
+
+    def available_specs(self):
+        return self.robot_facade.available_specs()
+
+    def solver_defaults(self) -> dict[str, object]:
+        return self.solver_settings.ik.as_dict()
+
+    def trajectory_defaults(self) -> dict[str, object]:
+        return self.solver_settings.trajectory.as_dict()
+
+    def import_robot(self, source: str, importer_id: str | None = None):
+        return self.import_robot_uc.execute(source, importer_id=importer_id)
 
     def load_robot(self, name: str):
-        spec = self.registry.load(name)
-        fk = self.fk_uc.execute(FKRequest(spec, spec.home_q.copy()))
-        self.state_store.patch(
-            robot_spec=spec,
-            q_current=spec.home_q.copy(),
-            fk_result=fk,
-            target_pose=None,
-            ik_result=None,
-            trajectory=None,
-            playback=PlaybackState(),
-            last_error="",
-            last_warning="",
-        )
-        return fk
+        return self.robot_facade.load_robot(name)
 
-    def build_robot_from_editor(self, existing_spec: RobotSpec | None, rows, home_q) -> RobotSpec:
-        if existing_spec is None:
-            raise RuntimeError("robot not loaded")
-        home_q = np.asarray(home_q, dtype=float)
-        home_q = InputValidator.validate_home_q(rows, home_q)
-        return RobotSpec(
-            name=existing_spec.name,
-            dh_rows=tuple(rows),
-            base_T=existing_spec.base_T,
-            tool_T=existing_spec.tool_T,
-            home_q=home_q,
-            display_name=existing_spec.display_name,
-            description=existing_spec.description,
-            metadata=dict(existing_spec.metadata),
-        )
+    def build_robot_from_editor(self, existing_spec, rows, home_q):
+        return self.robot_facade.build_robot_from_editor(existing_spec, rows, home_q)
 
     def save_current_robot(self, rows=None, home_q=None, name: str | None = None):
-        spec = self.state.robot_spec
-        if spec is None:
-            raise RuntimeError("robot not loaded")
-        if rows is not None or home_q is not None:
-            rows_in = rows if rows is not None else spec.dh_rows
-            home_q_in = home_q if home_q is not None else spec.home_q
-            spec = self.build_robot_from_editor(rows=rows_in, home_q=home_q_in, existing_spec=spec)
-            self.state_store.patch(robot_spec=spec)
-        return self.registry.save(spec, name=name)
+        return self.robot_facade.save_current_robot(rows=rows, home_q=home_q, name=name)
 
     def run_fk(self, q=None):
-        spec = self.state.robot_spec
-        q_current = self.state.q_current if q is None else np.asarray(q, dtype=float)
-        if spec is None or q_current is None:
-            raise RuntimeError("robot not loaded")
-        q_current = InputValidator.validate_joint_vector(spec, q_current, clamp=False)
-        self.state_store.patch(q_current=q_current.copy())
-        fk = self.fk_uc.execute(FKRequest(spec, q_current))
-        self.state_store.patch(fk_result=fk)
-        return fk
+        return self.robot_facade.run_fk(q=q)
 
-    def build_target_pose(self, values6, orientation_mode: str = "rvec"):
-        values6 = InputValidator.validate_target_values(values6)
-        p = np.asarray(values6[:3], dtype=float)
-        if orientation_mode == "euler_zyx":
-            yaw, pitch, roll = values6[3:]
-            R = rot_z(float(yaw)) @ rot_y(float(pitch)) @ rot_x(float(roll))
-        else:
-            R = exp_so3(np.asarray(values6[3:], dtype=float))
-        return Pose(p=p, R=R)
+    def sample_ee_positions(self, q_samples):
+        return self.robot_facade.sample_ee_positions(q_samples)
 
-    def build_ik_request(
-        self,
-        values6,
-        *,
-        orientation_mode: str = "rvec",
-        mode: str = "dls",
-        max_iters: int = 150,
-        step_scale: float = 0.5,
-        damping: float = 0.05,
-        enable_nullspace: bool = True,
-        position_only: bool = False,
-        pos_tol: float = 1e-4,
-        ori_tol: float = 1e-4,
-        max_step_norm: float = 0.35,
-        auto_fallback: bool = True,
-    ) -> IKRequest:
-        spec = self.state.robot_spec
-        q0 = self.state.q_current
-        if spec is None or q0 is None:
-            raise RuntimeError("robot not loaded")
-        target = self.build_target_pose(values6, orientation_mode=orientation_mode)
-        config = IKConfig(
-            mode=IKSolverMode(mode),
-            max_iters=int(max_iters),
-            step_scale=float(step_scale),
-            damping_lambda=float(damping),
-            enable_nullspace=bool(enable_nullspace),
-            position_only=bool(position_only),
-            pos_tol=float(pos_tol),
-            ori_tol=float(ori_tol),
-            max_step_norm=float(max_step_norm),
-            fallback_to_dls_when_singular=bool(auto_fallback),
-        )
-        return IKRequest(spec, target, q0.copy(), config)
+    def build_target_pose(self, values6, orientation_mode: str = 'rvec'):
+        return self.solver_facade.build_target_pose(values6, orientation_mode=orientation_mode)
 
-    def apply_ik_result(self, req: IKRequest, result) -> None:
-        self.state_store.patch(
-            target_pose=req.target,
-            ik_result=result,
-            q_current=result.q_sol.copy(),
-            last_error="" if result.success else result.message,
-            last_warning="" if result.success else result.message,
-        )
-        self.state_store.patch(fk_result=self.fk_uc.execute(FKRequest(req.spec, self.state.q_current)))
+    def build_ik_request(self, values6, **kwargs):
+        return self.solver_facade.build_ik_request(values6, **kwargs)
+
+    def apply_ik_result(self, req, result) -> None:
+        self.solver_facade.apply_ik_result(req, result)
 
     def run_ik(self, values6, **kwargs):
-        req = self.build_ik_request(values6, **kwargs)
-        result = self.ik_uc.execute(req)
-        self.apply_ik_result(req, result)
-        return result
+        return self.solver_facade.run_ik(values6, **kwargs)
 
-    def build_trajectory_request(self, q_goal, duration=3.0, dt=0.02) -> TrajectoryRequest:
-        if self.state.q_current is None or self.state.robot_spec is None:
-            raise RuntimeError("robot not loaded")
-        duration, dt = InputValidator.validate_duration_and_dt(duration, dt)
-        q_goal = InputValidator.validate_joint_vector(self.state.robot_spec, q_goal, clamp=True)
-        return TrajectoryRequest(self.state.q_current.copy(), np.asarray(q_goal, dtype=float), duration, dt)
+    def build_benchmark_config(self, **kwargs):
+        return self.benchmark_facade.build_benchmark_config(**kwargs)
 
-    def plan_trajectory(self, q_goal, duration=3.0, dt=0.02):
-        req = self.build_trajectory_request(q_goal=q_goal, duration=duration, dt=dt)
-        result = self.traj_uc.execute(req)
-        self.state_store.patch(
-            trajectory=result,
-            playback=self.playback_service.build_state(result, frame_idx=0, speed_multiplier=self.state.playback.speed_multiplier, loop_enabled=self.state.playback.loop_enabled),
-        )
-        return result
+    def run_benchmark(self, config=None):
+        return self.benchmark_facade.run_benchmark(config=config)
+
+    def trajectory_goal_or_raise(self):
+        return self.trajectory_facade.trajectory_goal_or_raise()
+
+    def build_trajectory_request(self, **kwargs):
+        return self.trajectory_facade.build_trajectory_request(**kwargs)
+
+    def plan_trajectory(self, **kwargs):
+        return self.trajectory_facade.plan_trajectory(**kwargs)
 
     def apply_trajectory(self, traj) -> None:
-        self.state_store.patch(
-            trajectory=traj,
-            playback=self.playback_service.build_state(traj, frame_idx=0, speed_multiplier=self.state.playback.speed_multiplier, loop_enabled=self.state.playback.loop_enabled),
-        )
+        self.trajectory_facade.apply_trajectory(traj)
 
-    def current_playback_frame(self) -> PlaybackFrame:
-        if self.state.trajectory is None:
-            raise RuntimeError("trajectory not available")
-        return self.playback_uc.current(self.state.trajectory, self.state.playback)
+    def current_playback_frame(self):
+        return self.playback_facade.current_playback_frame()
 
-    def set_playback_frame(self, frame_idx: int) -> PlaybackFrame:
-        if self.state.trajectory is None:
-            raise RuntimeError("trajectory not available")
-        state = self.state.playback.with_frame(frame_idx)
-        frame = self.playback_service.frame(self.state.trajectory, state.frame_idx)
-        self.state_store.patch(playback=state)
-        return frame
+    def set_playback_frame(self, frame_idx: int):
+        return self.playback_facade.set_playback_frame(frame_idx)
 
-    def next_playback_frame(self) -> PlaybackFrame | None:
-        if self.state.trajectory is None:
-            raise RuntimeError("trajectory not available")
-        state, frame = self.playback_uc.next(self.state.trajectory, self.state.playback)
-        self.state_store.patch(playback=state)
-        return frame
+    def next_playback_frame(self):
+        return self.playback_facade.next_playback_frame()
 
-    def set_playback_options(self, *, speed_multiplier: float | None = None, loop_enabled: bool | None = None) -> None:
-        playback = self.state.playback
-        if speed_multiplier is not None:
-            playback = PlaybackState(
-                is_playing=playback.is_playing,
-                frame_idx=playback.frame_idx,
-                total_frames=playback.total_frames,
-                speed_multiplier=max(float(speed_multiplier), 0.05),
-                loop_enabled=playback.loop_enabled if loop_enabled is None else bool(loop_enabled),
-            )
-        elif loop_enabled is not None:
-            playback = PlaybackState(
-                is_playing=playback.is_playing,
-                frame_idx=playback.frame_idx,
-                total_frames=playback.total_frames,
-                speed_multiplier=playback.speed_multiplier,
-                loop_enabled=bool(loop_enabled),
-            )
-        self.state_store.patch(playback=playback)
+    def set_playback_options(self, *, speed_multiplier=None, loop_enabled=None) -> None:
+        self.playback_facade.set_playback_options(speed_multiplier=speed_multiplier, loop_enabled=loop_enabled)
 
-    def export_trajectory(self, name: str = "trajectory.csv"):
-        traj = self.state.trajectory
-        if traj is None:
-            raise RuntimeError("trajectory not available")
-        return self.exporter.save_trajectory(name, traj.t, traj.q, traj.qd, traj.qdd)
+    def export_trajectory(self, name: str = 'trajectory.csv'):
+        return self.export_facade.export_trajectory(name=name)
 
-    def sample_ee_positions(self, q_samples) -> np.ndarray:
-        spec = self.state.robot_spec
-        if spec is None:
-            raise RuntimeError("robot not loaded")
-        pts = []
-        for q in np.asarray(q_samples, dtype=float):
-            fk = self.fk_uc.execute(FKRequest(spec, np.asarray(q, dtype=float)))
-            pts.append(np.asarray(fk.ee_pose.p, dtype=float))
-        return np.asarray(pts, dtype=float)
+    def export_trajectory_bundle(self, name: str = 'trajectory_bundle.npz'):
+        return self.export_facade.export_trajectory_bundle(name=name)
 
-    def export_session(self, name: str = "session.json"):
-        return self.save_session_uc.execute(name, self.state)
+    def export_trajectory_metrics(self, name: str = 'trajectory_metrics.json', metrics: dict[str, object] | None = None):
+        return self.export_facade.export_trajectory_metrics(name=name, metrics=metrics)
+
+    def export_benchmark(self, name: str = 'benchmark_report.json'):
+        return self.export_facade.export_benchmark(name=name)
+
+    def export_benchmark_cases_csv(self, name: str = 'benchmark_cases.csv'):
+        return self.export_facade.export_benchmark_cases_csv(name=name)
+
+    def export_session(self, name: str = 'session.json'):
+        return self.export_facade.export_session(name=name)
+
+    def export_package(self, name: str = 'robot_sim_package.zip'):
+        return self.export_facade.export_package(name=name)

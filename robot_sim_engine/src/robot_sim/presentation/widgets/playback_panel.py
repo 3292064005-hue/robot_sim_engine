@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 try:
-    from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSlider, QLabel, QDoubleSpinBox, QCheckBox
-    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QWidget
 except Exception:  # pragma: no cover
     QWidget = object  # type: ignore
 
@@ -10,7 +9,7 @@ except Exception:  # pragma: no cover
 class PlaybackPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
         super().__init__(parent)
-        from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QSlider, QLabel, QDoubleSpinBox, QCheckBox
+        from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSlider, QLabel, QDoubleSpinBox, QCheckBox
         from PySide6.QtCore import Qt
 
         layout = QHBoxLayout(self)
@@ -20,6 +19,7 @@ class PlaybackPanel(QWidget):  # pragma: no cover - GUI shell
         self.stop_btn = QPushButton("停止")
         self.export_btn = QPushButton("导出轨迹")
         self.session_btn = QPushButton("导出会话")
+        self.package_btn = QPushButton("导出整包")
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setRange(0, 0)
         self.cursor_label = QLabel("0 / 0")
@@ -41,6 +41,7 @@ class PlaybackPanel(QWidget):  # pragma: no cover - GUI shell
             self.loop,
             self.export_btn,
             self.session_btn,
+            self.package_btn,
         ]:
             layout.addWidget(w)
         self.pause_btn.setEnabled(False)

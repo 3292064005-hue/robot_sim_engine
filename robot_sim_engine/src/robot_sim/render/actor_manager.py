@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ActorManager:  # pragma: no cover - GUI shell
     def __init__(self) -> None:
@@ -19,8 +23,8 @@ class ActorManager:  # pragma: no cover - GUI shell
         if actor is not None and plotter is not None:
             try:
                 plotter.remove_actor(actor)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning('failed to remove actor %s: %s', name, exc)
 
     def clear(self, plotter) -> None:
         for name in list(self._actors):

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
 import re
@@ -6,6 +7,7 @@ import numpy as np
 import yaml
 
 from robot_sim.model.dh_row import DHRow
+from robot_sim.model.robot_catalog_entry import RobotCatalogEntry
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.domain.enums import JointType
 
@@ -21,6 +23,19 @@ class RobotRegistry:
     def list_specs(self) -> list[RobotSpec]:
         return [self.load(name) for name in self.list_names()]
 
+    def list_entries(self) -> list[RobotCatalogEntry]:
+        entries = [
+            RobotCatalogEntry(
+                name=spec.name,
+                label=spec.label,
+                dof=spec.dof,
+                description=spec.description,
+                metadata=dict(spec.metadata),
+            )
+            for spec in self.list_specs()
+        ]
+        return sorted(entries, key=lambda item: (item.label.lower(), item.name.lower()))
+
     def _slugify(self, value: str) -> str:
         text = re.sub(r"[^a-zA-Z0-9_\-]+", "_", value.strip()).strip("_")
         return text or "robot"
@@ -34,6 +49,10 @@ class RobotRegistry:
             raise FileNotFoundError(f"robot config not found: {path}")
         with path.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
+        if "id" not in data:
+            # Keep the runtime identifier aligned with the actual loadable file stem
+            # for legacy bundled configs that only define a human-readable display name.
+            data = {**data, "id": path.stem}
         spec = self.from_dict(data)
         if spec.display_name is None:
             spec = RobotSpec(
@@ -59,18 +78,24 @@ class RobotRegistry:
         rows_data = data.get("dh_rows") or []
         if not rows_data:
             raise ValueError("dh_rows is required")
-        rows = tuple(
-            DHRow(
-                a=float(r.get("a", 0.0)),
-                alpha=float(r.get("alpha", 0.0)),
-                d=float(r.get("d", 0.0)),
-                theta_offset=float(r.get("theta_offset", 0.0)),
-                joint_type=JointType(str(r.get("joint_type", JointType.REVOLUTE.value))),
-                q_min=float(r.get("q_min", -np.pi)),
-                q_max=float(r.get("q_max", np.pi)),
+        rows = []
+        for idx, r in enumerate(rows_data):
+            q_min = float(r.get("q_min", -np.pi))
+            q_max = float(r.get("q_max", np.pi))
+            if q_min > q_max:
+                raise ValueError(f"dh_rows[{idx}] has q_min > q_max")
+            rows.append(
+                DHRow(
+                    a=float(r.get("a", 0.0)),
+                    alpha=float(r.get("alpha", 0.0)),
+                    d=float(r.get("d", 0.0)),
+                    theta_offset=float(r.get("theta_offset", 0.0)),
+                    joint_type=JointType(str(r.get("joint_type", JointType.REVOLUTE.value))),
+                    q_min=q_min,
+                    q_max=q_max,
+                )
             )
-            for r in rows_data
-        )
+        rows = tuple(rows)
         display_name = str(data.get("name") or "unnamed_robot")
         stored_name = str(data.get("id") or self._slugify(display_name))
         dof = len(rows)
@@ -81,6 +106,12 @@ class RobotRegistry:
         tool_T = np.array(data.get("tool_T", np.eye(4).tolist()), dtype=float)
         if base_T.shape != (4, 4) or tool_T.shape != (4, 4):
             raise ValueError("base_T and tool_T must be 4x4")
+        if not np.isfinite(home_q).all() or not np.isfinite(base_T).all() or not np.isfinite(tool_T).all():
+            raise ValueError("robot configuration contains non-finite values")
+        mins = np.array([r.q_min for r in rows], dtype=float)
+        maxs = np.array([r.q_max for r in rows], dtype=float)
+        if np.any(home_q < mins) or np.any(home_q > maxs):
+            raise ValueError("home_q must lie within joint limits")
         metadata = dict(data.get("metadata") or {})
         description = str(data.get("description") or "")
         return RobotSpec(

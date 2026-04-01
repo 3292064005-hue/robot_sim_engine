@@ -1,6 +1,6 @@
 from __future__ import annotations
 try:
-    from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QFormLayout, QGroupBox
+    from PySide6.QtWidgets import QWidget
 except Exception:  # pragma: no cover
     QWidget = object  # type: ignore
 
@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
 class StatusPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
         super().__init__(parent)
-        from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QTextEdit, QFormLayout, QGroupBox
+        from PySide6.QtWidgets import QVBoxLayout, QLabel, QTextEdit, QFormLayout, QGroupBox
 
         layout = QVBoxLayout(self)
         self.summary = QLabel("状态：未运行")
@@ -25,6 +25,8 @@ class StatusPanel(QWidget):  # pragma: no cover - GUI shell
             ("manip", "可操作度"),
             ("dq_norm", "末步长度"),
             ("mode", "实际模式"),
+            ("damping", "最终阻尼"),
+            ("stop_reason", "停止原因"),
             ("elapsed", "耗时 ms"),
             ("playback", "播放状态"),
         ]:

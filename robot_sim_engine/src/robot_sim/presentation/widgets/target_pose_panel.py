@@ -4,7 +4,7 @@ from robot_sim.core.math.transforms import rot_x, rot_y, rot_z
 from robot_sim.core.math.so3 import log_so3, exp_so3
 
 try:
-    from PySide6.QtWidgets import QWidget, QFormLayout, QDoubleSpinBox, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout
+    from PySide6.QtWidgets import QWidget
 except Exception:  # pragma: no cover
     QWidget = object  # type: ignore
 
@@ -12,7 +12,7 @@ except Exception:  # pragma: no cover
 class TargetPosePanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
         super().__init__(parent)
-        from PySide6.QtWidgets import QWidget, QFormLayout, QDoubleSpinBox, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout
+        from PySide6.QtWidgets import QFormLayout, QDoubleSpinBox, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout
 
         root = QVBoxLayout(self)
         self.orientation_mode = QComboBox()
