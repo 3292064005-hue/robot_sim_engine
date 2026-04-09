@@ -13,8 +13,13 @@ class InputValidator:
         if not np.all(np.isfinite(arr)):
             raise ValueError("joint vector contains non-finite values")
         if clamp:
+<<<<<<< HEAD
             mins = np.array([limit.lower for limit in spec.runtime_joint_limits], dtype=float)
             maxs = np.array([limit.upper for limit in spec.runtime_joint_limits], dtype=float)
+=======
+            mins = np.array([row.q_min for row in spec.dh_rows], dtype=float)
+            maxs = np.array([row.q_max for row in spec.dh_rows], dtype=float)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             arr = np.clip(arr, mins, maxs)
         return arr
 

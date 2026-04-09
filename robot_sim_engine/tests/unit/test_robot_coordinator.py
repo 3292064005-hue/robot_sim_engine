@@ -43,7 +43,11 @@ class DummyWindow:
 
 def test_robot_coordinator_loads_and_saves_robot():
     window = DummyWindow()
+<<<<<<< HEAD
     coord = RobotCoordinator(window, robot=window.robot_facade)
+=======
+    coord = RobotCoordinator(window)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     coord.load_robot()
     coord.save_current_robot()
     assert window.reset is True

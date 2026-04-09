@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from typing import TYPE_CHECKING
 
 from robot_sim.application.workers.trajectory_worker import TrajectoryWorker
@@ -8,10 +9,16 @@ from robot_sim.presentation.coordinators._helpers import require_dependency, req
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.presentation.view_contracts import TrajectoryTaskView
 
+=======
+from robot_sim.application.workers.trajectory_worker import TrajectoryWorker
+from robot_sim.presentation.coordinators._helpers import require_dependency, require_view, run_presented, set_plot_curves
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class TrajectoryTaskCoordinator:
     """Own the trajectory task orchestration previously embedded in the window shell."""
 
+<<<<<<< HEAD
     def __init__(self, window: 'TrajectoryTaskView', *, trajectory=None, threader=None) -> None:
         self.window = window
         self.trajectory = require_dependency(trajectory, 'trajectory_facade')
@@ -28,6 +35,12 @@ class TrajectoryTaskCoordinator:
         request = self._pending_request
         self._pending_request = None
         return request
+=======
+    def __init__(self, window, *, trajectory=None, threader=None) -> None:
+        self.window = window
+        self.trajectory = require_dependency(trajectory if trajectory is not None else getattr(window, 'trajectory_facade', None), 'trajectory_facade')
+        self.threader = require_dependency(threader if threader is not None else getattr(window, 'threader', None), 'threader')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def run(self) -> None:
         """Public UI entrypoint for starting a trajectory task."""
@@ -37,7 +50,11 @@ class TrajectoryTaskCoordinator:
         """Start the trajectory worker using the shared background-thread orchestrator."""
         def action() -> None:
             req = require_view(self.window, 'read_trajectory_request')
+<<<<<<< HEAD
             self.remember_request(req)
+=======
+            self.window._pending_traj_request = req
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             require_view(self.window, 'project_task_started', 'trajectory', '轨迹任务已启动')
             trajectory_use_case = require_dependency(getattr(self.trajectory, 'trajectory_use_case', None), 'trajectory_facade.trajectory_use_case')
             task = self.threader.start(
@@ -62,7 +79,10 @@ class TrajectoryTaskCoordinator:
         require_view(self.window, 'project_busy_state', False, '')
 
         def action() -> None:
+<<<<<<< HEAD
             self.pop_pending_request()
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             self.trajectory.apply_trajectory(traj)
             ee_points = traj.ee_positions if getattr(traj, 'ee_positions', None) is not None else None
             metrics = self.window.metrics_service.summarize_trajectory(traj)

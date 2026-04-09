@@ -26,6 +26,10 @@ class DummyWindow:
         self.solver_facade = SimpleNamespace(ik_use_case=object())
         self.threader = DummyThreader()
         self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
+<<<<<<< HEAD
+=======
+        self._pending_ik_request = None
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._set_busy_calls = []
         self.read_ik_request = lambda: SimpleNamespace()
         self.project_task_started = lambda task_kind, message: (self._set_busy_calls.append((True, task_kind)), self.status_panel.append(message))
@@ -40,8 +44,12 @@ class DummyWindow:
 
 def test_ik_task_coordinator_starts_worker_and_patches_task_state():
     window = DummyWindow()
+<<<<<<< HEAD
     coordinator = IKTaskCoordinator(window, solver=window.solver_facade, threader=window.threader)
     coordinator.run()
+=======
+    IKTaskCoordinator(window).run()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.threader.started['task_kind'] == 'ik'
     assert window.controller.state_store.patched['active_task_kind'] == 'ik'
     assert window._set_busy_calls == [(True, 'ik')]

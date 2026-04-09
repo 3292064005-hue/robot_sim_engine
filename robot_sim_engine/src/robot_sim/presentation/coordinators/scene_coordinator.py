@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
@@ -22,11 +23,17 @@ from robot_sim.render.screenshot_service import ScreenshotService
 
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.presentation.view_contracts import SceneTaskView
+=======
+from pathlib import Path
+
+from robot_sim.presentation.coordinators._helpers import require_dependency, require_view, run_presented
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class SceneCoordinator:
     """Own scene-toolbar orchestration for the main window."""
 
+<<<<<<< HEAD
     def __init__(
         self,
         window: 'SceneTaskView',
@@ -61,6 +68,14 @@ class SceneCoordinator:
         effective_capture_use_case = capture_scene_use_case or capture_scene_uc
         self.capture_scene_use_case = effective_capture_use_case or CaptureSceneUseCase(self.screenshot_service)
         self.scene_authority_service = scene_authority_service or SceneAuthorityService()
+=======
+    def __init__(self, window, *, runtime=None) -> None:
+        self.window = window
+        self.runtime = require_dependency(
+            runtime if runtime is not None else getattr(window, 'runtime_facade', None),
+            'runtime_facade',
+        )
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def fit(self) -> None:
         require_view(self.window, 'project_scene_fit')
@@ -68,6 +83,7 @@ class SceneCoordinator:
     def clear_path(self) -> None:
         require_view(self.window, 'project_scene_path_cleared')
 
+<<<<<<< HEAD
     def add_obstacle(self) -> None:
         """Create or replace one stable box obstacle through the scene authority service.
 
@@ -389,3 +405,18 @@ class SceneCoordinator:
         """
         self._record_capture_telemetry(self._extract_capture_telemetry(getattr(event, 'metadata', {})))
         self.window.on_worker_cancelled()
+=======
+    def capture(self) -> None:
+        """Capture the current scene into the configured runtime export directory.
+
+        Raises:
+            AttributeError: If the required runtime export root or view capture contract is missing.
+        """
+        def action() -> None:
+            export_root = require_dependency(getattr(self.runtime, 'export_root', None), 'runtime_facade.export_root')
+            path = Path(export_root) / 'scene_capture.png'
+            result = require_view(self.window, 'capture_scene_screenshot', path)
+            require_view(self.window, 'project_scene_capture', result)
+
+        run_presented(self.window, action, title='截图失败')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

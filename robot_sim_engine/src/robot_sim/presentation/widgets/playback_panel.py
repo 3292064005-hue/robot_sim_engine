@@ -1,12 +1,26 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from robot_sim.presentation.qt_runtime import QCheckBox, QDoubleSpinBox, QHBoxLayout, QLabel, QPushButton, QSlider, Qt, QWidget, require_qt_runtime
+=======
+try:
+    from PySide6.QtWidgets import QWidget
+except Exception:  # pragma: no cover
+    QWidget = object  # type: ignore
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class PlaybackPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
+<<<<<<< HEAD
         require_qt_runtime('PlaybackPanel')
         super().__init__(parent)
+=======
+        super().__init__(parent)
+        from PySide6.QtWidgets import QHBoxLayout, QPushButton, QSlider, QLabel, QDoubleSpinBox, QCheckBox
+        from PySide6.QtCore import Qt
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         layout = QHBoxLayout(self)
         self.play_btn = QPushButton("播放")
         self.pause_btn = QPushButton("暂停")

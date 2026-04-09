@@ -32,6 +32,7 @@ def test_trajectory_controller_builds_joint_request(project_root):
     req = traj_ctrl.build_trajectory_request(duration=1.0, dt=0.1)
     assert req.q_goal is not None
     assert req.mode.value == 'joint_space'
+<<<<<<< HEAD
 
 
 def test_trajectory_controller_uses_configured_default_validation_layers(project_root):
@@ -54,3 +55,5 @@ def test_trajectory_controller_uses_configured_default_validation_layers(project
     )
     req = traj_ctrl.build_trajectory_request(duration=1.0, dt=0.1)
     assert req.validation_layers == cfg.load_solver_settings().trajectory.validation_layers
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

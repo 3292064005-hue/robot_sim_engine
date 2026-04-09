@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -31,6 +32,11 @@ class DummyRuntimeFacade:
     @property
     def state(self):
         return self.state_store.state
+=======
+from types import SimpleNamespace
+
+from robot_sim.presentation.coordinators.scene_coordinator import SceneCoordinator
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class DummyWindow:
@@ -40,6 +46,7 @@ class DummyWindow:
             trajectory_cleared=False,
             fit_camera=self._fit,
             clear_trajectory=self._clear,
+<<<<<<< HEAD
             scene_snapshot=lambda: {
                 'title': 'Robot Sim Engine',
                 'robot_points': [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]],
@@ -67,6 +74,19 @@ class DummyWindow:
         self._project_exception = lambda exc, title='错误': self._projected.append((title, str(exc)))
         self.on_worker_failed = lambda failure: self._projected.append(('failed', str(getattr(failure, 'message', failure))))
         self.on_worker_cancelled = lambda: self._projected.append(('cancelled', 'cancelled'))
+=======
+            capture_screenshot=lambda path: 'capture.png',
+        )
+        self.scene_controller = SimpleNamespace(cleared=False, clear_transient_visuals=self._clear_visuals)
+        self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
+        self.runtime_facade = SimpleNamespace(export_root='.')
+        self.project_scene_fit = lambda: (self.scene_widget.fit_camera(), self.status_panel.append('3D 视图已适配到当前场景'))
+        self.project_scene_path_cleared = lambda: (self.scene_controller.clear_transient_visuals(), self.scene_widget.clear_trajectory(), self.status_panel.append('末端轨迹显示已清空'))
+        self.capture_scene_screenshot = lambda path: self.scene_widget.capture_screenshot(path)
+        self.project_scene_capture = lambda result: self.status_panel.append(f'场景截图已导出：{result}')
+        self._projected = []
+        self._project_exception = lambda exc, title='错误': self._projected.append((title, str(exc)))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _fit(self):
         self.scene_widget.fit_called = True
@@ -78,6 +98,7 @@ class DummyWindow:
         self.scene_controller.cleared = True
 
 
+<<<<<<< HEAD
 class FakeScreenshotService:
     def __init__(self, *, failure: Exception | None = None):
         self.failure = failure
@@ -318,3 +339,19 @@ def test_scene_coordinator_rejects_conflicting_capture_use_case_aliases():
             capture_scene_use_case=object(),
             capture_scene_uc=object(),
         )
+=======
+def test_scene_coordinator_handles_fit_clear_and_capture():
+    window = DummyWindow()
+    coord = SceneCoordinator(window)
+    coord.fit()
+    coord.clear_path()
+    coord.capture()
+    assert window.scene_widget.fit_called is True
+    assert window.scene_widget.trajectory_cleared is True
+    assert window.scene_controller.cleared is True
+    assert window.status_panel.messages == [
+        '3D 视图已适配到当前场景',
+        '末端轨迹显示已清空',
+        '场景截图已导出：capture.png',
+    ]
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

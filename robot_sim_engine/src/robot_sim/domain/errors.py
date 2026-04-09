@@ -89,6 +89,7 @@ class ExportRobotError(RobotSimError):
     default_remediation_hint = '检查导出目录权限、依赖安装情况和输出路径。'
 
 
+<<<<<<< HEAD
 
 
 class RenderBackendUnavailableError(RobotSimError):
@@ -118,6 +119,8 @@ class PlotBackendUnavailableError(RobotSimError):
     default_error_code = 'plot_backend_unavailable'
     default_remediation_hint = '安装 pyqtgraph，或在无图形模式下跳过曲线投影。'
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 class CancelledTaskError(RobotSimError):
     """Raised when a long-running task is cancelled before completion."""
 
@@ -141,10 +144,13 @@ __all__ = [
     'CollisionError',
     'ImportRobotError',
     'ExportRobotError',
+<<<<<<< HEAD
     'RenderBackendUnavailableError',
     'RenderInitializationError',
     'RenderOperationError',
     'PlotBackendUnavailableError',
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     'CancelledTaskError',
     'IncompatibleSchemaError',
 ]

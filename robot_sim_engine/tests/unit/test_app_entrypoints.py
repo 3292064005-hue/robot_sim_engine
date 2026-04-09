@@ -8,7 +8,10 @@ from robot_sim.app import bootstrap as bootstrap_mod
 from robot_sim.app import main as main_mod
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_bootstrap_uses_runtime_paths_and_dependencies(monkeypatch):
     root = Path('/tmp/fake-project')
     called: dict[str, object] = {}
@@ -32,17 +35,29 @@ def test_bootstrap_uses_runtime_paths_and_dependencies(monkeypatch):
 
     monkeypatch.setattr(bootstrap_mod, 'build_container', fake_build_container)
 
+<<<<<<< HEAD
     context = bootstrap_mod.bootstrap(startup_mode='headless')
 
     assert context.project_root == root
     assert context.container == 'container'
+=======
+    result_root, container = bootstrap_mod.bootstrap()
+
+    assert result_root == root
+    assert container == 'container'
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert called['logging_path'] == root / 'runtime' / 'logging.yaml'
     assert getattr(called['container_root'], 'project_root') == root
 
 
+<<<<<<< HEAD
 
 def test_main_returns_1_when_pyside_missing(monkeypatch, capsys):
     monkeypatch.setattr(main_mod, 'bootstrap', lambda *args, **kwargs: bootstrap_mod.BootstrapContext(Path('/tmp/fake-project'), object()))
+=======
+def test_main_returns_1_when_pyside_missing(monkeypatch, capsys):
+    monkeypatch.setattr(main_mod, 'bootstrap', lambda: (Path('/tmp/fake-project'), object()))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     monkeypatch.delitem(sys.modules, 'PySide6', raising=False)
     monkeypatch.delitem(sys.modules, 'PySide6.QtWidgets', raising=False)
 
@@ -59,6 +74,7 @@ def test_main_returns_1_when_pyside_missing(monkeypatch, capsys):
     assert 'PySide6 未安装' in captured.out
 
 
+<<<<<<< HEAD
 
 def test_main_returns_2_when_bootstrap_fails_with_missing_runtime_resource(monkeypatch, capsys):
     monkeypatch.setattr(main_mod, 'bootstrap', lambda *args, **kwargs: (_ for _ in ()).throw(FileNotFoundError('missing packaged runtime configs')))
@@ -69,6 +85,8 @@ def test_main_returns_2_when_bootstrap_fails_with_missing_runtime_resource(monke
 
 
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_main_launches_window_when_qt_is_available(monkeypatch):
     events: list[object] = []
 
@@ -97,7 +115,11 @@ def test_main_launches_window_when_qt_is_available(monkeypatch):
     fake_window_mod.MainWindow = FakeWindow
     monkeypatch.setitem(sys.modules, 'robot_sim.presentation.main_window', fake_window_mod)
     fake_container = object()
+<<<<<<< HEAD
     monkeypatch.setattr(main_mod, 'bootstrap', lambda *args, **kwargs: bootstrap_mod.BootstrapContext(Path('/tmp/fake-project'), fake_container))
+=======
+    monkeypatch.setattr(main_mod, 'bootstrap', lambda: (Path('/tmp/fake-project'), fake_container))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     assert main_mod.main() == 7
     assert ('window_root', Path('/tmp/fake-project')) in events

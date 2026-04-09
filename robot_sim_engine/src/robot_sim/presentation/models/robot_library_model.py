@@ -1,6 +1,19 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
+=======
+try:
+    from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
+except Exception:  # pragma: no cover
+    class QAbstractListModel:  # type: ignore
+        def __init__(self, *args, **kwargs): ...
+    class QModelIndex:  # type: ignore
+        pass
+    class Qt:  # type: ignore
+        DisplayRole = 0
+        UserRole = 256
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class RobotLibraryModel(QAbstractListModel):  # pragma: no cover - GUI shell

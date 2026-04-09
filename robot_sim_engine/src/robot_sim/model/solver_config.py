@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+<<<<<<< HEAD
 
 from robot_sim.domain.enums import IKSolverMode
 
@@ -18,6 +19,13 @@ SUPPORTED_TRAJECTORY_VALIDATION_LAYERS: tuple[str, ...] = (
 class IKConfig:
     """Typed inverse-kinematics runtime configuration."""
 
+=======
+from robot_sim.domain.enums import IKSolverMode
+
+
+@dataclass(frozen=True)
+class IKConfig:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     mode: IKSolverMode = IKSolverMode.DLS
     max_iters: int = 150
     pos_tol: float = 1.0e-4
@@ -44,6 +52,7 @@ class IKConfig:
     allow_orientation_relaxation: bool = False
     orientation_relaxation_pos_multiplier: float = 5.0
     orientation_relaxation_ori_multiplier: float = 25.0
+<<<<<<< HEAD
     timeout_ms: float = 0.0
 
     def __post_init__(self) -> None:
@@ -68,6 +77,8 @@ class IKConfig:
             raise ValueError('max_iters must be > 0')
         if float(self.min_damping_lambda) > float(self.max_damping_lambda):
             raise ValueError('min_damping_lambda cannot exceed max_damping_lambda')
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def as_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -77,6 +88,7 @@ class IKConfig:
 
 @dataclass(frozen=True)
 class TrajectoryConfig:
+<<<<<<< HEAD
     """Typed trajectory runtime configuration.
 
     Attributes:
@@ -94,6 +106,15 @@ class TrajectoryConfig:
         payload = asdict(self)
         payload['validation_layers'] = list(self.validation_layers)
         return payload
+=======
+    """Typed trajectory runtime configuration."""
+
+    duration: float = 3.0
+    dt: float = 0.02
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)

@@ -1,7 +1,15 @@
 from __future__ import annotations
 from robot_sim.model.dh_row import DHRow
 
+<<<<<<< HEAD
 from PySide6.QtCore import QAbstractTableModel, Qt
+=======
+try:
+    from PySide6.QtCore import QAbstractTableModel, Qt
+except Exception:  # pragma: no cover
+    QAbstractTableModel = object  # type: ignore
+    Qt = object  # type: ignore
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class JointLimitTableModel(QAbstractTableModel):  # pragma: no cover - GUI shell

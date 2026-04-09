@@ -45,7 +45,11 @@ class DummyWindow:
 
 def test_benchmark_task_coordinator_starts_worker_and_patches_task_state():
     window = DummyWindow()
+<<<<<<< HEAD
     BenchmarkTaskCoordinator(window, runtime=window.runtime_facade, benchmark=window.benchmark_facade, threader=window.threader).run()
+=======
+    BenchmarkTaskCoordinator(window).run()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.threader.started['task_kind'] == 'benchmark'
     assert window.runtime_facade.state_store.patched['active_task_kind'] == 'benchmark'
     assert window._set_busy_calls == [(True, 'benchmark')]

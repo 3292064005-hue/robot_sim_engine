@@ -20,6 +20,9 @@ def test_export_service_session_and_trajectory(project_root, tmp_path):
     )
     payload = json.loads(session_path.read_text(encoding='utf-8'))
     assert payload['robot_name'] == spec.name
+<<<<<<< HEAD
     assert payload['runtime_model_summary']['execution_row_count'] == spec.dof
     assert payload['runtime_model_summary']['source_surface'] == 'canonical_model'
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert traj_path.exists()

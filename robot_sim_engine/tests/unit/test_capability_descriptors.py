@@ -17,6 +17,10 @@ def test_capability_descriptors_include_metadata(project_root):
     assert 'joint_quintic' in planner_desc
     assert planner_desc['waypoint_graph']['metadata']['requires_ik'] is True
     assert 'urdf_skeleton' in importer_desc
+<<<<<<< HEAD
     assert 'urdf_model' in importer_desc
     assert importer_desc['urdf_model']['aliases'] == ['urdf']
     assert importer_desc['urdf_skeleton']['aliases'] == ['urdf_approx']
+=======
+    assert importer_desc['urdf_skeleton']['aliases'] == ['urdf']
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

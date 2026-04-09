@@ -19,6 +19,9 @@ def test_main_window_has_core_bindable_widgets():
     assert w.playback_panel is not None
     assert w.solver_panel is not None
     assert w.status_panel is not None
+<<<<<<< HEAD
     assert w.robot_panel.import_button is not None
     assert w.robot_panel.importer_combo is not None
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     w.close()

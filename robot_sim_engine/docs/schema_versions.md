@@ -37,7 +37,11 @@ These fields are part of the P0 task/state contract and should not be dropped wi
 
 ## P1 additions
 
+<<<<<<< HEAD
 - Session payload may now include `planning_scene` summary fields: `revision`, `collision_level`, `collision_backend`, `obstacle_ids`, `attached_object_ids`, `allowed_collision_pairs`, and `geometry_source`.
 - Session payload may include `scene_runtime_summary` for non-canonical runtime annotations such as cache/projection state; these fields are intentionally kept outside `planning_scene`.
+=======
+- Session payload may now include `planning_scene` summary fields: `revision`, `collision_level`, `obstacle_ids`, and `allowed_collision_pairs`.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 - Trajectory collision summaries may now include `scene_revision`, `ignored_pairs`, `self_pairs`, and `environment_pairs`.
 - Solver schema now accepts `ik.mode = "lm"`.

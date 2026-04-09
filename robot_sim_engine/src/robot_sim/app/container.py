@@ -132,6 +132,7 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
     """
     runtime_paths = project_root if isinstance(project_root, RuntimePaths) else resolve_runtime_paths(project_root)
     active_profile = str(os.environ.get('ROBOT_SIM_PROFILE', ConfigService.DEFAULT_PROFILE) or ConfigService.DEFAULT_PROFILE)
+<<<<<<< HEAD
     config_service = ConfigService(
         runtime_paths.config_root,
         profile=active_profile,
@@ -141,6 +142,10 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         runtime_paths.robot_root,
         readonly_roots=(runtime_paths.bundled_robot_root,),
     )
+=======
+    config_service = ConfigService(runtime_paths.config_root, profile=active_profile)
+    robot_registry = RobotRegistry(runtime_paths.robot_root)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     metrics_service = build_metrics_service()
     export_service = build_export_service(runtime_paths.export_root)
     package_service = build_package_service(runtime_paths.export_root)
@@ -149,7 +154,10 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
     runtime_feature_service = build_runtime_feature_service(config_service)
     runtime_feature_policy = runtime_feature_service.load_policy()
     plugin_loader = PluginLoader(runtime_paths.plugin_manifest_path, policy=runtime_feature_policy)
+<<<<<<< HEAD
     plugin_catalog = plugin_loader.audit()
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     capability_matrix_service = build_capability_service(runtime_feature_policy=runtime_feature_policy)
     module_status_service = build_module_status_service(runtime_feature_policy=runtime_feature_policy)
 
@@ -191,6 +199,7 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         'resource_root': str(runtime_paths.resource_root),
         'config_root': str(runtime_paths.config_root),
         'robot_root': str(runtime_paths.robot_root),
+<<<<<<< HEAD
         'bundled_robot_root': str(runtime_paths.bundled_robot_root),
         'profiles_root': str(runtime_paths.profiles_root),
         'plugin_manifest_path': str(runtime_paths.plugin_manifest_path),
@@ -209,5 +218,14 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         },
         'source_layout_available': runtime_paths.source_layout_available,
         'config_resolution': config_service.describe_resolution(),
+=======
+        'profiles_root': str(runtime_paths.profiles_root),
+        'plugin_manifest_path': str(runtime_paths.plugin_manifest_path),
+        'export_root': str(runtime_paths.export_root),
+        'runtime_feature_policy': runtime_feature_policy.as_dict(),
+        'profiles': config_service.available_profiles(),
+        'plugin_discovery_enabled': runtime_feature_policy.plugin_discovery_enabled,
+        'source_layout_available': runtime_paths.source_layout_available,
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     }
     return container

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -138,3 +139,12 @@ class CaptureSceneUseCase:
         if not isinstance(snapshot, Mapping):
             raise ValueError('scene snapshot payload must be a mapping')
         return int(self._screenshot_service.snapshot_sample_count(dict(snapshot)))
+=======
+
+class CaptureSceneUseCase:
+    def __init__(self, screenshot_service) -> None:
+        self._screenshot_service = screenshot_service
+
+    def execute(self, scene_widget, path):
+        return self._screenshot_service.capture(scene_widget, path)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

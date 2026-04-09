@@ -3,7 +3,11 @@ from __future__ import annotations
 from threading import Timer
 from typing import Callable
 
+<<<<<<< HEAD
 from robot_sim.presentation.threading.qt_compat import QCoreApplication, QTimer
+=======
+from robot_sim.presentation.threading.qt_compat import QTimer
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class TimeoutSupervisor:
@@ -45,6 +49,7 @@ class TimeoutSupervisor:
             return
         self._task_id = str(task_id)
         interval_ms = int(timeout_ms)
+<<<<<<< HEAD
         app = QCoreApplication.instance()
         loop_level = 0
         if app is not None and not bool(getattr(app, '_robot_sim_headless_helper', False)):
@@ -61,6 +66,8 @@ class TimeoutSupervisor:
             timer.start(interval_ms)
             self._qt_timer = timer
             return
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         timer = Timer(float(interval_ms) / 1000.0, lambda: callback(self._task_id))
         timer.daemon = True
         timer.start()

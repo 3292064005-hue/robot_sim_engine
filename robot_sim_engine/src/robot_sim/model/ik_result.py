@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.types import FloatArray
 
 
@@ -23,8 +26,11 @@ class IKIterationLog:
 
 @dataclass(frozen=True)
 class IKResult:
+<<<<<<< HEAD
     """Canonical inverse-kinematics result contract."""
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     success: bool
     q_sol: FloatArray
     logs: tuple[IKIterationLog, ...]
@@ -40,6 +46,7 @@ class IKResult:
     best_q: FloatArray | None = None
     restarts_used: int = 0
     diagnostics: dict[str, object] = field(default_factory=dict)
+<<<<<<< HEAD
     status: str = ''
     residuals: dict[str, float] = field(default_factory=dict)
     attempt_count: int = 0
@@ -58,3 +65,5 @@ class IKResult:
         if self.attempt_count <= 0:
             object.__setattr__(self, 'attempt_count', max(int(self.restarts_used) + 1, 1))
         object.__setattr__(self, 'warnings', tuple(str(item) for item in self.warnings))
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

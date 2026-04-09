@@ -1,4 +1,5 @@
 from __future__ import annotations
+<<<<<<< HEAD
 
 from pathlib import Path
 
@@ -8,6 +9,12 @@ from robot_sim.application.services.robot_registry import RobotRegistry
 
 
 
+=======
+import numpy as np
+from robot_sim.application.services.robot_registry import RobotRegistry
+
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_robot_registry_roundtrip(project_root, tmp_path):
     src = RobotRegistry(project_root / 'configs' / 'robots')
     dst = RobotRegistry(tmp_path)
@@ -15,6 +22,7 @@ def test_robot_registry_roundtrip(project_root, tmp_path):
     path = dst.save(spec, name='roundtrip_planar')
     loaded = dst.load('roundtrip_planar')
     assert path.exists()
+<<<<<<< HEAD
     assert loaded.name == 'roundtrip_planar'
     assert loaded.dof == spec.dof
     assert np.allclose(loaded.home_q, spec.home_q)
@@ -50,3 +58,8 @@ def test_robot_registry_avoids_shadowing_bundled_default_for_unrelated_import(pr
     allocated = registry.next_available_name('planar_2dof')
 
     assert allocated == 'planar_2dof_2'
+=======
+    assert loaded.name == spec.name
+    assert loaded.dof == spec.dof
+    assert np.allclose(loaded.home_q, spec.home_q)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from dataclasses import dataclass
 from typing import Iterable, cast
 
@@ -293,10 +294,42 @@ class CapsuleCollisionBackend:
         return float(np.linalg.norm(closest_1 - closest_2))
 
     def _base_payload(self) -> dict[str, object]:
+=======
+
+class CapsuleCollisionBackend:
+    """Placeholder capsule backend kept for interface compatibility only."""
+
+    backend_id = 'capsule'
+    availability = 'unavailable'
+    fallback_backend = 'aabb'
+
+    def _unsupported_payload(self) -> dict[str, object]:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return {
             'backend_id': self.backend_id,
             'availability': self.availability,
             'fallback_backend': self.fallback_backend,
+<<<<<<< HEAD
             'reason': self.unsupported_reason,
             'supported_operations': self.supported_operations,
         }
+=======
+            'warning': 'capsule collision backend is not available in V7.1 and must fall back to aabb',
+        }
+
+    def check_state_collision(self, *args, **kwargs) -> dict[str, object]:
+        payload = self._unsupported_payload()
+        payload.update({'supported': False, 'self_collision': False, 'environment_collision': False})
+        return payload
+
+    def check_path_collision(self, *args, **kwargs) -> dict[str, object]:
+        payload = self._unsupported_payload()
+        payload.update({'supported': False, 'path_collision': False})
+        return payload
+
+    def min_distance(self, *args, **kwargs) -> float:
+        return 0.0
+
+    def contact_pairs(self, *args, **kwargs) -> tuple[tuple[str, str], ...]:
+        return ()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

@@ -5,4 +5,8 @@ def test_container_registry_snapshot_contains_canonical_ids(tmp_path):
     container = build_container(tmp_path)
     assert set(container.solver_registry.ids()) == {'pinv', 'dls', 'lm', 'analytic_6r'}
     assert set(container.planner_registry.ids()) == {'joint_trapezoidal', 'joint_quintic', 'cartesian_sampled', 'waypoint_graph'}
+<<<<<<< HEAD
     assert set(container.importer_registry.ids()) == {'yaml', 'urdf_model', 'urdf_skeleton'}
+=======
+    assert set(container.importer_registry.ids()) == {'yaml', 'urdf_skeleton'}
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

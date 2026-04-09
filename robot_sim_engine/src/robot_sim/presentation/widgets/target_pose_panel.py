@@ -1,16 +1,33 @@
 from __future__ import annotations
+<<<<<<< HEAD
 
 import numpy as np
 
 from robot_sim.core.math.so3 import exp_so3, log_so3
 from robot_sim.core.math.transforms import rot_x, rot_y, rot_z
 from robot_sim.presentation.qt_runtime import QComboBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QPushButton, QVBoxLayout, QWidget, require_qt_runtime
+=======
+import numpy as np
+from robot_sim.core.math.transforms import rot_x, rot_y, rot_z
+from robot_sim.core.math.so3 import log_so3, exp_so3
+
+try:
+    from PySide6.QtWidgets import QWidget
+except Exception:  # pragma: no cover
+    QWidget = object  # type: ignore
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class TargetPosePanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
+<<<<<<< HEAD
         require_qt_runtime('TargetPosePanel')
         super().__init__(parent)
+=======
+        super().__init__(parent)
+        from PySide6.QtWidgets import QFormLayout, QDoubleSpinBox, QComboBox, QPushButton, QHBoxLayout, QVBoxLayout
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         root = QVBoxLayout(self)
         self.orientation_mode = QComboBox()
         self.orientation_mode.addItems(["rvec", "euler_zyx"])

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+<<<<<<< HEAD
 from typing import Any, Iterable
 import re
 
@@ -59,6 +60,26 @@ class RobotRegistry:
                 continue
             stems.update(p.stem for p in root.glob('*.yaml'))
         return sorted(stems)
+=======
+from typing import Any
+import re
+import numpy as np
+import yaml
+
+from robot_sim.model.dh_row import DHRow
+from robot_sim.model.robot_catalog_entry import RobotCatalogEntry
+from robot_sim.model.robot_spec import RobotSpec
+from robot_sim.domain.enums import JointType
+
+
+class RobotRegistry:
+    def __init__(self, robots_dir: str | Path) -> None:
+        self.robots_dir = Path(robots_dir)
+        self.robots_dir.mkdir(parents=True, exist_ok=True)
+
+    def list_names(self) -> list[str]:
+        return sorted(p.stem for p in self.robots_dir.glob("*.yaml"))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def list_specs(self) -> list[RobotSpec]:
         return [self.load(name) for name in self.list_names()]
@@ -77,13 +98,19 @@ class RobotRegistry:
         return sorted(entries, key=lambda item: (item.label.lower(), item.name.lower()))
 
     def _slugify(self, value: str) -> str:
+<<<<<<< HEAD
         """Normalize robot identifiers to stable lowercase filesystem-safe slugs."""
         text = re.sub(r"[^a-zA-Z0-9_\-]+", "_", value.strip()).strip("_")
         return text.lower() or "robot"
+=======
+        text = re.sub(r"[^a-zA-Z0-9_\-]+", "_", value.strip()).strip("_")
+        return text or "robot"
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _path(self, name: str) -> Path:
         return self.robots_dir / f"{name}.yaml"
 
+<<<<<<< HEAD
     def _readonly_paths(self, name: str) -> tuple[Path, ...]:
         target = f'{name}.yaml'
         return tuple(root / target for root in self._readonly_roots if (root / target).exists())
@@ -137,6 +164,18 @@ class RobotRegistry:
             raise FileNotFoundError(f"robot config not found: {self._path(self._slugify(name))}")
         with path.open("r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
+=======
+    def load(self, name: str) -> RobotSpec:
+        path = self._path(name)
+        if not path.exists():
+            raise FileNotFoundError(f"robot config not found: {path}")
+        with path.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if "id" not in data:
+            # Keep the runtime identifier aligned with the actual loadable file stem
+            # for legacy bundled configs that only define a human-readable display name.
+            data = {**data, "id": path.stem}
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         spec = self.from_dict(data)
         if spec.display_name is None:
             spec = RobotSpec(
@@ -148,6 +187,7 @@ class RobotRegistry:
                 display_name=str(data.get("name") or spec.name),
                 description=spec.description,
                 metadata=spec.metadata,
+<<<<<<< HEAD
                 joint_names=spec.joint_names,
                 link_names=spec.link_names,
                 joint_types=spec.joint_types,
@@ -161,16 +201,23 @@ class RobotRegistry:
                 source_model_summary=spec.source_model_summary,
                 canonical_model=spec.canonical_model,
                 imported_package=spec.imported_package,
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             )
         return spec
 
     def save(self, spec: RobotSpec, name: str | None = None) -> Path:
         stem = self._slugify(name or spec.name)
         path = self._path(stem)
+<<<<<<< HEAD
         payload = self.to_dict(spec)
         payload['id'] = stem
         with path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(payload, f, sort_keys=False, allow_unicode=True)
+=======
+        with path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(self.to_dict(spec), f, sort_keys=False, allow_unicode=True)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return path
 
     def from_dict(self, data: dict[str, Any]) -> RobotSpec:
@@ -213,6 +260,7 @@ class RobotRegistry:
             raise ValueError("home_q must lie within joint limits")
         metadata = dict(data.get("metadata") or {})
         description = str(data.get("description") or "")
+<<<<<<< HEAD
 
         joint_names = tuple(str(item) for item in data.get('joint_names') or ())
         link_names = tuple(str(item) for item in data.get('link_names') or ())
@@ -299,6 +347,8 @@ class RobotRegistry:
                 'serialized_collision_geometry',
             ):
                 metadata.pop(heavy_key, None)
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return RobotSpec(
             name=stored_name,
             dh_rows=rows,
@@ -308,6 +358,7 @@ class RobotRegistry:
             display_name=display_name,
             description=description,
             metadata=metadata,
+<<<<<<< HEAD
             joint_names=joint_names,
             link_names=link_names,
             joint_types=joint_types,
@@ -341,6 +392,16 @@ class RobotRegistry:
             "name": spec.label,
             "description": spec.description,
             "metadata": metadata,
+=======
+        )
+
+    def to_dict(self, spec: RobotSpec) -> dict[str, Any]:
+        payload = {
+            "id": spec.name,
+            "name": spec.label,
+            "description": spec.description,
+            "metadata": dict(spec.metadata),
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             "dh_rows": [
                 {
                     "a": float(r.a),
@@ -357,6 +418,7 @@ class RobotRegistry:
             "tool_T": np.asarray(spec.tool_T, dtype=float).tolist(),
             "home_q": np.asarray(spec.home_q, dtype=float).tolist(),
         }
+<<<<<<< HEAD
         if spec.joint_names:
             payload['joint_names'] = list(spec.joint_names)
         if spec.link_names:
@@ -440,11 +502,14 @@ class RobotRegistry:
         serialized_canonical = serialize_canonical_robot_model(spec.canonical_model)
         if serialized_canonical is not None:
             payload['canonical_model'] = serialized_canonical
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if not payload["description"]:
             payload.pop("description")
         if not payload["metadata"]:
             payload.pop("metadata")
         return payload
+<<<<<<< HEAD
 
     @staticmethod
     def _synthesize_canonical_model(
@@ -495,3 +560,5 @@ class RobotRegistry:
             fidelity='native' if source_format == 'yaml' else 'structured',
             metadata={'generated_from': 'robot_registry', 'execution_surface': 'canonical_model'},
         )
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

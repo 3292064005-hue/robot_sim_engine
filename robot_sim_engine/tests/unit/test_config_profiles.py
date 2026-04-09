@@ -14,7 +14,11 @@ def test_config_service_merges_default_and_named_profiles(tmp_path):
     }), encoding='utf-8')
     (profiles / 'ci.yaml').write_text(yaml.safe_dump({
         'window': {'title': 'CI Title'},
+<<<<<<< HEAD
         'trajectory': {'dt': 0.05, 'validation_layers': ['timing', 'limits']},
+=======
+        'trajectory': {'dt': 0.05},
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     }), encoding='utf-8')
     service = ConfigService(tmp_path, profile='ci')
 
@@ -25,6 +29,7 @@ def test_config_service_merges_default_and_named_profiles(tmp_path):
     assert app_cfg['window']['title'] == 'CI Title'
     assert solver_cfg['ik']['retry_count'] == 2
     assert solver_cfg['trajectory']['dt'] == 0.05
+<<<<<<< HEAD
     assert solver_cfg['trajectory']['validation_layers'] == ['timing', 'limits']
 
 
@@ -33,6 +38,13 @@ def test_config_service_local_files_override_profiles_from_local_directory(tmp_p
     profiles.mkdir(parents=True)
     local_dir = tmp_path / 'local'
     local_dir.mkdir(parents=True)
+=======
+
+
+def test_config_service_local_files_override_profiles(tmp_path):
+    profiles = tmp_path / 'profiles'
+    profiles.mkdir(parents=True)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     (profiles / 'default.yaml').write_text(yaml.safe_dump({
         'window': {'height': 900},
         'trajectory': {'duration': 4.0},
@@ -41,6 +53,7 @@ def test_config_service_local_files_override_profiles_from_local_directory(tmp_p
         'window': {'title': 'GUI'},
         'plots': {'max_points': 6000},
     }), encoding='utf-8')
+<<<<<<< HEAD
     (local_dir / 'app.local.yaml').write_text(yaml.safe_dump({
         'window': {'title': 'LOCAL GUI'},
     }), encoding='utf-8')
@@ -48,6 +61,15 @@ def test_config_service_local_files_override_profiles_from_local_directory(tmp_p
         'trajectory': {'duration': 5.0},
     }), encoding='utf-8')
     service = ConfigService(tmp_path, profile='gui', local_override_dir=local_dir)
+=======
+    (tmp_path / 'app.yaml').write_text(yaml.safe_dump({
+        'window': {'title': 'LOCAL GUI'},
+    }), encoding='utf-8')
+    (tmp_path / 'solver.yaml').write_text(yaml.safe_dump({
+        'trajectory': {'duration': 5.0},
+    }), encoding='utf-8')
+    service = ConfigService(tmp_path, profile='gui')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     app_cfg = service.load_app_config()
     solver_cfg = service.load_solver_config()
@@ -58,6 +80,7 @@ def test_config_service_local_files_override_profiles_from_local_directory(tmp_p
     assert solver_cfg['trajectory']['duration'] == 5.0
 
 
+<<<<<<< HEAD
 def test_shipped_repository_profiles_remain_observably_different(project_root):
     observed = {}
     for profile in ('default', 'dev', 'ci', 'research'):
@@ -77,6 +100,8 @@ def test_shipped_repository_profiles_remain_observably_different(project_root):
     assert observed['research'] == ('Robot Sim Engine [research]', 8000, 3, 0.01)
 
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_config_service_reports_available_profiles(tmp_path):
     profiles = tmp_path / 'profiles'
     profiles.mkdir(parents=True)

@@ -3,7 +3,10 @@
 - GUI tasks use worker objects moved to QThread.
 - Controllers submit requests; the window projects state only.
 - `ThreadOrchestrator` owns task lifecycle state, not business computation.
+<<<<<<< HEAD
 - export/package/screenshot now route through the same task lifecycle used by IK/trajectory/benchmark/playback.
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 ## Dependency injection rule

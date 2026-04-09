@@ -59,7 +59,11 @@ class DummyWindow:
 
 def test_playback_task_coordinator_covers_play_pause_stop():
     window = DummyWindow()
+<<<<<<< HEAD
     coord = PlaybackTaskCoordinator(window, runtime=window.runtime_facade, playback=window.playback_facade, playback_threader=window.playback_threader)
+=======
+    coord = PlaybackTaskCoordinator(window)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     coord.play()
     coord.pause()
     coord.stop()

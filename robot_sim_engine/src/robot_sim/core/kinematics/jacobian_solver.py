@@ -17,6 +17,7 @@ class JacobianSolver:
         self._fk = ForwardKinematicsSolver()
 
     def _geometric_world(self, spec: RobotSpec, q: FloatArray, fk_result: FKResult) -> np.ndarray:
+<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         p_n = np.asarray(fk_result.ee_pose.p, dtype=float)
@@ -25,6 +26,17 @@ class JacobianSolver:
             z = np.asarray(axis, dtype=float)
             p = np.asarray(origin, dtype=float)
             if joint.joint_type is JointType.REVOLUTE:
+=======
+        p_n = np.asarray(fk_result.ee_pose.p, dtype=float)
+        n = spec.dof
+        J = np.zeros((6, n), dtype=float)
+
+        for i, row in enumerate(spec.dh_rows):
+            T_prev = np.asarray(fk_result.T_list[i], dtype=float)
+            z = T_prev[:3, 2]
+            p = T_prev[:3, 3]
+            if row.joint_type is JointType.REVOLUTE:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 J[:3, i] = np.cross(z, p_n - p)
                 J[3:, i] = z
             else:
@@ -32,7 +44,18 @@ class JacobianSolver:
                 J[3:, i] = 0.0
         return J
 
+<<<<<<< HEAD
     def geometric(self, spec: RobotSpec, q: FloatArray, fk: FKResult | None = None, *, reference_frame: ReferenceFrame = ReferenceFrame.WORLD) -> JacobianResult:
+=======
+    def geometric(
+        self,
+        spec: RobotSpec,
+        q: FloatArray,
+        fk: FKResult | None = None,
+        *,
+        reference_frame: ReferenceFrame = ReferenceFrame.WORLD,
+    ) -> JacobianResult:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         fk_result = fk if fk is not None else self._fk.solve(spec, q)
         J_world = self._geometric_world(spec, q, fk_result)
         if reference_frame is ReferenceFrame.LOCAL:
@@ -43,17 +66,41 @@ class JacobianSolver:
             J = J_world
         else:
             raise ValueError(f'unsupported Jacobian reference frame: {reference_frame}')
+<<<<<<< HEAD
         return JacobianResult(J=J, condition_number=condition_number(J), manipulability=manipulability(J), reference_frame=reference_frame)
 
     def finite_difference(self, spec: RobotSpec, q: FloatArray, *, eps: float = 1.0e-7, reference_frame: ReferenceFrame = ReferenceFrame.WORLD) -> JacobianResult:
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
+=======
+
+        return JacobianResult(
+            J=J,
+            condition_number=condition_number(J),
+            manipulability=manipulability(J),
+            reference_frame=reference_frame,
+        )
+
+    def finite_difference(
+        self,
+        spec: RobotSpec,
+        q: FloatArray,
+        *,
+        eps: float = 1.0e-7,
+        reference_frame: ReferenceFrame = ReferenceFrame.WORLD,
+    ) -> JacobianResult:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         q = np.asarray(q, dtype=float)
         fk = self._fk.solve(spec, q)
         base_pos = np.asarray(fk.ee_pose.p, dtype=float)
         base_rot = np.asarray(fk.ee_pose.R, dtype=float)
+<<<<<<< HEAD
         J = np.zeros((6, articulated.dof), dtype=float)
         for i in range(articulated.dof):
+=======
+        J = np.zeros((6, spec.dof), dtype=float)
+        for i in range(spec.dof):
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             q_plus = q.copy()
             q_plus[i] += eps
             fk_plus = self._fk.solve(spec, q_plus)

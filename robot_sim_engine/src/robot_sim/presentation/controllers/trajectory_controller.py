@@ -13,6 +13,7 @@ from robot_sim.presentation.validators.input_validator import InputValidator
 class TrajectoryController:
     """Presentation controller for trajectory requests and application state."""
 
+<<<<<<< HEAD
     def __init__(
         self,
         state_store: StateStore,
@@ -22,11 +23,17 @@ class TrajectoryController:
         *,
         default_validation_layers: tuple[str, ...] | None = None,
     ) -> None:
+=======
+    def __init__(self, state_store: StateStore, planner_uc: PlanTrajectoryUseCase, playback_service: PlaybackService, ik_builder) -> None:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._state_store = state_store
         self._planner_uc = planner_uc
         self._playback_service = playback_service
         self._ik_builder = ik_builder
+<<<<<<< HEAD
         self._default_validation_layers = tuple(str(item).strip() for item in (default_validation_layers or ())) or None
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def trajectory_goal_or_raise(self) -> np.ndarray:
         result = self._state_store.state.ik_result
@@ -34,6 +41,7 @@ class TrajectoryController:
             raise RuntimeError('请先得到一个成功的 IK 解，再生成轨迹')
         return np.asarray(result.q_sol, dtype=float).copy()
 
+<<<<<<< HEAD
     def build_trajectory_request(
         self,
         q_goal=None,
@@ -46,10 +54,14 @@ class TrajectoryController:
         ik_kwargs: dict | None = None,
         validation_layers: tuple[str, ...] | list[str] | None = None,
     ) -> TrajectoryRequest:
+=======
+    def build_trajectory_request(self, q_goal=None, duration=3.0, dt=0.02, *, mode: str = 'joint_space', target_values6=None, orientation_mode: str = 'rvec', ik_kwargs: dict | None = None) -> TrajectoryRequest:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if self._state_store.state.q_current is None or self._state_store.state.robot_spec is None:
             raise RuntimeError('robot not loaded')
         duration, dt = InputValidator.validate_duration_and_dt(duration, dt)
         traj_mode = TrajectoryMode(str(mode))
+<<<<<<< HEAD
         resolved_validation_layers = validation_layers
         if resolved_validation_layers in (None, (), []):
             resolved_validation_layers = self._default_validation_layers
@@ -59,6 +71,11 @@ class TrajectoryController:
             'spec': self._state_store.state.robot_spec,
             'planning_scene': self._state_store.state.planning_scene,
             'validation_layers': resolved_validation_layers,
+=======
+        common_kwargs = {
+            'spec': self._state_store.state.robot_spec,
+            'planning_scene': self._state_store.state.planning_scene,
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         }
         if traj_mode is TrajectoryMode.CARTESIAN:
             if target_values6 is None:

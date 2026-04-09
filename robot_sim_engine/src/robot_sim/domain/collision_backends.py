@@ -96,6 +96,7 @@ class CollisionBackendRegistry:
         """Return all registered backend descriptors."""
         return self._descriptors
 
+<<<<<<< HEAD
     def declared_backend_ids(self) -> tuple[str, ...]:
         """Return all declared backend identifiers in canonical order."""
         return tuple(descriptor.backend_id for descriptor in self._descriptors)
@@ -112,6 +113,16 @@ class CollisionBackendRegistry:
     def supported_backend_ids(self, *, experimental_enabled: bool = False) -> tuple[str, ...]:
         """Backward-compatible alias for ``active_backend_ids``."""
         return self.active_backend_ids(experimental_enabled=experimental_enabled)
+=======
+    def supported_backend_ids(self, *, experimental_enabled: bool = False) -> tuple[str, ...]:
+        """Return backend identifiers considered selectable under the supplied runtime mode."""
+        supported: list[str] = []
+        for descriptor in self._descriptors:
+            availability = descriptor.availability(experimental_enabled=experimental_enabled)
+            if availability in {'enabled', 'disabled_by_profile'}:
+                supported.append(descriptor.backend_id)
+        return tuple(supported)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def normalize_backend(
         self,
@@ -173,7 +184,11 @@ _DEFAULT_REGISTRY = CollisionBackendRegistry(
         CollisionBackendDescriptor(
             backend_id='aabb',
             display_name='AABB collision backend',
+<<<<<<< HEAD
             status=ModuleStatus.INTERNAL,
+=======
+            status=ModuleStatus.STABLE,
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             is_available=True,
             is_experimental=False,
             fallback_backend='aabb',
@@ -183,10 +198,17 @@ _DEFAULT_REGISTRY = CollisionBackendRegistry(
             backend_id='capsule',
             display_name='Capsule collision backend',
             status=ModuleStatus.EXPERIMENTAL,
+<<<<<<< HEAD
             is_available=True,
             is_experimental=True,
             fallback_backend='aabb',
             required_dependencies=(),
+=======
+            is_available=False,
+            is_experimental=True,
+            fallback_backend='aabb',
+            required_dependencies=('capsule_backend',),
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             metadata={'family': 'narrow_phase', 'supported_collision_levels': ['capsule']},
         ),
     )

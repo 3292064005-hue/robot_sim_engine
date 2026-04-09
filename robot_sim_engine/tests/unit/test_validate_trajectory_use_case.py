@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
+<<<<<<< HEAD
 import pytest
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 from robot_sim.application.use_cases.validate_trajectory import ValidateTrajectoryUseCase
 from robot_sim.model.trajectory import JointTrajectory
@@ -34,6 +37,7 @@ def test_validate_trajectory_flags_non_monotonic_time():
     report = ValidateTrajectoryUseCase().execute(traj)
     assert report.feasible is False
     assert 'non_monotonic_time' in report.reasons
+<<<<<<< HEAD
 
 
 
@@ -71,3 +75,5 @@ def test_validate_trajectory_rejects_shape_mismatch() -> None:
     )
     with pytest.raises(ValueError, match='trajectory.qd shape must match trajectory.q'):
         ValidateTrajectoryUseCase().execute(traj)
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

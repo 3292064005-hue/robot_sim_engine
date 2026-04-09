@@ -23,6 +23,7 @@ jobs:
         run: ruff check src tests
       - name: Mypy
         run: mypy
+<<<<<<< HEAD
       - name: Packaged config staging
         run: python scripts/sync_packaged_configs.py --check
       - name: Quality contracts and shipped behavior contracts
@@ -43,10 +44,15 @@ jobs:
         run: |
           python scripts/regenerate_importer_fidelity_baseline.py
           git diff --exit-code -- tests/regression/baselines/importer_fidelity_baseline.json
+=======
+      - name: Quality contracts
+        run: python scripts/verify_quality_contracts.py
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
       - name: Regenerate contract docs and ensure clean tree
         run: |
           python scripts/regenerate_quality_contracts.py
           git diff --exit-code -- docs
+<<<<<<< HEAD
       - name: Collect quality evidence artifact
         run: python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json quick_quality compatibility_budget performance_smoke
       - name: Upload quality evidence artifact
@@ -57,6 +63,8 @@ jobs:
             artifacts/quality_evidence.json
             artifacts/quality_evidence.md
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
       - name: Unit and regression tests
         run: pytest tests/unit tests/regression -q
 
@@ -74,6 +82,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
       - name: Tests with coverage gate
+<<<<<<< HEAD
         run: pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q
       - name: Partition coverage gate
         run: python scripts/verify_partition_coverage.py --coverage-json coverage.json
@@ -98,12 +107,18 @@ jobs:
           python -m pip install -e .[dev]
       - name: Headless compatibility tests
         run: pytest tests/unit tests/regression -q
+=======
+        run: pytest --cov=src/robot_sim --cov-report=term-missing -q
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
   gui_smoke:
     runs-on: ubuntu-22.04
     needs: quick_quality
+<<<<<<< HEAD
     env:
       QT_QPA_PLATFORM: offscreen
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -114,6 +129,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e .[gui,dev]
+<<<<<<< HEAD
       - name: GUI runtime baseline
         run: python scripts/verify_runtime_baseline.py --mode gui
       - name: GUI release environment contract
@@ -124,6 +140,12 @@ jobs:
         run: python scripts/verify_benchmark_matrix.py --execute-gates --execute
       - name: Experimental module governance with executed gates
         run: python scripts/verify_module_governance.py --execute-gates
+=======
+      - name: GUI smoke
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest tests/gui -q
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
   release_validation:
     runs-on: ubuntu-22.04
@@ -139,6 +161,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .[dev]
           python -m pip install build
+<<<<<<< HEAD
       - name: Validate packaged config staging
         run: python scripts/sync_packaged_configs.py --check
       - name: Build distribution artifacts
@@ -147,13 +170,40 @@ jobs:
         run: python scripts/verify_runtime_baseline.py --mode release
       - name: Release environment contract
         run: python scripts/verify_release_environment.py --mode release
+=======
+      - name: Build distribution artifacts
+        run: python -m build
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
       - name: Reinstall built wheel
         run: python -m pip install --force-reinstall dist/*.whl
       - name: Smoke installed bootstrap/container
         run: |
           python -c "import robot_sim; import robot_sim.app.bootstrap; import robot_sim.app.version"
+<<<<<<< HEAD
           python -c "from robot_sim.app.bootstrap import bootstrap; context = bootstrap(startup_mode='release'); assert context.container.runtime_context['config_root']; assert context.container.runtime_context['export_root']; assert context.container.runtime_context['robot_root']; assert context.container.runtime_context['startup_mode'] == 'release'; print(context.project_root); print(context.container.runtime_context['config_root']); print(context.container.runtime_context['robot_root'])"
       - name: Smoke installed robot import/save overlay
         run: python -m robot_sim.infra.installed_runtime_smoke
       - name: Release package validation
         run: pytest tests/test_release_package.py -q
+=======
+          python -c "from robot_sim.app.bootstrap import bootstrap; root, container = bootstrap(); assert container.runtime_context['config_root']; assert container.runtime_context['export_root']; print(root); print(container.runtime_context['config_root'])"
+      - name: Release package validation
+        run: pytest tests/test_release_package.py -q
+
+  scheduled_canary:
+    if: github.event_name == 'schedule'
+    continue-on-error: true
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+      - name: Canary tests
+        run: pytest tests/unit tests/regression -q
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

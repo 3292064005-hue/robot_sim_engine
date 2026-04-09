@@ -1,4 +1,5 @@
 from __future__ import annotations
+<<<<<<< HEAD
 
 from robot_sim.application.dto import IKRequest
 from robot_sim.application.use_cases.run_ik import RunIKUseCase
@@ -23,6 +24,14 @@ class IKWorker(BaseWorker):
         Raises:
             ValueError: If ``use_case`` is not provided.
         """
+=======
+from robot_sim.application.workers.base import BaseWorker, Slot
+from robot_sim.application.dto import IKRequest
+from robot_sim.application.use_cases.run_ik import RunIKUseCase
+
+class IKWorker(BaseWorker):
+    def __init__(self, request: IKRequest, use_case: RunIKUseCase) -> None:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         super().__init__(task_kind='ik')
         if use_case is None:
             raise ValueError('IKWorker requires an explicit IK use case')
@@ -31,6 +40,7 @@ class IKWorker(BaseWorker):
 
     @Slot()
     def run(self) -> None:
+<<<<<<< HEAD
         """Execute the IK use case and emit canonical worker lifecycle events.
 
         Returns:
@@ -66,5 +76,18 @@ class IKWorker(BaseWorker):
             self.emit_finished(result)
         except CancelledTaskError as exc:
             self.emit_cancelled(stop_reason='cancelled', message=str(exc), metadata=exc.to_dict())
+=======
+        self.emit_started()
+        try:
+            result = self._use_case.execute(
+                self._request,
+                cancel_flag=self.is_cancel_requested,
+                progress_cb=lambda payload: self.emit_progress(stage='ik', message='iterating', payload=payload if isinstance(payload, dict) else {'value': payload}),
+            )
+            if result.message == 'cancelled':
+                self.emit_cancelled()
+            else:
+                self.emit_finished(result)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         except Exception as exc:
             self.emit_failed(exc)

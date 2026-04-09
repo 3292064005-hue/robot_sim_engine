@@ -3,9 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
+<<<<<<< HEAD
 from robot_sim.model.imported_robot_package import ImportedRobotPackage
 from robot_sim.model.robot_geometry import RobotGeometry
 from robot_sim.model.robot_geometry_model import RobotGeometryModel
+=======
+from robot_sim.model.robot_geometry import RobotGeometry
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.robot_model_bundle import RobotModelBundle
 
 
@@ -13,6 +17,7 @@ class ImportRobotUseCase:
     def __init__(self, importer_registry) -> None:
         self._importers = importer_registry
 
+<<<<<<< HEAD
 
     @staticmethod
     def build_imported_package(bundle: RobotModelBundle) -> ImportedRobotPackage:
@@ -56,6 +61,8 @@ class ImportRobotUseCase:
             metadata=dict(bundle.metadata or {}),
         )
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def execute_bundle(self, source: str | Path, importer_id: str | None = None, **kwargs) -> RobotModelBundle:
         path = Path(source)
         importer_id = importer_id or path.suffix.lower().lstrip('.')
@@ -65,6 +72,7 @@ class ImportRobotUseCase:
         importer = self._importers.get(canonical_id)
         loaded = importer.load(path, **kwargs)
         if isinstance(loaded, RobotModelBundle):
+<<<<<<< HEAD
             if loaded.imported_package is not None:
                 return loaded
             return RobotModelBundle(**{**loaded.__dict__, 'imported_package': self.build_imported_package(loaded)})
@@ -74,11 +82,19 @@ class ImportRobotUseCase:
             spec=loaded,
             geometry=geometry,
             collision_geometry=geometry,
+=======
+            return loaded
+        geometry = RobotGeometry.simple_capsules(getattr(loaded, 'dof', 0))
+        return RobotModelBundle(
+            spec=loaded,
+            geometry=geometry,
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             fidelity=str(getattr(loaded, 'metadata', {}).get('import_fidelity', 'native')),
             warnings=tuple(str(item) for item in getattr(loaded, 'metadata', {}).get('warnings', ())),
             source_path=str(path),
             importer_id=str(canonical_id),
             metadata={'legacy_adapter': True},
+<<<<<<< HEAD
             source_model_summary=summary,
         )
         return RobotModelBundle(**{**fallback_bundle.__dict__, 'imported_package': self.build_imported_package(fallback_bundle)})
@@ -97,11 +113,22 @@ class ImportRobotUseCase:
         Raises:
             None: Metadata normalization is deterministic.
         """
+=======
+        )
+
+    def execute(self, source: str | Path, importer_id: str | None = None, **kwargs):
+        path = Path(source)
+        requested_id = importer_id or path.suffix.lower().lstrip('.')
+        if requested_id == 'yml':
+            requested_id = 'yaml'
+        bundle = self.execute_bundle(path, importer_id=requested_id, **kwargs)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         metadata = dict(getattr(bundle.spec, 'metadata', {}) or {})
         metadata.setdefault('importer_requested', str(requested_id))
         metadata.setdefault('importer_resolved', str(bundle.importer_id or requested_id))
         metadata.setdefault('import_fidelity', str(bundle.fidelity or metadata.get('import_fidelity', 'unknown')))
         metadata.setdefault('geometry_available', bool(bundle.geometry is not None))
+<<<<<<< HEAD
         imported_package = bundle.imported_package or self.build_imported_package(bundle)
         visual_ref = 'spec.imported_package.geometry_model.visual_geometry' if imported_package.geometry_model is not None and imported_package.geometry_model.visual_geometry is not None else ''
         collision_ref = 'spec.imported_package.geometry_model.collision_geometry' if imported_package.geometry_model is not None and imported_package.geometry_model.collision_geometry is not None else ''
@@ -146,6 +173,9 @@ class ImportRobotUseCase:
         metadata.setdefault('execution_surface', str(execution_summary['execution_surface']))
         metadata['execution_row_count'] = int(execution_summary['execution_row_count'])
         metadata['execution_summary'] = dict(execution_summary)
+=======
+        metadata.setdefault('geometry_ref', 'bundle.geometry' if bundle.geometry is not None else '')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if bundle.warnings:
             notes = list(metadata.get('warnings', []))
             for warning in bundle.warnings:
@@ -154,6 +184,7 @@ class ImportRobotUseCase:
             metadata['warnings'] = notes
         if bundle.importer_id == 'urdf_skeleton':
             metadata.setdefault('import_family', 'approximate_tree_import')
+<<<<<<< HEAD
         elif bundle.importer_id == 'urdf_model':
             metadata.setdefault('import_family', 'serial_model_import')
         imported_package = imported_package.with_normalized_asset_resolution_manifest(
@@ -191,3 +222,6 @@ class ImportRobotUseCase:
             requested_id = 'yaml'
         bundle = self.execute_bundle(path, importer_id=requested_id, **kwargs)
         return self.normalize_bundle_spec(bundle, requested_id=str(requested_id))
+=======
+        return replace(bundle.spec, metadata=metadata)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

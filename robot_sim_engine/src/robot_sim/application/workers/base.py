@@ -1,10 +1,63 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+<<<<<<< HEAD
 from typing import Mapping
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, Signal, Slot
+=======
+from typing import TYPE_CHECKING, Mapping
+from uuid import uuid4
+
+if TYPE_CHECKING:  # pragma: no cover
+    from PySide6.QtCore import QObject, Signal, Slot
+else:
+    try:
+        from PySide6.QtCore import QObject, Signal, Slot
+    except Exception:  # pragma: no cover
+        class QObject:
+            def __init__(self, *args, **kwargs):
+                super().__init__()
+
+            def moveToThread(self, _thread) -> None:
+                return None
+
+            def deleteLater(self) -> None:
+                return None
+
+        def Slot(*args, **kwargs):
+            def deco(fn):
+                return fn
+            return deco
+
+        class _DummySignalInstance:
+            def __init__(self) -> None:
+                self._callbacks: list[object] = []
+
+            def emit(self, *args, **kwargs) -> None:
+                for cb in list(self._callbacks):
+                    cb(*args, **kwargs)
+
+            def connect(self, callback, *args, **kwargs) -> None:
+                self._callbacks.append(callback)
+
+        class Signal:
+            def __init__(self, *args, **kwargs) -> None:
+                self._name = ''
+
+            def __set_name__(self, owner, name) -> None:
+                self._name = f'__signal_{name}'
+
+            def __get__(self, instance, owner):
+                if instance is None:
+                    return self
+                signal = instance.__dict__.get(self._name)
+                if signal is None:
+                    signal = _DummySignalInstance()
+                    instance.__dict__[self._name] = signal
+                return signal
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 from robot_sim.application.workers.task_events import (
     WorkerCancelledEvent,
@@ -15,18 +68,33 @@ from robot_sim.application.workers.task_events import (
 from robot_sim.domain.enums import TaskState
 from robot_sim.domain.errors import CancelledTaskError, RobotSimError
 
+<<<<<<< HEAD
 __all__ = ['BaseWorker', 'Slot']
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class BaseWorker(QObject):
     """Qt worker base class with structured lifecycle events.
 
+<<<<<<< HEAD
     Structured worker events are the canonical lifecycle contract used by the
     orchestrator and diagnostics pipeline. Historical Qt payload signals have been
     retired so new code and external tooling consume one explicit structured surface.
     """
 
     started = Signal()
+=======
+    The worker keeps the legacy Qt signals for backward compatibility while
+    emitting structured event objects for richer orchestration and diagnostics.
+    """
+
+    started = Signal()
+    progress = Signal(object)
+    finished = Signal(object)
+    failed = Signal(str)
+    cancelled = Signal()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     state_changed = Signal(str)
     progress_event = Signal(object)
     finished_event = Signal(object)
@@ -105,7 +173,11 @@ class BaseWorker(QObject):
         self.started.emit()
 
     def emit_progress(self, stage: str = '', percent: float = 0.0, message: str = '', payload: dict[str, object] | None = None) -> None:
+<<<<<<< HEAD
         """Emit a structured progress notification.
+=======
+        """Emit structured and legacy progress notifications.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Args:
             stage: Progress stage name.
@@ -123,9 +195,21 @@ class BaseWorker(QObject):
             payload=dict(payload or {}),
         )
         self.progress_event.emit(event)
+<<<<<<< HEAD
 
     def emit_finished(self, payload: object, stop_reason: str = 'completed', *, metadata: Mapping[str, object] | None = None) -> None:
         """Emit a structured success notification.
+=======
+        legacy_payload: object = event
+        if payload is not None and 'value' in payload and len(payload) == 1:
+            legacy_payload = payload['value']
+        elif payload:
+            legacy_payload = payload
+        self.progress.emit(legacy_payload)
+
+    def emit_finished(self, payload: object, stop_reason: str = 'completed', *, metadata: Mapping[str, object] | None = None) -> None:
+        """Emit structured and legacy success notifications.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Args:
             payload: Task result payload.
@@ -143,6 +227,10 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.finished_event.emit(event)
+<<<<<<< HEAD
+=======
+        self.finished.emit(payload)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def emit_failed(
         self,
@@ -153,7 +241,11 @@ class BaseWorker(QObject):
         metadata: Mapping[str, object] | None = None,
         severity: str | None = None,
     ) -> None:
+<<<<<<< HEAD
         """Emit a structured failure notification.
+=======
+        """Emit structured and legacy failure notifications.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Args:
             exc: Exception instance or fallback failure message.
@@ -189,9 +281,16 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.failed_event.emit(event)
+<<<<<<< HEAD
 
     def emit_cancelled(self, stop_reason: str = 'cancelled', *, message: str = 'cancelled', metadata: Mapping[str, object] | None = None) -> None:
         """Emit a structured cancellation notification.
+=======
+        self.failed.emit(message)
+
+    def emit_cancelled(self, stop_reason: str = 'cancelled', *, message: str = 'cancelled', metadata: Mapping[str, object] | None = None) -> None:
+        """Emit structured and legacy cancellation notifications.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Args:
             stop_reason: Terminal cancellation reason such as ``cancelled`` or ``timeout``.
@@ -209,3 +308,7 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.cancelled_event.emit(event)
+<<<<<<< HEAD
+=======
+        self.cancelled.emit()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

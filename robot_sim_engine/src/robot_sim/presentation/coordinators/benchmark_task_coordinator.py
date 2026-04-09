@@ -9,9 +9,15 @@ class BenchmarkTaskCoordinator:
 
     def __init__(self, window, *, runtime=None, benchmark=None, threader=None) -> None:
         self.window = window
+<<<<<<< HEAD
         self.runtime = require_dependency(runtime, 'runtime_facade')
         self.benchmark = require_dependency(benchmark, 'benchmark_facade')
         self.threader = require_dependency(threader, 'threader')
+=======
+        self.runtime = require_dependency(runtime if runtime is not None else getattr(window, 'runtime_facade', None), 'runtime_facade')
+        self.benchmark = require_dependency(benchmark if benchmark is not None else getattr(window, 'benchmark_facade', None), 'benchmark_facade')
+        self.threader = require_dependency(threader if threader is not None else getattr(window, 'threader', None), 'threader')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def run(self) -> None:
         self.start_task()

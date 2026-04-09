@@ -20,6 +20,7 @@ def test_config_service_rejects_invalid_solver_config(tmp_path):
     service = ConfigService(cfg_dir)
     with pytest.raises(SchemaError):
         service.load_solver_config()
+<<<<<<< HEAD
 
 
 def test_solver_config_rejects_unknown_validation_layer(tmp_path):
@@ -36,3 +37,5 @@ def test_solver_config_rejects_unknown_validation_layer(tmp_path):
     service = ConfigService(tmp_path, local_override_dir=local_dir)
     with pytest.raises(SchemaError):
         service.load_solver_config()
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

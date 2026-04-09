@@ -8,8 +8,11 @@ from robot_sim.model.trajectory import JointTrajectory
 import numpy as np
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.model.session_state import SessionState
+<<<<<<< HEAD
 from robot_sim.presentation.coordinators.ik_task_coordinator import IKTaskCoordinator
 from robot_sim.presentation.coordinators.scene_coordinator import SceneCoordinator
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 def test_step_playback_use_case_requires_explicit_service():
@@ -26,6 +29,7 @@ def test_playback_worker_requires_explicit_playback_service():
     traj = JointTrajectory(t=np.array([0.0]), q=np.array([[0.0]]), qd=np.array([[0.0]]), qdd=np.array([[0.0]]))
     with pytest.raises(ValueError):
         PlaybackWorker(traj, PlaybackState(total_frames=1), None)  # type: ignore[arg-type]
+<<<<<<< HEAD
 
 
 def test_ik_task_coordinator_requires_explicit_dependencies():
@@ -36,3 +40,5 @@ def test_ik_task_coordinator_requires_explicit_dependencies():
 def test_scene_coordinator_requires_explicit_runtime_and_threader():
     with pytest.raises(AttributeError):
         SceneCoordinator(object())  # type: ignore[arg-type]
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

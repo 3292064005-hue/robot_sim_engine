@@ -48,6 +48,19 @@ class _EventWorker(BaseWorker):
         self.emit_finished('done')
 
 
+<<<<<<< HEAD
+=======
+class _LegacyProgressWorker(BaseWorker):
+    def __init__(self) -> None:
+        super().__init__(task_kind='legacy')
+
+    def run(self) -> None:
+        self.emit_started()
+        self.progress.emit('frame-7')
+        self.emit_finished('done')
+
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_thread_orchestrator_routes_baseworker_emit_progress_to_callback(monkeypatch):
     monkeypatch.setattr(mod, 'QThread', _InlineThread)
     orch = ThreadOrchestrator()
@@ -56,6 +69,7 @@ def test_thread_orchestrator_routes_baseworker_emit_progress_to_callback(monkeyp
     assert seen == [123]
 
 
+<<<<<<< HEAD
 
 def test_thread_orchestrator_routes_structured_terminal_events_to_external_event_callbacks(monkeypatch):
     monkeypatch.setattr(mod, 'QThread', _InlineThread)
@@ -65,3 +79,11 @@ def test_thread_orchestrator_routes_structured_terminal_events_to_external_event
     orch.start(_EventWorker(), on_finished_event=lambda event: seen.append(getattr(event, 'payload', None)), task_kind='event')
 
     assert seen == ['done']
+=======
+def test_thread_orchestrator_routes_legacy_progress_signal_to_callback(monkeypatch):
+    monkeypatch.setattr(mod, 'QThread', _InlineThread)
+    orch = ThreadOrchestrator()
+    seen: list[object] = []
+    orch.start(_LegacyProgressWorker(), on_progress=seen.append, task_kind='legacy')
+    assert seen == ['frame-7']
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

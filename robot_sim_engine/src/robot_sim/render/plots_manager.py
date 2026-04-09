@@ -3,35 +3,48 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterable
 
+<<<<<<< HEAD
 from robot_sim.domain.errors import PlotBackendUnavailableError, RenderOperationError
 from robot_sim.model.render_runtime import RenderCapabilityState
 
 try:
     import pyqtgraph as pg
 except ImportError:  # pragma: no cover
+=======
+try:
+    import pyqtgraph as pg
+except Exception:  # pragma: no cover
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     pg = None
 
 logger = logging.getLogger(__name__)
 
 
 class PlotsManager:  # pragma: no cover - GUI shell
+<<<<<<< HEAD
     """Thin adapter around the plotting backend used by the presentation layer.
 
     The manager tolerates missing optional plotting dependencies, but it no longer swallows
     arbitrary runtime errors. Backend setup and projection failures are narrowed to the set of
     exceptions that the GUI shell can reasonably degrade around.
     """
+=======
+    """Thin adapter around the plotting backend used by the presentation layer."""
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def __init__(self, plot_widgets: dict[str, object] | None = None):
         self.plot_widgets = plot_widgets or {}
         self.curves: dict[tuple[str, str], object] = {}
         self.cursors: dict[str, object] = {}
+<<<<<<< HEAD
         if pg is None:
             self._runtime_state = RenderCapabilityState(capability='plots', status='unsupported', backend='pyqtgraph', reason='backend_dependency_missing', error_code=PlotBackendUnavailableError.default_error_code, message='Plot backend dependency is unavailable.')
         elif not self.plot_widgets:
             self._runtime_state = RenderCapabilityState(capability='plots', status='degraded', backend='pyqtgraph', reason='no_plot_widgets_configured', message='Plot backend is installed but no plot widgets were configured.')
         else:
             self._runtime_state = RenderCapabilityState.available_state('plots', backend='pyqtgraph', reason='plot_widgets_ready', message='Plot backend is active.')
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._configure_widgets()
 
     def _configure_widgets(self) -> None:
@@ -43,7 +56,11 @@ class PlotsManager:  # pragma: no cover - GUI shell
                 widget.setClipToView(True)
                 widget.getPlotItem().setMenuEnabled(False)
                 widget.setDownsampling(auto=True, mode='peak')
+<<<<<<< HEAD
             except (AttributeError, RuntimeError, TypeError, ValueError) as exc:
+=======
+            except Exception as exc:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 logger.warning('failed to configure plot widget %s: %s', key, exc)
 
     def clear(self, plot_key: str) -> None:
@@ -57,7 +74,11 @@ class PlotsManager:  # pragma: no cover - GUI shell
         self.cursors.pop(plot_key, None)
         try:
             widget.addLegend()
+<<<<<<< HEAD
         except (AttributeError, RuntimeError, TypeError, ValueError) as exc:
+=======
+        except Exception as exc:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             logger.warning('failed to add legend for plot %s: %s', plot_key, exc)
 
     def ensure_curve(self, plot_key: str, curve_name: str):
@@ -73,11 +94,16 @@ class PlotsManager:  # pragma: no cover - GUI shell
                 curve.setClipToView(True)
                 curve.setDownsampling(auto=True, method='peak')
                 curve.setSkipFiniteCheck(True)
+<<<<<<< HEAD
             except (AttributeError, RuntimeError, TypeError, ValueError) as exc:
+=======
+            except Exception as exc:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 logger.debug('curve performance opts unavailable for %s/%s: %s', plot_key, curve_name, exc)
             self.curves[key] = curve
         return self.curves[key]
 
+<<<<<<< HEAD
     def require_backend(self) -> None:
         """Raise a structured error when the optional plotting backend is unavailable.
 
@@ -115,6 +141,13 @@ class PlotsManager:  # pragma: no cover - GUI shell
                 'failed to update plot curve',
                 metadata={'plot_key': plot_key, 'curve_name': curve_name, 'exception_type': exc.__class__.__name__},
             ) from exc
+=======
+    def set_curve(self, plot_key: str, curve_name: str, x, y):
+        """Set or replace a single named curve."""
+        curve = self.ensure_curve(plot_key, curve_name)
+        if curve is not None:
+            curve.setData(x=x, y=y, skipFiniteCheck=True)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def set_curves_batch(self, plot_key: str, curves: Iterable[tuple[str, object, object]], *, clear_first: bool = False) -> None:
         """Set multiple curves on the same plot in one call.
@@ -128,7 +161,11 @@ class PlotsManager:  # pragma: no cover - GUI shell
             None: Updates in-memory curve handles and plot widgets.
 
         Raises:
+<<<<<<< HEAD
             RenderOperationError: Propagates any per-curve backend projection failure.
+=======
+            None: Missing plotting backends are tolerated.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         """
         if clear_first:
             self.clear(plot_key)
@@ -136,6 +173,7 @@ class PlotsManager:  # pragma: no cover - GUI shell
             self.set_curve(plot_key, curve_name, x, y)
 
     def set_cursor(self, plot_key: str, x_value: float) -> None:
+<<<<<<< HEAD
         """Move or create a vertical cursor line on the requested plot.
 
         Args:
@@ -148,12 +186,15 @@ class PlotsManager:  # pragma: no cover - GUI shell
         Raises:
             RenderOperationError: If the plotting backend rejects cursor creation or update.
         """
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if pg is None:
             return
         widget = self.plot_widgets.get(plot_key)
         if widget is None:
             return
         cursor = self.cursors.get(plot_key)
+<<<<<<< HEAD
         try:
             if cursor is None:
                 cursor = pg.InfiniteLine(angle=90, movable=False)
@@ -169,6 +210,13 @@ class PlotsManager:  # pragma: no cover - GUI shell
     def runtime_state(self) -> RenderCapabilityState:
         """Return the structured runtime status for plot rendering."""
         return self._runtime_state
+=======
+        if cursor is None:
+            cursor = pg.InfiniteLine(angle=90, movable=False)
+            widget.addItem(cursor)
+            self.cursors[plot_key] = cursor
+        cursor.setValue(float(x_value))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def set_cursors_batch(self, cursor_updates: Iterable[tuple[str, float]]) -> None:
         """Update multiple plot cursors in one call.
@@ -180,7 +228,11 @@ class PlotsManager:  # pragma: no cover - GUI shell
             None: Updates cursor overlays on the configured plots.
 
         Raises:
+<<<<<<< HEAD
             RenderOperationError: Propagates any per-plot cursor projection failure.
+=======
+            None: Missing plotting backends are tolerated.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         """
         for plot_key, x_value in cursor_updates:
             self.set_cursor(plot_key, x_value)

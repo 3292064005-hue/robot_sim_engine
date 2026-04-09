@@ -10,6 +10,7 @@ def test_import_robot_use_case_records_skeleton_fidelity_warning(project_root, t
         encoding='utf-8',
     )
     container = build_container(project_root)
+<<<<<<< HEAD
     spec = container.import_robot_uc.execute(urdf, importer_id='urdf_skeleton')
 
     assert spec.metadata['importer_resolved'] == 'urdf_skeleton'
@@ -104,3 +105,9 @@ def test_runtime_dispatch_contract_is_consumed_by_runtime_model(project_root, tm
     assert dispatch['primary_execution_surface'] == 'articulated_model'
     assert dispatch['primary_execution_adapter'] == 'canonical_articulated_chain'
     assert spec.execution_summary['runtime_dispatch']['primary_execution_surface'] == 'articulated_model'
+=======
+    spec = container.import_robot_uc.execute(urdf, importer_id='urdf')
+
+    assert spec.metadata['importer_resolved'] == 'urdf_skeleton'
+    assert any('urdf_skeleton fidelity' in item for item in spec.metadata.get('warnings', []))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

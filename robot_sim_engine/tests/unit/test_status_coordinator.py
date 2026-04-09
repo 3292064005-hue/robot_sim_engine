@@ -61,7 +61,11 @@ class DummyWindow:
 
 def test_status_coordinator_patches_state_store_and_projects_failures():
     window = DummyWindow()
+<<<<<<< HEAD
     coord = StatusCoordinator(window, runtime=window.runtime_facade)
+=======
+    coord = StatusCoordinator(window)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     snap = TaskSnapshot(task_id='t', task_kind='ik', task_state=TaskState.RUNNING)
     coord.apply_task_snapshot(snap)
     failure = SimpleNamespace(message='boom', error_code='unexpected_error')

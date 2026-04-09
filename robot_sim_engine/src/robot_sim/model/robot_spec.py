@@ -1,4 +1,5 @@
 from __future__ import annotations
+<<<<<<< HEAD
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -16,10 +17,18 @@ if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.model.articulated_robot_model import ArticulatedRobotModel
     from robot_sim.model.imported_robot_package import ImportedRobotPackage
     from robot_sim.model.runtime_robot_model import RuntimeRobotModel
+=======
+from dataclasses import dataclass, field
+import numpy as np
+from robot_sim.model.dh_row import DHRow
+from robot_sim.domain.types import FloatArray
+from robot_sim.domain.enums import KinematicConvention
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)
 class RobotSpec:
+<<<<<<< HEAD
     """Canonical robot specification used by the runtime.
 
     ``dh_rows`` remains the persisted compatibility payload, but runtime execution now resolves
@@ -28,6 +37,8 @@ class RobotSpec:
     source of truth while the current solver surface still consumes a serial DH-like adapter chain.
     """
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     name: str
     dh_rows: tuple[DHRow, ...]
     base_T: FloatArray
@@ -36,6 +47,7 @@ class RobotSpec:
     display_name: str | None = None
     description: str = ""
     metadata: dict[str, object] = field(default_factory=dict)
+<<<<<<< HEAD
     joint_names: tuple[str, ...] = ()
     link_names: tuple[str, ...] = ()
     joint_types: tuple[JointType, ...] = ()
@@ -97,12 +109,15 @@ class RobotSpec:
             raise ValueError('link_names must contain at least one link per DOF chain')
         if self.structured_links and len(self.structured_links) < dof:
             raise ValueError('structured_links must contain at least one link per DOF chain')
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     @property
     def dof(self) -> int:
         return len(self.dh_rows)
 
     @property
+<<<<<<< HEAD
     def runtime_model(self):
         """Return the structured runtime semantic model derived from this spec.
 
@@ -179,6 +194,8 @@ class RobotSpec:
         return self.execution_rows
 
     @property
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def label(self) -> str:
         return self.display_name or self.name
 
@@ -188,6 +205,7 @@ class RobotSpec:
 
     @property
     def model_source(self) -> str:
+<<<<<<< HEAD
         return str(self.metadata.get('model_source', self.kinematic_source or 'dh_config'))
 
     @property
@@ -254,3 +272,17 @@ class RobotSpec:
 
     def q_mid(self) -> FloatArray:
         return np.array([(r.q_min + r.q_max) * 0.5 for r in self.execution_rows], dtype=float)
+=======
+        return str(self.metadata.get('model_source', 'dh_config'))
+
+    @property
+    def geometry_available(self) -> bool:
+        return bool(self.metadata.get('geometry_available', False))
+
+    @property
+    def collision_model(self) -> str:
+        return str(self.metadata.get('collision_model', 'none'))
+
+    def q_mid(self) -> FloatArray:
+        return np.array([(r.q_min + r.q_max) * 0.5 for r in self.dh_rows], dtype=float)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

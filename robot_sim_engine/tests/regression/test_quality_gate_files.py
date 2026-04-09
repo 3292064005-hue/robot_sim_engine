@@ -13,6 +13,7 @@ def test_ci_workflow_contains_quality_gates(project_root: Path):
         "gui_smoke:",
         "ruff check src tests",
         "run: mypy",
+<<<<<<< HEAD
         "python scripts/sync_packaged_configs.py --check",
         "python scripts/verify_quality_contracts.py",
         "python scripts/verify_module_governance.py",
@@ -22,6 +23,11 @@ def test_ci_workflow_contains_quality_gates(project_root: Path):
         "pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q",
         "python scripts/verify_partition_coverage.py --coverage-json coverage.json",
         "python scripts/verify_release_environment.py --mode gui",
+=======
+        "python scripts/verify_quality_contracts.py",
+        "pytest tests/unit tests/regression -q",
+        "pytest --cov=src/robot_sim --cov-report=term-missing -q",
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         "pytest tests/gui -q",
     ]:
         assert marker in ci_text

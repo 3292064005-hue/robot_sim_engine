@@ -7,7 +7,10 @@ name = "robot-sim-engine"
 version = "0.7.0"
 description = "Pure-math robotic arm kinematics and trajectory planning simulator"
 readme = "README.md"
+<<<<<<< HEAD
 license = "MIT"
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 requires-python = ">=3.10"
 dependencies = [
   "numpy>=1.24",
@@ -28,8 +31,11 @@ dev = [
   "ruff>=0.6",
   "mypy>=1.10",
   "pre-commit>=3.8",
+<<<<<<< HEAD
   "build>=1.2",
   "nox>=2024.4.15",
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 ]
 
 [project.entry-points."robot_sim.plugins"]
@@ -38,6 +44,16 @@ dev = [
 where = ["src"]
 
 
+<<<<<<< HEAD
+=======
+[tool.setuptools.package-data]
+robot_sim = [
+  "resources/configs/*.yaml",
+  "resources/configs/profiles/*.yaml",
+  "resources/configs/robots/*.yaml",
+]
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
@@ -67,9 +83,12 @@ files = [
   "src/robot_sim/app/runtime_paths.py",
   "src/robot_sim/application/workers/task_events.py",
   "src/robot_sim/application/services/manifest_builder.py",
+<<<<<<< HEAD
   "src/robot_sim/application/services/scene_authority_service.py",
   "src/robot_sim/presentation/scene_ui_support.py",
   "src/robot_sim/presentation/render_telemetry_formatters.py",
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
   "src/robot_sim/presentation/error_boundary.py",
   "src/robot_sim/presentation/view_contracts.py",
   "src/robot_sim/presentation/main_window_ui.py",

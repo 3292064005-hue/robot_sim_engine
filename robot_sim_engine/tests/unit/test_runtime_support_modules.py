@@ -107,7 +107,11 @@ def test_metrics_service_summarizes_ik_batch_task_and_scene():
     scene_summary = service.summarize_scene(_Scene())
     assert scene_summary['revision'] == 3
     assert scene_summary['obstacle_count'] == 2
+<<<<<<< HEAD
     assert scene_summary['attached_object_count'] == 1
+=======
+    assert scene_summary['attached_objects'] == 1
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert service.summarize_scene(None)['collision_backend'] == 'none'
 
 

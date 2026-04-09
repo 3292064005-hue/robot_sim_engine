@@ -13,6 +13,7 @@ class SceneController:  # pragma: no cover - GUI shell
     def reset_path(self) -> None:
         self._ee_path.clear()
 
+<<<<<<< HEAD
     def update_robot_geometry_projection(self, robot_geometry) -> None:
         """Project runtime robot geometry into the 3D scene widget.
 
@@ -27,6 +28,8 @@ class SceneController:  # pragma: no cover - GUI shell
         """
         self.widget.set_robot_geometry(robot_geometry)
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def clear_transient_visuals(self) -> None:
         self.reset_path()
         self.widget.clear_trajectory()
@@ -54,7 +57,10 @@ class SceneController:  # pragma: no cover - GUI shell
         if planning_scene is None:
             self.widget.set_scene_obstacles([])
             self.widget.set_attached_objects([])
+<<<<<<< HEAD
             self.widget.set_overlay_text('Scene rev=0 backend=none obstacles=0 attached=0')
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             return
         self.widget.set_scene_obstacles(getattr(planning_scene, 'obstacles', ()))
         self.widget.set_attached_objects(getattr(planning_scene, 'attached_objects', ()))

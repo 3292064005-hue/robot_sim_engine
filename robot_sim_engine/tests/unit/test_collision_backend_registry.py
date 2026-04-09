@@ -34,6 +34,9 @@ def test_capability_service_renders_backend_registry_availability():
     )
     features = {descriptor.key: descriptor for descriptor in capability_service._scene_features()}
     assert features['planning_scene'].metadata['fallback_backend'] == 'aabb'
+<<<<<<< HEAD
     assert features['planning_scene'].metadata['declared_backends'] == ['aabb', 'capsule']
     assert features['planning_scene'].metadata['active_backends'] == ['aabb', 'capsule']
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert features['collision_backend_capsule'].metadata['availability'] == 'enabled'

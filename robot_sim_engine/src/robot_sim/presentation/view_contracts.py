@@ -23,9 +23,13 @@ class RuntimeViewContract(Protocol):
 @runtime_checkable
 class RobotFacadeContract(Protocol):
     def robot_entries(self) -> Any: ...
+<<<<<<< HEAD
     def importer_entries(self) -> Any: ...
     def load_robot(self, name: str) -> Any: ...
     def import_robot(self, source: str, importer_id: str | None = None) -> Any: ...
+=======
+    def load_robot(self, name: str) -> Any: ...
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def save_current_robot(self, rows=None, home_q=None, name: str | None = None) -> Any: ...
     def run_fk(self, q=None) -> Any: ...
 
@@ -76,6 +80,7 @@ class ExportFacadeContract(Protocol):
     def export_benchmark_cases_csv(self, name: str = 'benchmark_cases.csv') -> Any: ...
 
 
+<<<<<<< HEAD
 
 @runtime_checkable
 class ExportTaskView(Protocol):
@@ -211,6 +216,15 @@ class MainWindowUIContract(MainWindowActionView, MainWindowTaskView, Protocol):
     The UI mixin still needs a broad surface because it owns widget construction and
     projection methods, but that breadth is now localized instead of shared across all
     presentation mixins.
+=======
+@runtime_checkable
+class MainWindowLike(Protocol):
+    """Structural contract shared by coordinators, mixins, and GUI tests.
+
+    The protocol now focuses on explicit façade injection and stable view-projection surfaces.
+    Legacy tests may still attach ``controller`` to dummy windows, but coordinator/mixin primary
+    paths are expected to consume the injected façade contracts below.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     """
 
     runtime_facade: RuntimeViewContract
@@ -220,6 +234,7 @@ class MainWindowUIContract(MainWindowActionView, MainWindowTaskView, Protocol):
     playback_facade: PlaybackFacadeContract
     benchmark_facade: BenchmarkFacadeContract
     export_facade: ExportFacadeContract
+<<<<<<< HEAD
     playback_threader: Any
     window_cfg: dict[str, object]
     diagnostics_panel: Any
@@ -257,3 +272,20 @@ class MainWindowUIContract(MainWindowActionView, MainWindowTaskView, Protocol):
     def on_export_package(self) -> None: ...
     def on_export_benchmark(self) -> None: ...
     def _on_task_state_changed(self, snapshot) -> None: ...
+=======
+    metrics_service: Any
+    threader: Any
+    playback_threader: Any
+    status_panel: Any
+    benchmark_panel: Any
+    solver_panel: Any
+    playback_panel: Any
+    target_panel: Any
+    robot_panel: Any
+    scene_controller: Any
+    scene_widget: Any
+    plots_manager: Any
+    playback_render_scheduler: Any
+    _pending_ik_request: Any
+    _pending_traj_request: Any
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

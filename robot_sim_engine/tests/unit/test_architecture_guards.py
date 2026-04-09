@@ -66,6 +66,7 @@ def test_coordinators_only_touch_view_boundary_methods_for_widget_projection():
         text = path.read_text(encoding='utf-8')
         for marker in forbidden_markers:
             assert marker not in text, f'coordinator should project through view boundary ({marker}): {path.relative_to(PROJECT_ROOT)}'
+<<<<<<< HEAD
 
 
 def test_main_window_and_view_contracts_do_not_store_pending_task_requests():
@@ -155,3 +156,5 @@ def test_main_controller_builds_collaborators_through_support_module():
     assert 'build_presentation_collaborators' in text
     assert 'install_main_controller_collaborators' in text
     assert 'class _PresentationControllerCollaborators' not in text
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

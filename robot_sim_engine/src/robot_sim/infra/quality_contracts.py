@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 import ast
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,11 +16,18 @@ from robot_sim.infra.exception_policy import render_exception_catch_matrix_markd
 
 
 QUALITY_GATE_LINES: tuple[str, ...] = (
+<<<<<<< HEAD
     '- quick quality: `ruff check src tests` + targeted `mypy` (`tool.mypy.files`) + `python scripts/verify_quality_contracts.py` + `python scripts/verify_module_governance.py` + `python scripts/verify_benchmark_matrix.py` + `python scripts/verify_runtime_baseline.py --mode headless` + `python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline` + `python scripts/verify_perf_budget_config.py` + `pytest tests/unit tests/regression -q`',
     '- shipped behavior contracts: repo profiles must remain differentiable, coordinators must stay on explicit dependency injection paths, export/screenshot coordinators must stay on worker lifecycle routes, render degradation state must stay projected in SessionState.render_runtime through a typed status-panel subscription flow, clean bootstrap/headless mainline paths must stay within the configured compatibility budget, public plugin SDK examples must remain loader-compatible, render telemetry must remain recorded as bounded structured state transitions + operation spans + sampling counters + backend-specific performance telemetry, and screenshot/importer fidelity baselines must stay reproducible from checked-in fixtures',
     '- full validation: `pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q` with `fail_under = 80` + `python scripts/verify_partition_coverage.py --coverage-json coverage.json`',
     '- gui smoke: `python scripts/verify_runtime_baseline.py --mode gui` + `python scripts/verify_release_environment.py --mode gui` + `pytest tests/gui -q` on Ubuntu 22.04 with `PySide6>=6.5` installed; pytest defaults `QT_QPA_PLATFORM=offscreen` unless `ROBOT_SIM_PYTEST_FORCE_GUI_DISPLAY=1` is set',
     '- quality contracts: `python scripts/verify_quality_contracts.py` + `python scripts/verify_module_governance.py` + `python scripts/verify_benchmark_matrix.py`',
+=======
+    '- quick quality: `ruff check src tests` + targeted `mypy` + `pytest tests/unit tests/regression -q`',
+    '- full validation: `pytest --cov=src/robot_sim --cov-report=term-missing -q` with `fail_under = 80`',
+    '- gui smoke: `pytest tests/gui -q` on Ubuntu 22.04 with `PySide6>=6.5` installed',
+    '- quality contracts: `python scripts/verify_quality_contracts.py`',
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     '- contract regeneration: `python scripts/regenerate_quality_contracts.py` + `git diff --exit-code -- docs`',
 )
 
@@ -30,7 +40,10 @@ class QualityContractSnapshot:
     module_status_markdown: str
     capability_matrix_markdown: str
     exception_catch_matrix_markdown: str
+<<<<<<< HEAD
     quality_evidence_markdown: str
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class QualityContractService:
@@ -60,6 +73,7 @@ class QualityContractService:
             module_status_markdown=self._module_status_renderer(),
             capability_matrix_markdown=self._capability_matrix_renderer(),
             exception_catch_matrix_markdown=self._exception_catch_matrix_renderer(),
+<<<<<<< HEAD
             quality_evidence_markdown=self.render_quality_evidence_markdown(),
         )
 
@@ -82,6 +96,10 @@ class QualityContractService:
         ]
         return '\n'.join(lines)
 
+=======
+        )
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def render_quality_gates_markdown(self) -> str:
         """Render the quality-gates markdown document."""
         lines = ['# Quality Gates', '']
@@ -90,6 +108,7 @@ class QualityContractService:
         return '\n'.join(lines)
 
 
+<<<<<<< HEAD
 
 
 def _module_ast(path: Path) -> ast.AST:
@@ -106,6 +125,8 @@ def _class_function_names(module_ast: ast.AST, class_name: str) -> set[str]:
                     names.add(item.name)
     return names
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def _expected_docs(root: Path, snapshot: QualityContractSnapshot) -> dict[Path, str]:
     docs_dir = root / 'docs'
     return {
@@ -113,6 +134,7 @@ def _expected_docs(root: Path, snapshot: QualityContractSnapshot) -> dict[Path, 
         docs_dir / 'module_status.md': snapshot.module_status_markdown,
         docs_dir / 'capability_matrix.md': snapshot.capability_matrix_markdown,
         docs_dir / 'exception_catch_matrix.md': snapshot.exception_catch_matrix_markdown,
+<<<<<<< HEAD
         docs_dir / 'quality_evidence.md': snapshot.quality_evidence_markdown,
     }
 
@@ -292,6 +314,11 @@ def verify_behavior_contracts(project_root: str | Path) -> list[str]:
     return errors
 
 
+=======
+    }
+
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def write_quality_contract_files(project_root: str | Path) -> None:
     """Regenerate checked-in contract docs from runtime truth sources."""
     root = Path(project_root)
@@ -316,7 +343,10 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             errors.append(f'contract doc out of date: {path.relative_to(root)}')
 
     errors.extend(verify_exception_catch_matrix(root))
+<<<<<<< HEAD
     errors.extend(verify_behavior_contracts(root))
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     workflow_path = root / '.github' / 'workflows' / 'ci.yml'
     workflow = ''
@@ -327,6 +357,7 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             'full_validation:',
             'gui_smoke:',
             'python scripts/verify_quality_contracts.py',
+<<<<<<< HEAD
             'python scripts/verify_runtime_baseline.py --mode headless',
             'python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline',
             'python scripts/verify_perf_budget_config.py',
@@ -339,6 +370,12 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             'python scripts/regenerate_importer_fidelity_baseline.py',
             'pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q',
             'python scripts/verify_partition_coverage.py --coverage-json coverage.json',
+=======
+            'python scripts/regenerate_quality_contracts.py',
+            'git diff --exit-code -- docs',
+            'pytest tests/unit tests/regression -q',
+            'pytest --cov=src/robot_sim --cov-report=term-missing -q',
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'pytest tests/gui -q',
         )
         for marker in required_markers:
@@ -357,11 +394,14 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             'full validation',
             'gui smoke',
             'quality contracts',
+<<<<<<< HEAD
             'shipped behavior contracts',
             'python scripts/regenerate_importer_fidelity_baseline.py',
             'verify_runtime_baseline.py --mode headless',
             'verify_compatibility_budget.py --scenario clean_headless_mainline',
             'verify_runtime_baseline.py --mode gui',
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'regenerate_quality_contracts.py',
             'research.yaml',
         )
@@ -371,6 +411,7 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
     else:
         errors.append('missing README.md')
 
+<<<<<<< HEAD
     pyproject = root / 'pyproject.toml'
     if pyproject.exists():
         data = tomllib.loads(pyproject.read_text(encoding='utf-8'))
@@ -384,4 +425,39 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
     else:
         errors.append('missing pyproject.toml')
 
+=======
+    pyproject_path = root / 'pyproject.toml'
+    pyproject = {}
+    if pyproject_path.exists():
+        pyproject = tomllib.loads(pyproject_path.read_text(encoding='utf-8'))
+    else:
+        errors.append('missing pyproject.toml')
+
+    if readme and pyproject:
+        project = dict(pyproject.get('project', {}))
+        optional_deps = dict(project.get('optional-dependencies', {}))
+        gui_deps = tuple(optional_deps.get('gui', ()))
+        env_markers = (
+            ('Ubuntu 22.04', readme, workflow),
+            ('Python 3.10', readme, str(project.get('requires-python', ''))),
+            ('PySide6 >= 6.5', readme, ' '.join(gui_deps)),
+            ('pyqtgraph >= 0.13', readme, ' '.join(gui_deps)),
+            ('PyVista >= 0.43', readme, ' '.join(gui_deps)),
+            ('pyvistaqt >= 0.11', readme, ' '.join(gui_deps)),
+        )
+        for label, left, _right in env_markers:
+            if label not in left:
+                errors.append(f'README missing environment marker: {label}')
+        if 'ubuntu-22.04' not in workflow:
+            errors.append('workflow missing environment marker: ubuntu-22.04')
+        if 'python-version: "3.10"' not in workflow:
+            errors.append('workflow missing environment marker: python-version 3.10')
+        if str(project.get('requires-python', '')) != '>=3.10':
+            errors.append('pyproject requires-python drifted from 3.10+ baseline')
+        joined_gui = ' '.join(gui_deps)
+        for marker in ('PySide6>=6.5', 'pyqtgraph>=0.13', 'pyvista>=0.43', 'pyvistaqt>=0.11'):
+            if marker not in joined_gui:
+                errors.append(f'pyproject missing gui dependency marker: {marker}')
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     return errors

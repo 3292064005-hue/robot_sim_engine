@@ -1,31 +1,44 @@
 from __future__ import annotations
 
 from copy import deepcopy
+<<<<<<< HEAD
 import os
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from pathlib import Path
 
 import yaml
 
 from robot_sim.infra.schema import ConfigSchema
 from robot_sim.model.app_config import AppConfig, PlotConfig, WindowConfig
+<<<<<<< HEAD
 from robot_sim.model.solver_config import (
     IKConfig,
     SUPPORTED_TRAJECTORY_VALIDATION_LAYERS,
     SolverSettings,
     TrajectoryConfig,
 )
+=======
+from robot_sim.model.solver_config import IKConfig, SolverSettings, TrajectoryConfig
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class ConfigService:
     """Load application and solver configuration with profile-aware overrides.
 
+<<<<<<< HEAD
     The shipped repository/profile configuration is the authoritative runtime baseline.
     Optional local overrides are resolved separately so repository-managed defaults do not
     silently flatten per-profile differences.
+=======
+    Resolution order is deliberately explicit so release, CI, GUI, and local development
+    can share a common baseline without duplicating the full configuration tree.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     """
 
     DEFAULT_PROFILE = 'default'
     PROFILE_DIR_NAME = 'profiles'
+<<<<<<< HEAD
     LOCAL_OVERRIDE_DIR_NAME = 'local'
     APP_CONFIG_NAME = 'app.yaml'
     SOLVER_CONFIG_NAME = 'solver.yaml'
@@ -34,6 +47,8 @@ class ConfigService:
     LOCAL_OVERRIDE_DIR_ENV = 'ROBOT_SIM_CONFIG_LOCAL_DIR'
     APP_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_APP_CONFIG_OVERRIDE'
     SOLVER_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_SOLVER_CONFIG_OVERRIDE'
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     DEFAULT_APP_CONFIG: dict[str, object] = {
         'window': {
             'title': 'Robot Sim Engine',
@@ -77,6 +92,7 @@ class ConfigService:
         'trajectory': {
             'duration': 3.0,
             'dt': 0.02,
+<<<<<<< HEAD
             'validation_layers': list(SUPPORTED_TRAJECTORY_VALIDATION_LAYERS),
         },
     }
@@ -100,6 +116,19 @@ class ConfigService:
                 loading has been retired; only explicit local override files are supported.
             local_override_dir: Optional explicit directory containing
                 ``app.local.yaml`` / ``solver.local.yaml`` override files.
+=======
+        },
+    }
+
+    def __init__(self, config_dir: str | Path, *, profile: str = DEFAULT_PROFILE) -> None:
+        """Create the config service.
+
+        Args:
+            config_dir: Directory containing ``app.yaml``, ``solver.yaml``, and optional
+                ``profiles/<profile>.yaml`` overlays.
+            profile: Active configuration profile. ``default`` uses only the shared
+                baseline unless a local override file exists.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Returns:
             None: Stores configuration paths and profile state.
@@ -112,19 +141,25 @@ class ConfigService:
             raise ValueError('ConfigService profile must be a non-empty string')
         self.config_dir = Path(config_dir)
         self.profile = normalized_profile
+<<<<<<< HEAD
         self.allow_legacy_local_override = False
         self._explicit_local_override_dir = Path(local_override_dir) if local_override_dir is not None else None
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     @property
     def profile_dir(self) -> Path:
         """Return the profile-directory path."""
         return self.config_dir / self.PROFILE_DIR_NAME
 
+<<<<<<< HEAD
     @property
     def default_local_override_dir(self) -> Path:
         """Return the default local override directory under the config root."""
         return self.config_dir / self.LOCAL_OVERRIDE_DIR_NAME
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def available_profiles(self) -> tuple[str, ...]:
         """Return the available configuration profile identifiers.
 
@@ -138,6 +173,7 @@ class ConfigService:
             return ()
         return tuple(sorted(path.stem for path in self.profile_dir.glob('*.yaml') if path.is_file()))
 
+<<<<<<< HEAD
     def describe_resolution(self) -> dict[str, object]:
         """Describe the active configuration resolution chain.
 
@@ -196,6 +232,8 @@ class ConfigService:
             },
         }
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def load_yaml(self, name: str) -> dict:
         """Load a YAML mapping from the config directory.
 
@@ -208,6 +246,7 @@ class ConfigService:
         Raises:
             ValueError: If the YAML payload is not a mapping.
         """
+<<<<<<< HEAD
         return self.load_yaml_path(self.config_dir / name)
 
     def load_yaml_path(self, path: str | Path) -> dict:
@@ -229,6 +268,15 @@ class ConfigService:
             data = yaml.safe_load(handle) or {}
         if not isinstance(data, dict):
             raise ValueError(f'config must be a mapping: {resolved}')
+=======
+        path = self.config_dir / name
+        if not path.exists():
+            return {}
+        with path.open('r', encoding='utf-8') as handle:
+            data = yaml.safe_load(handle) or {}
+        if not isinstance(data, dict):
+            raise ValueError(f'config must be a mapping: {path}')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return data
 
     def load_profile_yaml(self, profile: str | None = None) -> dict:
@@ -244,7 +292,14 @@ class ConfigService:
             ValueError: If the profile YAML payload is not a mapping.
         """
         resolved_profile = str(profile or self.profile).strip()
+<<<<<<< HEAD
         profile_path = self.profile_dir / f'{resolved_profile}.yaml'
+=======
+        if resolved_profile == self.DEFAULT_PROFILE:
+            profile_path = self.profile_dir / f'{self.DEFAULT_PROFILE}.yaml'
+        else:
+            profile_path = self.profile_dir / f'{resolved_profile}.yaml'
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if not profile_path.exists():
             return {}
         with profile_path.open('r', encoding='utf-8') as handle:
@@ -255,12 +310,20 @@ class ConfigService:
 
     def load_app_config(self) -> dict[str, object]:
         """Load the validated application UI configuration as a plain mapping."""
+<<<<<<< HEAD
         merged = self._merge_profile_section(self.DEFAULT_APP_CONFIG, section_keys=('window', 'plots'), local_kind='app')
+=======
+        merged = self._merge_profile_section(self.DEFAULT_APP_CONFIG, section_keys=('window', 'plots'), local_name='app.yaml')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return ConfigSchema.validate_app_config(merged)
 
     def load_solver_config(self) -> dict[str, object]:
         """Load the validated solver and trajectory configuration as a plain mapping."""
+<<<<<<< HEAD
         raw = self._merge_profile_section(self.DEFAULT_SOLVER_CONFIG, section_keys=('ik', 'trajectory'), local_kind='solver')
+=======
+        raw = self._merge_profile_section(self.DEFAULT_SOLVER_CONFIG, section_keys=('ik', 'trajectory'), local_name='solver.yaml')
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         normalized = deepcopy(raw)
         ik = normalized.setdefault('ik', {})
         if 'damping_lambda' not in ik and 'damping' in ik:
@@ -304,27 +367,42 @@ class ConfigService:
         config = self.load_solver_config()
         ik = dict(config.get('ik', {}) or {})
         trajectory = dict(config.get('trajectory', {}) or {})
+<<<<<<< HEAD
         validation_layers = trajectory.get('validation_layers', TrajectoryConfig.validation_layers)
         if validation_layers in (None, (), []):
             resolved_layers = TrajectoryConfig.validation_layers
         else:
             resolved_layers = tuple(str(item).strip() for item in validation_layers)
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return SolverSettings(
             ik=IKConfig(**ik),
             trajectory=TrajectoryConfig(
                 duration=float(trajectory.get('duration', TrajectoryConfig.duration)),
                 dt=float(trajectory.get('dt', TrajectoryConfig.dt)),
+<<<<<<< HEAD
                 validation_layers=resolved_layers,
             ),
         )
 
     def _merge_profile_section(self, base: dict[str, object], *, section_keys: tuple[str, ...], local_kind: str) -> dict[str, object]:
         """Merge baseline, profile, and optional local overrides for a logical config section.
+=======
+            ),
+        )
+
+    def _merge_profile_section(self, base: dict[str, object], *, section_keys: tuple[str, ...], local_name: str) -> dict[str, object]:
+        """Merge baseline, profile, and local overrides for a logical config section.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Args:
             base: Shared in-code defaults.
             section_keys: Top-level keys owned by the logical section.
+<<<<<<< HEAD
             local_kind: Logical config kind, either ``app`` or ``solver``.
+=======
+            local_name: Local override filename under ``config_dir``.
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         Returns:
             dict[str, object]: Deep-merged configuration mapping.
@@ -333,9 +411,12 @@ class ConfigService:
             ValueError: Propagates malformed YAML mapping errors from profile or local files.
         """
         merged = deepcopy(base)
+<<<<<<< HEAD
         base_config = self._load_base_config(local_kind)
         if base_config:
             merged = self._deep_merge(merged, base_config)
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         default_overlay = self._filtered_profile_overlay(self.DEFAULT_PROFILE, section_keys)
         if default_overlay:
             merged = self._deep_merge(merged, default_overlay)
@@ -343,7 +424,11 @@ class ConfigService:
             profile_overlay = self._filtered_profile_overlay(self.profile, section_keys)
             if profile_overlay:
                 merged = self._deep_merge(merged, profile_overlay)
+<<<<<<< HEAD
         local_override = self._load_local_override(local_kind)
+=======
+        local_override = self.load_yaml(local_name)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if local_override:
             merged = self._deep_merge(merged, local_override)
         return merged
@@ -354,6 +439,7 @@ class ConfigService:
             return {}
         return {str(key): deepcopy(value) for key, value in overlay.items() if str(key) in section_keys}
 
+<<<<<<< HEAD
 
     def _uses_authoritative_base_files(self) -> bool:
         """Return whether ``app.yaml`` / ``solver.yaml`` should be treated as shipped base config.
@@ -429,6 +515,8 @@ class ConfigService:
             return self.load_yaml_path(preferred)
         return {}
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def _deep_merge(self, base: dict, override: dict) -> dict:
         """Deep-merge two configuration mappings.
 

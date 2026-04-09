@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from dataclasses import dataclass, field, replace
+=======
+from dataclasses import dataclass, field
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from typing import Callable, Protocol
 
 import numpy as np
@@ -9,6 +13,10 @@ from robot_sim.application.dto import IKRequest
 from robot_sim.core.math.so3 import orthonormalize_rotation
 from robot_sim.model.ik_result import IKResult
 from robot_sim.model.pose import Pose
+<<<<<<< HEAD
+=======
+from robot_sim.model.solver_config import IKConfig
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)
@@ -34,6 +42,7 @@ class JointLimitSeedAdapter:
     adapter_id = 'joint_limit_seed_clamp'
 
     def adapt(self, request: IKRequest) -> AdaptedIKRequest:
+<<<<<<< HEAD
         """Clamp invalid seeds to configured joint limits.
 
         Args:
@@ -51,6 +60,16 @@ class JointLimitSeedAdapter:
         if np.allclose(clamped, np.asarray(request.q0, dtype=float), atol=1.0e-12):
             return AdaptedIKRequest(request)
         repaired = replace(request, q0=clamped)
+=======
+        if not bool(getattr(request.config, 'clamp_seed_to_joint_limits', True)):
+            return AdaptedIKRequest(request)
+        mins = np.array([row.q_min for row in request.spec.dh_rows], dtype=float)
+        maxs = np.array([row.q_max for row in request.spec.dh_rows], dtype=float)
+        clamped = np.clip(np.asarray(request.q0, dtype=float), mins, maxs)
+        if np.allclose(clamped, np.asarray(request.q0, dtype=float), atol=1.0e-12):
+            return AdaptedIKRequest(request)
+        repaired = IKRequest(spec=request.spec, target=request.target, q0=clamped, config=request.config)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return AdaptedIKRequest(
             repaired,
             notes=('initial seed clamped to joint limits',),
@@ -67,7 +86,10 @@ class TargetRotationNormalizationAdapter:
     adapter_id = 'target_rotation_normalization'
 
     def adapt(self, request: IKRequest) -> AdaptedIKRequest:
+<<<<<<< HEAD
         """Project non-orthonormal target rotations onto ``SO(3)``."""
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if not bool(getattr(request.config, 'normalize_target_rotation', True)):
             return AdaptedIKRequest(request)
         target_R = np.asarray(request.target.R, dtype=float)
@@ -76,8 +98,13 @@ class TargetRotationNormalizationAdapter:
         delta = float(np.linalg.norm(repaired_R - target_R, ord='fro'))
         if delta <= 1.0e-12:
             return AdaptedIKRequest(request)
+<<<<<<< HEAD
         repaired_target = Pose(p=np.asarray(request.target.p, dtype=float).copy(), R=repaired_R, frame=request.target.frame)
         repaired = replace(request, target=repaired_target)
+=======
+        repaired_target = Pose(p=np.asarray(request.target.p, dtype=float).copy(), R=repaired_R)
+        repaired = IKRequest(spec=request.spec, target=repaired_target, q0=request.q0, config=request.config)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return AdaptedIKRequest(
             repaired,
             notes=('target rotation projected onto SO(3)',),
@@ -94,9 +121,14 @@ class OrientationRelaxationAdapter:
     adapter_id = 'orientation_relaxation_fallback'
 
     def adapt_result(self, request: IKRequest, result: IKResult, *, solve_fn: Callable[[IKRequest], IKResult]) -> IKResult:
+<<<<<<< HEAD
         """Retry in position-only mode when orientation is the only blocking error."""
         cfg = request.config
         if result.success or request.position_only or not bool(getattr(cfg, 'allow_orientation_relaxation', False)):
+=======
+        cfg = request.config
+        if result.success or cfg.position_only or not bool(getattr(cfg, 'allow_orientation_relaxation', False)):
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             return result
         pos_gate = max(float(cfg.pos_tol) * float(getattr(cfg, 'orientation_relaxation_pos_multiplier', 5.0)), 1.0e-3)
         ori_gate = max(float(cfg.ori_tol) * float(getattr(cfg, 'orientation_relaxation_ori_multiplier', 25.0)), 5.0e-3)
@@ -105,6 +137,7 @@ class OrientationRelaxationAdapter:
         if float(result.final_pos_err) > pos_gate or float(result.final_ori_err) < ori_gate:
             return result
 
+<<<<<<< HEAD
         relaxed_cfg = replace(cfg, position_only=True, allow_orientation_relaxation=False)
         relaxed_seed = np.asarray(result.best_q if result.best_q is not None else request.q0, dtype=float).copy()
         relaxed_request = replace(
@@ -114,6 +147,15 @@ class OrientationRelaxationAdapter:
             orientation_mask=(False, False, False),
             allow_approximate_solution=True,
         )
+=======
+        relaxed_cfg = IKConfig(**{
+            **cfg.__dict__,
+            'position_only': True,
+            'allow_orientation_relaxation': False,
+        })
+        relaxed_seed = np.asarray(result.best_q if result.best_q is not None else request.q0, dtype=float).copy()
+        relaxed_request = IKRequest(spec=request.spec, target=request.target, q0=relaxed_seed, config=relaxed_cfg)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         relaxed = solve_fn(relaxed_request)
         diagnostics = dict(relaxed.diagnostics)
         diagnostics.setdefault('request_adapters', [])
@@ -143,10 +185,13 @@ class OrientationRelaxationAdapter:
             best_q=relaxed.best_q,
             restarts_used=relaxed.restarts_used,
             diagnostics=diagnostics,
+<<<<<<< HEAD
             status='succeeded' if relaxed.success else result.status,
             residuals=dict(relaxed.residuals),
             attempt_count=relaxed.attempt_count,
             warnings=tuple(relaxed.warnings),
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )
 
 

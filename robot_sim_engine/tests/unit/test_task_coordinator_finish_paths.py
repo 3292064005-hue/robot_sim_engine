@@ -41,6 +41,10 @@ class DummyPlotsManager:
 
 class DummyWindow:
     def __init__(self):
+<<<<<<< HEAD
+=======
+        self._pending_ik_request = object()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.status_panel = DummyStatusPanel()
         self.project_busy_state_calls = []
         self.threader = object()
@@ -131,9 +135,13 @@ class DummyWindow:
 def test_task_coordinator_finish_handlers_update_window_state():
     window = DummyWindow()
     ik_result = SimpleNamespace(success=True, q_sol=np.array([0.1, 0.2]), message='ok', logs=[SimpleNamespace(attempt_idx=0, iter_idx=0, pos_err_norm=1e-3, ori_err_norm=2e-3, cond_number=10.0, manipulability=0.1, dq_norm=0.2)])
+<<<<<<< HEAD
     ik_coordinator = IKTaskCoordinator(window, solver=window.solver_facade, threader=window.threader)
     ik_coordinator.remember_request(object())
     ik_coordinator.handle_finished(ik_result)
+=======
+    IKTaskCoordinator(window).handle_finished(ik_result)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     traj = SimpleNamespace(
         t=np.array([0.0, 1.0]),
         q=np.array([[0.0, 0.0], [1.0, 1.0]]),
@@ -142,11 +150,17 @@ def test_task_coordinator_finish_handlers_update_window_state():
         ee_positions=np.array([[0,0,0],[1,0,0]]),
         is_playback_ready=True,
     )
+<<<<<<< HEAD
     traj_coordinator = TrajectoryTaskCoordinator(window, trajectory=window.trajectory_facade, threader=window.threader)
     traj_coordinator.remember_request(object())
     traj_coordinator.handle_finished(traj)
     report = SimpleNamespace(num_cases=2, success_rate=1.0, cases=[{'name': 'a'}])
     BenchmarkTaskCoordinator(window, runtime=window.runtime_facade, benchmark=window.benchmark_facade, threader=window.threader).handle_finished(report)
+=======
+    TrajectoryTaskCoordinator(window).handle_finished(traj)
+    report = SimpleNamespace(num_cases=2, success_rate=1.0, cases=[{'name': 'a'}])
+    BenchmarkTaskCoordinator(window).handle_finished(report)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.status_panel.messages == ['ok', '轨迹已生成：2 个采样点', 'Benchmark 运行完成']
     assert window.total_frames == 2
     assert window.frame == (0, 2)

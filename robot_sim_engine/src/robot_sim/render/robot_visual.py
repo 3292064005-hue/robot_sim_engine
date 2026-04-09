@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 from pathlib import Path
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 import numpy as np
 
@@ -15,6 +18,7 @@ class RobotVisualConfig:
 
 
 class RobotVisual:
+<<<<<<< HEAD
     """Build live robot render payloads from FK points plus optional runtime geometry.
 
     The stable V7 scene still projects FK skeleton points, but when runtime geometry is
@@ -111,13 +115,31 @@ class RobotVisual:
         if robot_geometry is not None:
             geometry_key = repr(robot_geometry).encode('utf-8', errors='ignore')
         cache_key = (pts.tobytes(), geometry_key)
+=======
+    def __init__(self, config: RobotVisualConfig | None = None) -> None:
+        self.config = config or RobotVisualConfig()
+        self._cache_key: bytes | None = None
+        self._cached_payload: dict[str, tuple[object, dict[str, object]]] | None = None
+
+    def build(self, points) -> dict[str, tuple[object, dict[str, object]]]:
+        import pyvista as pv
+
+        pts = np.asarray(points, dtype=float)
+        if pts.ndim != 2 or pts.shape[0] < 2 or pts.shape[1] != 3:
+            raise ValueError('robot visual requires an (N, 3) point array with N >= 2')
+        cache_key = pts.tobytes()
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if self._cache_key == cache_key and self._cached_payload is not None:
             return self._cached_payload
         line_mesh = pv.lines_from_points(pts)
         if self.config.use_tube:
             line_mesh = line_mesh.tube(radius=float(self.config.tube_radius))
         joints_mesh = pv.PolyData(pts)
+<<<<<<< HEAD
         payload: dict[str, tuple[object, dict[str, object]]] = {
+=======
+        payload = {
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'robot_lines': (line_mesh, {'line_width': float(self.config.line_width)}),
             'robot_joints': (
                 joints_mesh,
@@ -127,6 +149,7 @@ class RobotVisual:
                 },
             ),
         }
+<<<<<<< HEAD
         for descriptor in self.describe_renderables(pts, robot_geometry=robot_geometry):
             mesh = self._build_mesh_for_descriptor(descriptor, pv)
             payload[str(descriptor['actor_name'])] = (mesh, {'opacity': 0.35, 'smooth_shading': True})
@@ -233,3 +256,8 @@ class RobotVisual:
             except (IndexError, TypeError, ValueError):
                 values.append(float(fallback))
         return tuple(values[:3])
+=======
+        self._cache_key = cache_key
+        self._cached_payload = payload
+        return payload
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

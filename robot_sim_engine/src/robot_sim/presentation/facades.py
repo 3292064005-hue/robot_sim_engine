@@ -56,7 +56,10 @@ class RobotFacade:
 
     registry: RobotRegistry
     controller: RobotController
+<<<<<<< HEAD
     importer_registry: object | None = None
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def robot_names(self) -> list[str]:
         return self.registry.list_names()
@@ -67,6 +70,7 @@ class RobotFacade:
     def available_specs(self):
         return self.registry.list_specs()
 
+<<<<<<< HEAD
     def importer_entries(self):
         if self.importer_registry is None:
             return []
@@ -78,6 +82,11 @@ class RobotFacade:
     def import_robot(self, source: str, importer_id: str | None = None):
         return self.controller.import_robot(source, importer_id=importer_id)
 
+=======
+    def load_robot(self, name: str):
+        return self.controller.load_robot(name)
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def build_robot_from_editor(self, existing_spec, rows, home_q):
         return self.controller.build_robot_from_editor(existing_spec, rows, home_q)
 

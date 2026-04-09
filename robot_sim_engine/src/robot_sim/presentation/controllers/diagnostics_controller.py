@@ -20,6 +20,7 @@ class DiagnosticsController:
             payload['trajectory'] = self._metrics.summarize_trajectory(state.trajectory)
         if state.benchmark_report is not None:
             payload['benchmark'] = self._metrics.summarize_benchmark(state.benchmark_report)
+<<<<<<< HEAD
         payload['render_runtime'] = state.render_runtime.as_dict() if hasattr(state.render_runtime, 'as_dict') else dict(state.render_runtime)
         payload['render_telemetry'] = {
             'event_count': len(tuple(getattr(state, 'render_telemetry', ()) or ())),
@@ -34,4 +35,6 @@ class DiagnosticsController:
             'backend_count': len(tuple(getattr(state, 'render_backend_performance', ()) or ())),
             'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in tuple(getattr(state, 'render_backend_performance', ()) or ())],
         }
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return payload

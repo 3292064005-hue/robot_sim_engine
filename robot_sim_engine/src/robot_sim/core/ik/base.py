@@ -1,4 +1,5 @@
 from __future__ import annotations
+<<<<<<< HEAD
 
 from typing import Callable, Protocol
 
@@ -17,6 +18,16 @@ class InverseKinematicsSolver(Protocol):
     request semantics through :class:`robot_sim.application.dto.IKRequest`.
     """
 
+=======
+from typing import Callable, Protocol
+from robot_sim.model.robot_spec import RobotSpec
+from robot_sim.model.pose import Pose
+from robot_sim.model.solver_config import IKConfig
+from robot_sim.model.ik_result import IKIterationLog, IKResult
+from robot_sim.domain.types import FloatArray
+
+class InverseKinematicsSolver(Protocol):
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def solve(
         self,
         spec: RobotSpec,
@@ -25,6 +36,7 @@ class InverseKinematicsSolver(Protocol):
         config: IKConfig,
         cancel_flag: Callable[[], bool] | None = None,
         progress_cb: Callable[[IKIterationLog], None] | None = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> IKResult:
         """Solve a task-space request.
@@ -42,4 +54,7 @@ class InverseKinematicsSolver(Protocol):
             IKResult: Bounded result contract describing success/failure,
                 diagnostics, and residuals.
         """
+=======
+    ) -> IKResult:
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         ...

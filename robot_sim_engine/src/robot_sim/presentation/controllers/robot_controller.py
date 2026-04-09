@@ -1,23 +1,34 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from dataclasses import replace
 from pathlib import Path
 
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 import numpy as np
 
 from robot_sim.application.dto import FKRequest
 from robot_sim.application.services.robot_registry import RobotRegistry
+<<<<<<< HEAD
 from robot_sim.application.services.runtime_asset_service import RobotRuntimeAssetService
 from robot_sim.application.use_cases.run_fk import RunFKUseCase
 from robot_sim.domain.enums import AppExecutionState
 from robot_sim.model.imported_robot_result import ImportedRobotResult
 from robot_sim.model.playback_state import PlaybackState
 from robot_sim.model.robot_spec import RobotSpec
+=======
+from robot_sim.application.use_cases.run_fk import RunFKUseCase
+from robot_sim.model.playback_state import PlaybackState
+from robot_sim.model.robot_spec import RobotSpec
+from robot_sim.domain.enums import AppExecutionState
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.presentation.validators.input_validator import InputValidator
 
 
 class RobotController:
+<<<<<<< HEAD
     def __init__(
         self,
         state_store: StateStore,
@@ -67,6 +78,16 @@ class RobotController:
             int(self._state_store.state.scene_revision) + 1,
             int(getattr(runtime_assets.planning_scene, 'revision', 0)),
         )
+=======
+    def __init__(self, state_store: StateStore, registry: RobotRegistry, fk_uc: RunFKUseCase) -> None:
+        self._state_store = state_store
+        self._registry = registry
+        self._fk_uc = fk_uc
+
+    def load_robot(self, name: str):
+        spec = self._registry.load(name)
+        fk = self._fk_uc.execute(FKRequest(spec, spec.home_q.copy()))
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._state_store.patch(
             robot_spec=spec,
             q_current=spec.home_q.copy(),
@@ -79,6 +100,7 @@ class RobotController:
             last_error='',
             last_warning='',
             app_state=AppExecutionState.ROBOT_READY,
+<<<<<<< HEAD
             scene_revision=scene_revision,
             robot_geometry=runtime_assets.robot_geometry,
             collision_geometry=runtime_assets.collision_geometry,
@@ -245,6 +267,28 @@ class RobotController:
             display_name = existing_spec.display_name
         return persisted_name, display_name
 
+=======
+            scene_revision=self._state_store.state.scene_revision + 1,
+        )
+        return fk
+
+    def build_robot_from_editor(self, existing_spec: RobotSpec | None, rows, home_q) -> RobotSpec:
+        if existing_spec is None:
+            raise RuntimeError('robot not loaded')
+        home_q = np.asarray(home_q, dtype=float)
+        home_q = InputValidator.validate_home_q(rows, home_q)
+        return RobotSpec(
+            name=existing_spec.name,
+            dh_rows=tuple(rows),
+            base_T=existing_spec.base_T,
+            tool_T=existing_spec.tool_T,
+            home_q=home_q,
+            display_name=existing_spec.display_name,
+            description=existing_spec.description,
+            metadata=dict(existing_spec.metadata),
+        )
+
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def save_current_robot(self, rows=None, home_q=None, name: str | None = None):
         spec = self._state_store.state.robot_spec
         if spec is None:
@@ -253,6 +297,7 @@ class RobotController:
             rows_in = rows if rows is not None else spec.dh_rows
             home_q_in = home_q if home_q is not None else spec.home_q
             spec = self.build_robot_from_editor(rows=rows_in, home_q=home_q_in, existing_spec=spec)
+<<<<<<< HEAD
             path = self._registry.save(spec, name=name)
             persisted_name, display_name = self._normalized_persisted_name(path, name, spec)
             spec = replace(spec, name=persisted_name, display_name=display_name)
@@ -325,6 +370,10 @@ class RobotController:
             geometry_available=bool(metadata.get('geometry_available', False)),
             source_model_summary=dict(metadata.get('source_model_summary', {}) or {}),
         )
+=======
+            self._state_store.patch(robot_spec=spec)
+        return self._registry.save(spec, name=name)
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def run_fk(self, q=None):
         spec = self._state_store.state.robot_spec

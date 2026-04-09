@@ -3,9 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from robot_sim.domain.enums import ImporterFidelity
+<<<<<<< HEAD
 from robot_sim.model.canonical_robot_model import CanonicalRobotModel
 from robot_sim.model.robot_geometry import RobotGeometry
 from robot_sim.model.robot_links import RobotJointSpec, RobotLinkSpec
+=======
+from robot_sim.model.robot_geometry import RobotGeometry
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.robot_model_bundle import RobotModelBundle
 
 
@@ -28,6 +32,7 @@ class YAMLRobotImporter:
         data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
         spec = self._robot_registry.from_dict(data)
         geometry = RobotGeometry.simple_capsules(spec.dof)
+<<<<<<< HEAD
         canonical_model = spec.canonical_model or self._build_canonical_model(spec)
         spec = type(spec)(
             name=spec.name,
@@ -55,11 +60,17 @@ class YAMLRobotImporter:
             spec=spec,
             geometry=geometry,
             collision_geometry=geometry,
+=======
+        return RobotModelBundle(
+            spec=spec,
+            geometry=geometry,
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             fidelity=ImporterFidelity.NATIVE.value,
             warnings=(),
             source_path=str(path),
             importer_id=self.importer_id,
             metadata={'source_format': 'yaml'},
+<<<<<<< HEAD
             source_model_summary={
                 'source_format': 'yaml',
                 'joint_count': int(spec.dof),
@@ -104,4 +115,6 @@ class YAMLRobotImporter:
             execution_rows=tuple(spec.execution_rows),
             fidelity=ImporterFidelity.NATIVE.value,
             metadata={'generated_from': 'yaml_importer', 'execution_surface': 'canonical_model'},
+=======
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )

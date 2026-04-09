@@ -10,8 +10,13 @@ def evaluate_limit_summary(q, spec) -> tuple[list[str], dict[str, object]]:
         return reasons, limit_summary
     q = np.asarray(q, dtype=float)
     if q.ndim == 2 and q.shape[0] > 0:
+<<<<<<< HEAD
         mins = np.array([limit.lower for limit in spec.runtime_joint_limits], dtype=float)[None, :]
         maxs = np.array([limit.upper for limit in spec.runtime_joint_limits], dtype=float)[None, :]
+=======
+        mins = np.array([row.q_min for row in spec.dh_rows], dtype=float)[None, :]
+        maxs = np.array([row.q_max for row in spec.dh_rows], dtype=float)[None, :]
+>>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         lower = q < (mins - 1.0e-9)
         upper = q > (maxs + 1.0e-9)
         limit_summary['lower_violations'] = int(np.sum(lower))
