@@ -1,26 +1,15 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from dataclasses import dataclass, field
 
 from robot_sim.domain.enums import ReferenceFrame, TrajectoryMode
 from robot_sim.domain.types import FloatArray
 from robot_sim.model.ik_contracts import IKConstraintSummary, IKSeedPolicy, IKTaskMask
 from robot_sim.model.planner_specs import WaypointPlannerSpec
-=======
-from dataclasses import dataclass
-
-from robot_sim.domain.enums import TrajectoryMode
-from robot_sim.domain.types import FloatArray
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.pose import Pose
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.model.solver_config import IKConfig
 from robot_sim.model.waypoint_graph import WaypointGraph
-<<<<<<< HEAD
-=======
-from robot_sim.model.planner_specs import WaypointPlannerSpec
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)
@@ -33,22 +22,17 @@ class FKRequest:
 
 @dataclass(frozen=True)
 class IKRequest:
-<<<<<<< HEAD
     """Inverse-kinematics request at the application boundary.
 
     The first four fields keep the legacy constructor order used by workers,
     controllers, and tests. Additional contract fields extend the request
     without breaking the existing call sites.
     """
-=======
-    """Inverse-kinematics request at the application boundary."""
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     spec: RobotSpec
     target: Pose
     q0: FloatArray
     config: IKConfig
-<<<<<<< HEAD
     target_frame: ReferenceFrame | None = None
     position_mask: tuple[bool, bool, bool] = (True, True, True)
     orientation_mask: tuple[bool, bool, bool] = (True, True, True)
@@ -86,9 +70,6 @@ class IKRequest:
     @property
     def position_only(self) -> bool:
         return bool(self.config.position_only or not any(self.orientation_mask))
-=======
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)
@@ -109,10 +90,7 @@ class TrajectoryRequest:
     max_acceleration: float | None = None
     collision_obstacles: tuple[object, ...] = ()
     planning_scene: object | None = None
-<<<<<<< HEAD
     validation_layers: tuple[str, ...] | None = None
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def to_waypoint_planner_spec(self) -> WaypointPlannerSpec:
         """Build a core-neutral waypoint planner spec from the request.

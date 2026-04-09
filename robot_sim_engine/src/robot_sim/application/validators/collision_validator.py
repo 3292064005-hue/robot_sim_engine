@@ -6,18 +6,11 @@ import json
 
 import numpy as np
 
-<<<<<<< HEAD
 from robot_sim.core.collision.capsule_backend import CapsuleCollisionBackend
 from robot_sim.core.collision.collision_result import CollisionResult
 from robot_sim.core.collision.environment_collision import environment_collision_flags, evaluate_environment_collision_pairs
 from robot_sim.core.collision.geometry import AABB, aabb_from_points
 from robot_sim.core.collision.self_collision import evaluate_self_collision_pairs, self_collision_pair_hits, self_collision_pair_specs
-=======
-from robot_sim.core.collision.aabb import broad_phase_intersections
-from robot_sim.core.collision.collision_result import CollisionResult
-from robot_sim.core.collision.environment_collision import environment_collision_flags
-from robot_sim.core.collision.geometry import AABB, aabb_from_points
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.collision_backends import default_collision_backend_registry
 from robot_sim.model.trajectory_digest import ensure_trajectory_digest_metadata
 
@@ -93,11 +86,8 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
         'scene_revision': result.scene_revision,
         'collision_level': result.collision_level,
         'clearance_metric': result.clearance_metric,
-<<<<<<< HEAD
         'scene_available': bool(planning_scene is not None),
         'collision_input': 'planning_scene' if planning_scene is not None else ('legacy_obstacles' if collision_obstacles else 'none'),
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         **dict(result.metadata),
     }
     if result.self_collision:
@@ -176,14 +166,11 @@ def _evaluate_scene_collision(
     trajectory_digest: str,
 ) -> CollisionResult:
     """Evaluate collision status against a structured planning scene."""
-<<<<<<< HEAD
     scene_graph_authority = getattr(planning_scene, 'scene_graph_authority', None)
     if scene_graph_authority is not None and hasattr(scene_graph_authority, 'query_context'):
         scene_graph_authority.query_context.require_query_kind('allowed_collision_matrix')
     elif scene_graph_authority is not None and hasattr(scene_graph_authority, 'require_query_kind'):
         scene_graph_authority.require_query_kind('allowed_collision_matrix')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     self_padding = float(getattr(planning_scene, 'self_collision_padding', 0.03) if planning_scene is not None else 0.03)
     ignore_adjacent = bool(getattr(planning_scene, 'ignore_adjacent_self_collisions', True) if planning_scene is not None else True)
     acm = getattr(planning_scene, 'allowed_collision_matrix', None)
@@ -205,7 +192,6 @@ def _evaluate_scene_collision(
     accepted_env_pairs: set[tuple[str, str]] = set()
     clearance_values: list[float] = []
     candidate_pair_count = 0
-<<<<<<< HEAD
 
     if backend == 'capsule':
         capsule_backend = CapsuleCollisionBackend()
@@ -252,35 +238,6 @@ def _evaluate_scene_collision(
             clearance_values.extend(self_eval['clearance_values'])
             clearance_values.extend(env_eval['clearance_values'])
             candidate_pair_count += int(self_eval['candidate_pair_count']) + int(env_eval['candidate_pair_count'])
-=======
-    self_pair_specs = _self_pair_specs(link_names, ignore_adjacent=ignore_adjacent)
-
-    for self_boxes, seen_self in zip(geometry.frame_boxes, geometry.self_hits):
-        frame_candidate_count = 0
-        for i, j, pair in self_pair_specs:
-            checked_pairs.add(pair)
-            if acm is not None and acm.allows(*pair):
-                ignored_pairs.add(pair)
-                continue
-            frame_candidate_count += 1
-            clearance_values.append(self_boxes[i].distance(self_boxes[j]))
-            if pair in seen_self:
-                accepted_self_pairs.add(pair)
-
-        for i, box_i in enumerate(self_boxes):
-            link_name = str(link_names[i])
-            for object_id, obstacle in obstacle_pairs:
-                pair = (link_name, str(object_id))
-                checked_pairs.add(pair)
-                if acm is not None and acm.allows(*pair):
-                    ignored_pairs.add(pair)
-                    continue
-                frame_candidate_count += 1
-                clearance_values.append(box_i.distance(obstacle))
-                if box_i.intersects(obstacle):
-                    accepted_env_pairs.add(pair)
-        candidate_pair_count += frame_candidate_count
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     return CollisionResult(
         self_collision=bool(accepted_self_pairs),
@@ -310,19 +267,6 @@ def _frame_link_boxes(frame: np.ndarray, *, padding: float) -> tuple[AABB, ...]:
 
 
 
-<<<<<<< HEAD
-=======
-def _self_pair_specs(link_names: list[str], *, ignore_adjacent: bool) -> tuple[tuple[int, int, tuple[str, str]], ...]:
-    """Precompute canonical self-collision pair descriptors for a link chain."""
-    pairs: list[tuple[int, int, tuple[str, str]]] = []
-    for i in range(len(link_names)):
-        for j in range(i + 1, len(link_names)):
-            if ignore_adjacent and abs(i - j) <= 1:
-                continue
-            pairs.append((i, j, (str(link_names[i]), str(link_names[j]))))
-    return tuple(pairs)
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 def _scene_geometry(
@@ -373,7 +317,6 @@ def _build_scene_frame_geometry(
         None: Invalid shapes simply produce empty per-frame descriptors.
     """
     frame_boxes: list[tuple[AABB, ...]] = []
-<<<<<<< HEAD
     self_hits = self_collision_pair_hits(
         joint_positions,
         link_padding=padding,
@@ -383,18 +326,6 @@ def _build_scene_frame_geometry(
     for frame in joint_positions:
         boxes = _frame_link_boxes(np.asarray(frame, dtype=float), padding=padding)
         frame_boxes.append(boxes)
-=======
-    self_hits: list[frozenset[tuple[str, str]]] = []
-    for frame in joint_positions:
-        boxes = _frame_link_boxes(np.asarray(frame, dtype=float), padding=padding)
-        pair_indices = broad_phase_intersections(list(boxes))
-        if ignore_adjacent:
-            pair_indices = [(i, j) for i, j in pair_indices if abs(i - j) > 1]
-        frame_boxes.append(boxes)
-        self_hits.append(
-            frozenset((str(link_names[i]), str(link_names[j])) for i, j in pair_indices)
-        )
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     return _SceneFrameGeometry(frame_boxes=tuple(frame_boxes), self_hits=tuple(self_hits))
 
 
@@ -407,7 +338,6 @@ def _evaluate_legacy_collision(
     collision_level: str,
     trajectory_digest: str,
 ) -> CollisionResult:
-<<<<<<< HEAD
     """Evaluate collision status against the legacy obstacle list.
 
     Args:
@@ -458,16 +388,6 @@ def _evaluate_legacy_collision(
         clearance_values.extend(self_eval['clearance_values'])
         candidate_pair_count += int(self_eval['candidate_pair_count'])
 
-=======
-    """Evaluate collision status against the legacy obstacle list."""
-    checked_pairs: set[tuple[str, str]] = set()
-    accepted_env_pairs: set[tuple[str, str]] = set()
-    clearance_values: list[float] = []
-    env_padding = 0.02
-    candidate_pair_count = 0
-    geometry, geometry_cache_hit = _legacy_geometry(joint_positions, padding=env_padding, trajectory_digest=trajectory_digest)
-    for frame, robot_box in zip(joint_positions, geometry.robot_boxes):
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         env_flags = environment_collision_flags(frame[None, ...], list(collision_obstacles), padding=env_padding)
         frame_candidate_count = 0
         for idx, obstacle in enumerate(collision_obstacles):
@@ -482,15 +402,9 @@ def _evaluate_legacy_collision(
         candidate_pair_count += frame_candidate_count
 
     return CollisionResult(
-<<<<<<< HEAD
         self_collision=bool(accepted_self_pairs),
         environment_collision=bool(accepted_env_pairs),
         self_pairs=tuple(sorted(accepted_self_pairs)),
-=======
-        self_collision=False,
-        environment_collision=bool(accepted_env_pairs),
-        self_pairs=(),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         environment_pairs=tuple(sorted(accepted_env_pairs)),
         ignored_pairs=(),
         checked_pairs=tuple(sorted(checked_pairs)),
@@ -505,11 +419,8 @@ def _evaluate_legacy_collision(
             'geometry_cache_hit': bool(geometry_cache_hit),
             'candidate_pair_count': int(candidate_pair_count),
             'trajectory_digest': trajectory_digest,
-<<<<<<< HEAD
             'collision_input': 'legacy_obstacles' if collision_obstacles else 'none',
             'degraded_reason': '' if collision_obstacles else 'planning_scene_missing',
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         },
     )
 
@@ -531,7 +442,6 @@ def _legacy_geometry(joint_positions: np.ndarray, *, padding: float, trajectory_
 
 
 def _resolve_backend_id(planning_scene) -> str:
-<<<<<<< HEAD
     metadata = dict(getattr(planning_scene, 'metadata', {}) or {})
     scene_backend = str(getattr(planning_scene, 'collision_backend', _COLLISION_BACKEND_REGISTRY.default_backend) or _COLLISION_BACKEND_REGISTRY.default_backend).strip().lower()
     resolved_from_scene = str(metadata.get('resolved_collision_backend', '') or '').strip().lower()
@@ -543,12 +453,6 @@ def _resolve_backend_id(planning_scene) -> str:
         requested_backend,
         experimental_enabled=experimental_enabled,
         metadata=metadata,
-=======
-    requested_backend = str(getattr(planning_scene, 'collision_backend', _COLLISION_BACKEND_REGISTRY.default_backend) or _COLLISION_BACKEND_REGISTRY.default_backend)
-    resolved_backend, _ = _COLLISION_BACKEND_REGISTRY.normalize_backend(
-        requested_backend,
-        metadata=dict(getattr(planning_scene, 'metadata', {}) or {}),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     )
     return resolved_backend
 
@@ -566,7 +470,6 @@ def _backend_metadata(
     metadata = dict(getattr(planning_scene, 'metadata', {}) if planning_scene is not None else {})
     requested_backend = str(metadata.get('requested_collision_backend', getattr(planning_scene, 'collision_backend', _COLLISION_BACKEND_REGISTRY.default_backend)) or _COLLISION_BACKEND_REGISTRY.default_backend).strip().lower() if planning_scene is not None else 'aabb'
     backend_id = resolved_backend or _resolve_backend_id(planning_scene)
-<<<<<<< HEAD
     backend_available = bool(metadata.get('collision_backend_available', backend_id == requested_backend))
     authority = getattr(planning_scene, 'geometry_authority', None) if planning_scene is not None else None
     payload = {
@@ -579,14 +482,6 @@ def _backend_metadata(
         'scene_fidelity': str(metadata.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'legacy')) or getattr(planning_scene, 'scene_fidelity', 'legacy')) if planning_scene is not None else 'legacy',
         'geometry_source': str(getattr(planning_scene, 'geometry_source', 'legacy') if planning_scene is not None else 'legacy'),
         'scene_geometry_contract': str(getattr(authority, 'scene_geometry_contract', metadata.get('scene_geometry_contract', 'resolved_only')) or 'resolved_only') if planning_scene is not None else 'legacy',
-=======
-    payload = {
-        'requested_backend': requested_backend,
-        'resolved_backend': backend_id,
-        'backend_available': backend_id == requested_backend,
-        'cache_hit': bool(cache_hit),
-        'candidate_pair_count': int(candidate_pair_count),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     }
     if geometry_cache_hit is not None:
         payload['geometry_cache_hit'] = bool(geometry_cache_hit)
@@ -622,7 +517,6 @@ def _digest_obstacles(*, planning_scene=None, collision_obstacles=()) -> tuple[o
         obstacles = []
         for obstacle in getattr(planning_scene, 'obstacles', ()):
             geometry = getattr(obstacle, 'geometry', None)
-<<<<<<< HEAD
             metadata = dict(getattr(obstacle, 'metadata', {}) or {})
             obstacles.append((
                 str(getattr(obstacle, 'object_id', '')),
@@ -630,9 +524,6 @@ def _digest_obstacles(*, planning_scene=None, collision_obstacles=()) -> tuple[o
                 metadata.get('declared_geometry', {}),
                 metadata.get('resolved_geometry', {}),
             ))
-=======
-            obstacles.append((str(getattr(obstacle, 'object_id', '')), _digest_geometry(geometry)))
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return tuple(obstacles)
     legacy = []
     for index, obstacle in enumerate(collision_obstacles):

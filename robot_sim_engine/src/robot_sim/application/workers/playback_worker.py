@@ -28,11 +28,7 @@ class PlaybackWorker(BaseWorker):
                 return
             while not self.is_cancel_requested():
                 frame = self._service.frame(self._trajectory, state.frame_idx)
-<<<<<<< HEAD
                 self.emit_progress(stage='frame', percent=0.0, message='frame_ready', payload={'value': frame})
-=======
-                self.progress.emit(frame)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 next_idx = self._service.next_index(state)
                 if next_idx is None:
                     self.emit_finished(state.stop())

@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 import logging
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 import sys
 
 from robot_sim.app.bootstrap import bootstrap
 
-<<<<<<< HEAD
 _LOG = logging.getLogger(__name__)
 _EXIT_CODE_MISSING_GUI = 1
 _EXIT_CODE_RUNTIME_RESOURCE = 2
@@ -56,8 +52,6 @@ def _log_startup_failure(exc: Exception) -> None:
     """
     _LOG.exception('application startup failed', exc_info=exc)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 def main() -> int:
     """Launch the Qt application shell.
@@ -68,7 +62,6 @@ def main() -> int:
     Raises:
         None: Startup errors are handled and converted into exit codes.
     """
-<<<<<<< HEAD
     try:
         context = bootstrap(startup_mode='gui')
         from PySide6.QtWidgets import QApplication
@@ -85,22 +78,6 @@ def main() -> int:
         if user_message != str(exc):
             print(exc)
         return exit_code
-=======
-    root, container = bootstrap()
-    try:
-        from PySide6.QtWidgets import QApplication
-    except Exception as exc:
-        print("PySide6 未安装。先安装 GUI 依赖后再运行界面。")
-        print(exc)
-        return 1
-
-    from robot_sim.presentation.main_window import MainWindow
-
-    app = QApplication(sys.argv)
-    w = MainWindow(root, container=container)
-    w.show()
-    return app.exec()
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 if __name__ == "__main__":

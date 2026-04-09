@@ -2,20 +2,14 @@ from __future__ import annotations
 
 import logging
 
-<<<<<<< HEAD
 from robot_sim.domain.errors import RenderOperationError
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 logger = logging.getLogger(__name__)
 
 
 class ActorManager:  # pragma: no cover - GUI shell
-<<<<<<< HEAD
     """Track named render actors attached to a scene plotter."""
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def __init__(self) -> None:
         self._actors: dict[str, object] = {}
 
@@ -29,7 +23,6 @@ class ActorManager:  # pragma: no cover - GUI shell
         return sorted(self._actors)
 
     def remove(self, plotter, name: str) -> None:
-<<<<<<< HEAD
         """Remove a tracked actor from the supplied plotter.
 
         Args:
@@ -42,13 +35,10 @@ class ActorManager:  # pragma: no cover - GUI shell
         Raises:
             RenderOperationError: If the backend rejects actor removal after the actor was tracked.
         """
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         actor = self._actors.pop(name, None)
         if actor is not None and plotter is not None:
             try:
                 plotter.remove_actor(actor)
-<<<<<<< HEAD
             except (AttributeError, RuntimeError, TypeError, ValueError) as exc:
                 self._actors[name] = actor
                 logger.warning('failed to remove actor %s: %s', name, exc)
@@ -69,11 +59,5 @@ class ActorManager:  # pragma: no cover - GUI shell
         Raises:
             RenderOperationError: Propagates the first actor-removal failure.
         """
-=======
-            except Exception as exc:
-                logger.warning('failed to remove actor %s: %s', name, exc)
-
-    def clear(self, plotter) -> None:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         for name in list(self._actors):
             self.remove(plotter, name)

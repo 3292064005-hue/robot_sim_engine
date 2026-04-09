@@ -3,7 +3,6 @@ from types import SimpleNamespace
 from robot_sim.presentation.coordinators.export_task_coordinator import ExportTaskCoordinator
 
 
-<<<<<<< HEAD
 class DummyThreader:
     def __init__(self):
         self.started = []
@@ -15,19 +14,6 @@ class DummyThreader:
 
 class DummyWindow:
     def __init__(self):
-=======
-class DummyWindow:
-    def __init__(self):
-        self.controller = SimpleNamespace(
-            export_trajectory=lambda: 'trajectory.csv',
-            export_trajectory_metrics=lambda _name, _metrics: 'trajectory_metrics.json',
-            export_session=lambda: 'session.json',
-            export_package=lambda: 'package.zip',
-            export_benchmark=lambda: 'benchmark.json',
-            export_benchmark_cases_csv=lambda: 'benchmark.csv',
-            state=SimpleNamespace(trajectory=SimpleNamespace()),
-        )
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.runtime_facade = SimpleNamespace(state=SimpleNamespace(trajectory=SimpleNamespace()))
         self.export_facade = SimpleNamespace(
             export_trajectory=lambda: 'trajectory.csv',
@@ -38,7 +24,6 @@ class DummyWindow:
             export_benchmark_cases_csv=lambda: 'benchmark.csv',
         )
         self.metrics_service = SimpleNamespace(summarize_trajectory=lambda _traj: {'mode': 'joint'})
-<<<<<<< HEAD
         self.threader = DummyThreader()
         self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
         self.project_export_messages = lambda *messages: [self.status_panel.append(message) for message in messages]
@@ -53,22 +38,10 @@ class DummyWindow:
 def test_export_task_coordinator_routes_exports_through_background_tasks():
     window = DummyWindow()
     coord = ExportTaskCoordinator(window, runtime=window.runtime_facade, export=window.export_facade, threader=window.threader, metrics_service=window.metrics_service)
-=======
-        self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
-        self.project_export_messages = lambda *messages: [self.status_panel.append(message) for message in messages]
-        self._projected = []
-        self._project_exception = lambda exc, title='错误': self._projected.append((title, str(exc)))
-
-
-def test_export_task_coordinator_exports_all_supported_artifacts():
-    window = DummyWindow()
-    coord = ExportTaskCoordinator(window)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     coord.export_trajectory()
     coord.export_session()
     coord.export_package()
     coord.export_benchmark()
-<<<<<<< HEAD
 
     assert [item['task_kind'] for item in window.threader.started] == ['export', 'export', 'export', 'export']
     assert window.status_panel.messages == [
@@ -88,9 +61,6 @@ def test_export_task_coordinator_exports_all_supported_artifacts():
         start['on_finished'](payload)
 
     assert window.status_panel.messages[-6:] == [
-=======
-    assert window.status_panel.messages == [
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         '轨迹已导出：trajectory.csv',
         '轨迹指标已导出：trajectory_metrics.json',
         '会话已导出：session.json',

@@ -14,10 +14,7 @@ def _configure_path() -> None:
 
 _configure_path()
 
-<<<<<<< HEAD
 from robot_sim.infra.release_environment_gate import ReleaseEnvironmentGate  # noqa: E402
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.infra.release_package import build_release_zip  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +25,6 @@ def main() -> int:
     parser.add_argument('--root', type=Path, default=REPO_ROOT, help='Repository root to package')
     parser.add_argument('--output', type=Path, required=True, help='Output zip path')
     parser.add_argument('--top-level-dir', type=str, default=None, help='Optional top-level directory inside zip')
-<<<<<<< HEAD
     parser.add_argument('--allow-unsupported-environment', action='store_true', help='Package even when the checked-in release environment contract is not satisfied')
     args = parser.parse_args()
 
@@ -40,10 +36,6 @@ def main() -> int:
         for error in report.errors:
             print(f'ERROR: {error}')
         raise SystemExit('release packaging requires a verified release environment; pass --allow-unsupported-environment to override')
-=======
-    args = parser.parse_args()
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     archive = build_release_zip(args.root, args.output, top_level_dir=args.top_level_dir)
     print(archive)
     return 0

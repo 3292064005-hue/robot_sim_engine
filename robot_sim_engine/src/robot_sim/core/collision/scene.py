@@ -1,30 +1,22 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from dataclasses import dataclass, field, replace
-=======
-from dataclasses import dataclass, field
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 from robot_sim.core.collision.allowed_collisions import AllowedCollisionMatrix
 from robot_sim.core.collision.geometry import AABB
 from robot_sim.domain.collision_backends import default_collision_backend_registry
 from robot_sim.domain.enums import CollisionLevel
-<<<<<<< HEAD
 from robot_sim.model.scene_geometry_authority import (
     SceneGeometryAuthority,
     default_scene_geometry_authority,
     summarize_scene_geometry_authority,
 )
 from robot_sim.model.scene_graph_authority import SceneGraphAuthority
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 _COLLISION_BACKEND_REGISTRY = default_collision_backend_registry()
 _COLLISION_BACKEND_FALLBACK = _COLLISION_BACKEND_REGISTRY.default_backend
 
 
-<<<<<<< HEAD
 def _serialize_aabb(geometry: AABB) -> dict[str, object]:
     return {
         'kind': 'aabb',
@@ -64,8 +56,6 @@ def _stable_scene_object_metadata(metadata: dict[str, object]) -> dict[str, obje
     return normalized
 
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def _normalize_collision_backend(backend_id: str, metadata: dict[str, object] | None = None) -> tuple[str, dict[str, object]]:
     """Normalize a requested collision backend against the canonical registry."""
     return _COLLISION_BACKEND_REGISTRY.normalize_backend(str(backend_id), metadata=metadata)
@@ -77,7 +67,6 @@ class SceneObject:
     geometry: AABB
     metadata: dict[str, object] = field(default_factory=dict)
 
-<<<<<<< HEAD
     def summary(self) -> dict[str, object]:
         metadata = dict(self.metadata or {})
         resolved_geometry = _scene_geometry_payload_from_metadata(metadata, 'resolved_geometry', _serialize_aabb(self.geometry))
@@ -99,11 +88,6 @@ class PlanningScene:
     and diagnostics therefore read one structured geometry truth source.
     """
 
-=======
-
-@dataclass(frozen=True)
-class PlanningScene:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     obstacles: tuple[SceneObject, ...] = ()
     allowed_collision_matrix: AllowedCollisionMatrix = field(default_factory=AllowedCollisionMatrix)
     revision: int = 0
@@ -116,7 +100,6 @@ class PlanningScene:
     attached_objects: tuple[SceneObject, ...] = ()
     clearance_policy: str = 'min_distance'
     metadata: dict[str, object] = field(default_factory=dict)
-<<<<<<< HEAD
     geometry_authority: SceneGeometryAuthority = field(default_factory=default_scene_geometry_authority)
     scene_graph_authority: SceneGraphAuthority = field(default_factory=SceneGraphAuthority)
 
@@ -135,14 +118,11 @@ class PlanningScene:
         ):
             scene_graph_authority = SceneGraphAuthority.from_scene(self, previous=scene_graph_authority)
         object.__setattr__(self, 'scene_graph_authority', scene_graph_authority)
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     @property
     def obstacle_ids(self) -> tuple[str, ...]:
         return tuple(obj.object_id for obj in self.obstacles)
 
-<<<<<<< HEAD
     @property
     def attached_object_ids(self) -> tuple[str, ...]:
         """Return the canonical attached-object identifiers in insertion order."""
@@ -209,51 +189,15 @@ class PlanningScene:
             updated.append(replacement if obstacle.object_id == normalized_id else obstacle)
         return self._spawn(obstacles=tuple(updated), revision=self.revision + 1)
 
-=======
-    def add_obstacle(self, object_id: str, geometry: AABB, *, metadata: dict[str, object] | None = None) -> 'PlanningScene':
-        return PlanningScene(
-            obstacles=self.obstacles + (SceneObject(object_id=object_id, geometry=geometry, metadata=dict(metadata or {})),),
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def remove_obstacle(self, object_id: str) -> 'PlanningScene':
         remaining = tuple(obj for obj in self.obstacles if obj.object_id != str(object_id))
         if remaining == self.obstacles:
             return self
-<<<<<<< HEAD
         return self._spawn(obstacles=remaining, revision=self.revision + 1)
-=======
-        return PlanningScene(
-            obstacles=remaining,
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def clear_obstacles(self) -> 'PlanningScene':
         if not self.obstacles:
             return self
-<<<<<<< HEAD
         return self._spawn(obstacles=(), revision=self.revision + 1)
 
     def replace_obstacles(self, obstacles: tuple[SceneObject, ...] | list[SceneObject]) -> 'PlanningScene':
@@ -331,93 +275,12 @@ class PlanningScene:
         return self._spawn(
             attached_objects=self.attached_objects + (SceneObject(object_id=object_id, geometry=geometry, metadata=dict(metadata or {})),),
             revision=self.revision + 1,
-=======
-        return PlanningScene(
-            obstacles=(),
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
-
-    def with_acm(self, allowed_collision_matrix: AllowedCollisionMatrix) -> 'PlanningScene':
-        return PlanningScene(
-            obstacles=self.obstacles,
-            allowed_collision_matrix=allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
-
-    def with_revision_bump(self) -> 'PlanningScene':
-        return PlanningScene(
-            obstacles=self.obstacles,
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
-
-    def with_collision_backend(self, backend_id: str) -> 'PlanningScene':
-        resolved_backend, metadata = _normalize_collision_backend(str(backend_id), metadata=self.metadata)
-        return PlanningScene(
-            obstacles=self.obstacles,
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=resolved_backend,
-            attached_objects=self.attached_objects,
-            clearance_policy=self.clearance_policy,
-            metadata=metadata,
-        )
-
-    def attach_object(self, object_id: str, geometry: AABB, *, metadata: dict[str, object] | None = None) -> 'PlanningScene':
-        return PlanningScene(
-            obstacles=self.obstacles,
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=self.attached_objects + (SceneObject(object_id=object_id, geometry=geometry, metadata=dict(metadata or {})),),
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )
 
     def detach_object(self, object_id: str) -> 'PlanningScene':
         remaining = tuple(obj for obj in self.attached_objects if obj.object_id != str(object_id))
         if remaining == self.attached_objects:
             return self
-<<<<<<< HEAD
         return self._spawn(attached_objects=remaining, revision=self.revision + 1)
 
     def summary(self) -> dict[str, object]:
@@ -481,31 +344,3 @@ class PlanningScene:
             },
         }
         return summary
-=======
-        return PlanningScene(
-            obstacles=self.obstacles,
-            allowed_collision_matrix=self.allowed_collision_matrix,
-            revision=self.revision + 1,
-            collision_level=self.collision_level,
-            self_collision_padding=self.self_collision_padding,
-            environment_collision_padding=self.environment_collision_padding,
-            ignore_adjacent_self_collisions=self.ignore_adjacent_self_collisions,
-            geometry_source=self.geometry_source,
-            collision_backend=self.collision_backend,
-            attached_objects=remaining,
-            clearance_policy=self.clearance_policy,
-            metadata=dict(self.metadata),
-        )
-
-    def summary(self) -> dict[str, object]:
-        return {
-            'revision': int(self.revision),
-            'collision_backend': str(self.collision_backend),
-            'requested_collision_backend': str(self.metadata.get('requested_collision_backend', self.collision_backend)),
-            'obstacle_ids': list(self.obstacle_ids),
-            'attached_object_ids': [obj.object_id for obj in self.attached_objects],
-            'collision_level': getattr(self.collision_level, 'value', str(self.collision_level)),
-            'self_collision_padding': float(self.self_collision_padding),
-            'environment_collision_padding': float(self.environment_collision_padding),
-        }
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

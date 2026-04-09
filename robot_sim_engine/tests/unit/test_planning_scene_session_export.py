@@ -13,7 +13,6 @@ import numpy as np
 def test_session_export_includes_planning_scene(tmp_path):
     exporter = ExportService(tmp_path)
     obstacle = SceneObject('fixture', aabb_from_points(np.array([[0, 0, 0], [1, 1, 1]], dtype=float)))
-<<<<<<< HEAD
     scene = PlanningScene(
         obstacles=(obstacle,),
         revision=4,
@@ -30,11 +29,3 @@ def test_session_export_includes_planning_scene(tmp_path):
     assert payload['planning_scene']['geometry_source'] == 'bundle'
     assert 'summary' not in payload['planning_scene']
     assert payload['scene_runtime_summary'] == {}
-=======
-    scene = PlanningScene(obstacles=(obstacle,), revision=4, allowed_collision_matrix=AllowedCollisionMatrix.from_pairs([('link_1', 'fixture')]))
-    state = SessionState(planning_scene=scene)
-    path = exporter.save_session('scene_session.json', state)
-    payload = json.loads(path.read_text(encoding='utf-8'))
-    assert payload['planning_scene']['revision'] == 4
-    assert payload['planning_scene']['obstacle_ids'] == ['fixture']
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

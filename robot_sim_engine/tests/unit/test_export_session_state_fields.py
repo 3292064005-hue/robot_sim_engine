@@ -5,10 +5,7 @@ import json
 from robot_sim.application.services.export_service import ExportService
 from robot_sim.domain.enums import AppExecutionState
 from robot_sim.model.playback_state import PlaybackState
-<<<<<<< HEAD
 from robot_sim.model.render_telemetry import RenderBackendPerformanceTelemetry, RenderOperationSpan, RenderSamplingCounter, RenderTelemetryEvent
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.session_state import SessionState
 
 
@@ -22,7 +19,6 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
         scene_revision=5,
         warnings=('warn-a',),
         last_warning='warn-a',
-<<<<<<< HEAD
         render_telemetry=(
             RenderTelemetryEvent(
                 sequence=1,
@@ -95,8 +91,6 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
                 live_counter_units={'drawable_samples': 'samples'},
             ),
         ),
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     )
     path = service.save_session('session.json', state)
     payload = json.loads(path.read_text(encoding='utf-8'))
@@ -105,7 +99,6 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
     assert payload['active_task_id'] == 'task-123'
     assert payload['scene_revision'] == 5
     assert payload['warnings'] == ['warn-a']
-<<<<<<< HEAD
     assert payload['render_telemetry']['event_count'] == 1
     assert payload['render_telemetry']['events'][0]['capability'] == 'scene_3d'
     assert payload['render_telemetry']['operation_span_count'] == 1
@@ -118,6 +111,4 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
     assert payload['render_telemetry']['backend_performance'][0]['duration_percentiles_ms']['p50'] == 10.5
     assert payload['render_telemetry']['backend_performance'][0]['rolling_counter_throughput']['drawable_samples'] == 9.0
     assert payload['render_telemetry']['backend_performance'][0]['live_counters']['drawable_samples'] == 9.0
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert payload['manifest']['producer_version']

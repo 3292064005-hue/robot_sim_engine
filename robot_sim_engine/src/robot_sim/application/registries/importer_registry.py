@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 from robot_sim.application.importers.importer_descriptor import ImporterDescriptor
-<<<<<<< HEAD
 from robot_sim.application.importers.urdf_model_importer import URDFModelImporter
 from robot_sim.application.importers.urdf_skeleton_importer import URDFRobotImporter
 from robot_sim.application.importers.yaml_importer import YAMLRobotImporter
 
 __all__ = ['ImporterRegistry', 'URDFModelImporter', 'URDFRobotImporter', 'YAMLRobotImporter']
-=======
-from robot_sim.application.importers.urdf_skeleton_importer import URDFRobotImporter
-from robot_sim.application.importers.yaml_importer import YAMLRobotImporter
-
-__all__ = ['ImporterRegistry', 'URDFRobotImporter', 'YAMLRobotImporter']
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class ImporterRegistry:

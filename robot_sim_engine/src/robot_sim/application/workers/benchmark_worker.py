@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from robot_sim.application.use_cases.run_benchmark import RunBenchmarkUseCase
 from robot_sim.application.workers.base import BaseWorker, Slot
 from robot_sim.application.workers.invocation import build_structured_progress_callback, call_with_worker_support
-=======
-import inspect
-
-from robot_sim.application.use_cases.run_benchmark import RunBenchmarkUseCase
-from robot_sim.application.workers.base import BaseWorker, Slot
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.errors import CancelledTaskError
 
 
@@ -25,12 +18,9 @@ class BenchmarkWorker(BaseWorker):
             use_case: Benchmark use case instance.
             cases: Optional benchmark case collection.
 
-<<<<<<< HEAD
         Returns:
             None: Stores the benchmark inputs and explicit use-case dependency.
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         Raises:
             ValueError: If ``use_case`` is not provided.
         """
@@ -44,7 +34,6 @@ class BenchmarkWorker(BaseWorker):
 
     @Slot()
     def run(self) -> None:
-<<<<<<< HEAD
         """Execute the benchmark use case and emit terminal worker events.
 
         Returns:
@@ -57,15 +46,11 @@ class BenchmarkWorker(BaseWorker):
             - Cooperative cancellation is checked before and after the use-case call.
             - ``CancelledTaskError`` is normalized to a cancellation event.
         """
-=======
-        """Execute the benchmark use case and emit terminal worker events."""
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.emit_started()
         try:
             if self.is_cancel_requested():
                 self.emit_cancelled(stop_reason='cancelled')
                 return
-<<<<<<< HEAD
             report = call_with_worker_support(
                 self._uc.execute,
                 self._spec,
@@ -78,23 +63,6 @@ class BenchmarkWorker(BaseWorker):
                     stage='benchmark',
                 ),
             )
-=======
-            execute = self._uc.execute
-            accepted = set(inspect.signature(execute).parameters)
-            kwargs = {}
-            if 'cancel_flag' in accepted:
-                kwargs['cancel_flag'] = self.is_cancel_requested
-            if 'progress_cb' in accepted:
-                kwargs['progress_cb'] = lambda percent, message='', payload=None: self.emit_progress(
-                    stage='benchmark',
-                    percent=float(percent),
-                    message=str(message),
-                    payload=dict(payload or {}),
-                )
-            if 'correlation_id' in accepted:
-                kwargs['correlation_id'] = self.correlation_id
-            report = execute(self._spec, self._config, self._cases, **kwargs)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             if self.is_cancel_requested():
                 self.emit_cancelled(stop_reason='cancelled')
                 return

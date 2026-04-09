@@ -27,7 +27,6 @@
 - 对比不同 IK 参数组合
 - 形成答辩或展示用的量化报告
 - 作为回归治理工具，而不是只做展示
-<<<<<<< HEAD
 
 ## 预算门禁
 
@@ -44,5 +43,3 @@
 - 该矩阵明确约束 `runtime_surface × importer_variant × scene_variant × solver_suite × capture_mode` 的最小覆盖对，不允许 benchmark 只剩单一 happy path。
 
 - `required_pairs` 现在必须声明 `execution_targets`，并由 `verify_benchmark_matrix.py --execute` 实际执行对应 pytest 节点；矩阵不再只是 YAML 自洽校验。
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

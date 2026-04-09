@@ -67,10 +67,7 @@ class TaskState(str, Enum):
 
 class ModuleStatus(str, Enum):
     STABLE = 'stable'
-<<<<<<< HEAD
     BETA = 'beta'
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     EXPERIMENTAL = 'experimental'
     INTERNAL = 'internal'
     DEPRECATED = 'deprecated'

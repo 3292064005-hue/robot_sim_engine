@@ -6,19 +6,14 @@ import zlib
 
 import numpy as np
 
-<<<<<<< HEAD
 from robot_sim.domain.errors import CancelledTaskError, ExportRobotError
 from robot_sim.model.render_runtime import RenderCapabilityState
 from robot_sim.render.backend_protocol import CaptureBackend, CaptureResult
-=======
-from robot_sim.domain.errors import ExportRobotError
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.render.robot_visual import RobotVisual
 from robot_sim.render.target_visual import TargetVisual
 from robot_sim.render.trajectory_visual import TrajectoryVisual
 
 
-<<<<<<< HEAD
 class _LivePlotterCaptureBackend:
     """Capture backend backed by a live plotter framebuffer."""
 
@@ -116,14 +111,10 @@ class _UnsupportedCaptureBackend:
 class ScreenshotService:
     """Render and persist scene screenshots for Qt and headless export flows."""
 
-=======
-class ScreenshotService:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def __init__(self) -> None:
         self._robot_visual = RobotVisual()
         self._target_visual = TargetVisual()
         self._trajectory_visual = TrajectoryVisual()
-<<<<<<< HEAD
         self._live_backend = _LivePlotterCaptureBackend()
         self._snapshot_backend = _SnapshotCaptureBackend(self)
         self._unsupported_backend = _UnsupportedCaptureBackend()
@@ -335,31 +326,6 @@ class ScreenshotService:
     def _ensure_not_cancelled(cancel_flag) -> None:
         if callable(cancel_flag) and bool(cancel_flag()):
             raise CancelledTaskError('scene screenshot cancelled')
-=======
-
-    def capture(self, scene_widget, path: str | Path):
-        target = Path(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        plotter = getattr(scene_widget, 'plotter', None)
-        if plotter is not None and hasattr(plotter, 'screenshot'):
-            plotter.screenshot(str(target))
-            self._ensure_non_empty(target)
-            return target
-
-        snapshot_fn = getattr(scene_widget, 'scene_snapshot', None)
-        snapshot = snapshot_fn() if callable(snapshot_fn) else None
-        if snapshot:
-            self._capture_from_snapshot(snapshot, target)
-            self._ensure_non_empty(target)
-            return target
-
-        raise ExportRobotError(
-            'scene capture backend is unavailable',
-            error_code='unsupported_capture_backend',
-            remediation_hint='安装 pyvista/pyvistaqt，或在产生场景数据后再执行截图。',
-            metadata={'path': str(target)},
-        )
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _capture_from_snapshot(self, snapshot: dict[str, object], target: Path) -> None:
         robot_points = self._as_points(snapshot.get('robot_points'))
@@ -368,7 +334,6 @@ class ScreenshotService:
         target_pose = snapshot.get('target_pose')
         target_point = self._as_point(getattr(target_pose, 'p', None)) if target_pose is not None else None
         target_rotation = np.asarray(getattr(target_pose, 'R', np.eye(3)), dtype=float) if target_pose is not None else np.eye(3)
-<<<<<<< HEAD
         scene_obstacles = tuple(snapshot.get('scene_obstacles') or ())
         attached_objects = tuple(snapshot.get('attached_objects') or ())
         show_target_axes = bool(snapshot.get('target_axes_visible', True))
@@ -376,12 +341,6 @@ class ScreenshotService:
         overlay_text = str(snapshot.get('overlay_text') or '').strip()
 
         if robot_points is None and trajectory_points is None and playback_marker is None and target_point is None and not overlay_text and not scene_obstacles and not attached_objects:
-=======
-        show_target_axes = bool(snapshot.get('target_axes_visible', True))
-        title = str(snapshot.get('title') or 'Robot Sim Engine')
-
-        if robot_points is None and trajectory_points is None and playback_marker is None and target_point is None:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             raise ExportRobotError(
                 'scene snapshot did not contain any drawable data',
                 error_code='render_unavailable',
@@ -409,7 +368,6 @@ class ScreenshotService:
                     axis=0,
                 )
                 all_points.append(axes)
-<<<<<<< HEAD
         obstacle_corner_ranges: list[tuple[str, int, int]] = []
         for prefix, objects in (('scene_obstacle', scene_obstacles), ('attached_object', attached_objects)):
             for obj in objects:
@@ -428,11 +386,6 @@ class ScreenshotService:
             projected = np.empty((0, 2), dtype=int)
             cursor = 0
             self._draw_overlay_placeholder(canvas, overlay_text)
-=======
-        stacked = np.vstack(all_points)
-        projected = self._project_points(stacked, canvas.shape[1], canvas.shape[0])
-        cursor = 0
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         if robot_points is not None:
             rp = projected[cursor: cursor + len(robot_points)]
@@ -462,13 +415,10 @@ class ScreenshotService:
                 self._draw_segment(canvas, axis_pts[2], axis_pts[3], color=(70, 180, 70), thickness=2)
                 self._draw_segment(canvas, axis_pts[4], axis_pts[5], color=(70, 70, 230), thickness=2)
 
-<<<<<<< HEAD
         for prefix, start, end in obstacle_corner_ranges:
             corners = projected[start:end]
             self._draw_aabb_wireframe(canvas, corners, color=(120, 120, 120) if prefix == 'scene_obstacle' else (120, 40, 160))
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._draw_title_bar(canvas, title)
         self._write_png(target, canvas)
 
@@ -503,7 +453,6 @@ class ScreenshotService:
         return np.rint(projected).astype(int)
 
     @staticmethod
-<<<<<<< HEAD
     def _draw_overlay_placeholder(canvas: np.ndarray, overlay_text: str) -> None:
         """Draw a deterministic placeholder when only overlay text is available."""
         hash_value = zlib.crc32(overlay_text.encode('utf-8')) if overlay_text else 0
@@ -559,8 +508,6 @@ class ScreenshotService:
             ScreenshotService._draw_segment(canvas, points[i], points[j], color=color, thickness=1)
 
     @staticmethod
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def _draw_title_bar(canvas: np.ndarray, title: str) -> None:
         canvas[:32, :, :] = np.array([245, 247, 250], dtype=np.uint8)
         hash_value = zlib.crc32(title.encode('utf-8'))
@@ -634,29 +581,18 @@ class ScreenshotService:
         def chunk(tag: bytes, data: bytes) -> bytes:
             return struct.pack('!I', len(data)) + tag + data + struct.pack('!I', zlib.crc32(tag + data) & 0xFFFFFFFF)
 
-<<<<<<< HEAD
         with path.open('wb') as handle:
             handle.write(b'\x89PNG\r\n\x1a\n')
             handle.write(chunk(b'IHDR', ihdr))
             handle.write(chunk(b'IDAT', compressed))
             handle.write(chunk(b'IEND', b''))
-=======
-        png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', ihdr) + chunk(b'IDAT', compressed) + chunk(b'IEND', b'')
-        path.write_bytes(png)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     @staticmethod
     def _ensure_non_empty(path: Path) -> None:
         if not path.exists() or path.stat().st_size <= 0:
             raise ExportRobotError(
-<<<<<<< HEAD
                 'screenshot file is empty',
                 error_code='empty_screenshot_output',
                 remediation_hint='确认截图目标路径可写，且场景中存在可导出的渲染内容。',
                 metadata={'path': str(path)},
-=======
-                f'empty screenshot artifact was produced: {path}',
-                error_code='empty_screenshot_artifact',
-                remediation_hint='检查渲染后端是否可用，并确认场景中存在可绘制对象。',
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             )

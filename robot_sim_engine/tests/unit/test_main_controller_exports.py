@@ -4,13 +4,9 @@ from robot_sim.app.container import build_container
 from robot_sim.presentation.main_controller import MainController
 
 
-<<<<<<< HEAD
 def test_main_controller_exports_trajectory_metrics(project_root, tmp_path, monkeypatch):
     export_root = tmp_path / 'exports'
     monkeypatch.setenv('ROBOT_SIM_EXPORT_DIR', str(export_root))
-=======
-def test_main_controller_exports_trajectory_metrics(project_root):
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     controller = MainController(project_root, container=build_container(project_root))
     controller.load_robot('planar_2dof')
     controller.state_store.patch(
@@ -19,7 +15,4 @@ def test_main_controller_exports_trajectory_metrics(project_root):
     traj = controller.plan_trajectory(q_goal=controller.state.q_current, duration=1.0, dt=0.1)
     path = controller.export_trajectory_metrics('metrics_test.json', {'num_samples': int(traj.t.shape[0])})
     assert path.exists()
-<<<<<<< HEAD
     assert path.parent == export_root
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

@@ -7,7 +7,6 @@ def test_config_service_typed_settings_roundtrip(tmp_path):
     profiles = tmp_path / 'profiles'
     profiles.mkdir(parents=True)
     (profiles / 'default.yaml').write_text(
-<<<<<<< HEAD
         """window:
   title: Demo
 plots:
@@ -21,9 +20,6 @@ trajectory:
     - timing
     - limits
 """,
-=======
-        'window:\n  title: Demo\nplots:\n  max_points: 42\nik:\n  mode: dls\ntrajectory:\n  duration: 2.0\n  dt: 0.05\n',
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         encoding='utf-8',
     )
     service = ConfigService(tmp_path)
@@ -34,9 +30,6 @@ trajectory:
     assert app_settings.window.title == 'Demo'
     assert app_settings.plots.max_points == 42
     assert solver_settings.trajectory.duration == 2.0
-<<<<<<< HEAD
     assert solver_settings.trajectory.validation_layers == ('timing', 'limits')
     assert solver_settings.as_dict()['trajectory']['validation_layers'] == ['timing', 'limits']
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert solver_settings.as_dict()['ik']['mode'] == 'dls'

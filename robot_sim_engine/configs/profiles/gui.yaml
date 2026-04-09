@@ -9,10 +9,7 @@ features:
   experimental_backends_enabled: false
   plugin_discovery_enabled: false
   contract_doc_autogen_enabled: false
-<<<<<<< HEAD
   plugin_status_allowlist: [stable, deprecated]
 
 trajectory:
   validation_layers: [timing, path_metrics, goal_metrics, collision, limits]
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

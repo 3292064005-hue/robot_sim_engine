@@ -5,31 +5,22 @@ from collections.abc import Mapping
 from robot_sim.domain.capabilities import CapabilityDescriptor
 from robot_sim.domain.collision_backends import default_collision_backend_registry
 from robot_sim.domain.enums import ModuleStatus
-<<<<<<< HEAD
 from robot_sim.domain.module_governance import governance_for_module
 
 
 MODULE_STATUSES: dict[str, str] = {
     'core.collision.scene': ModuleStatus.STABLE.value,
-=======
-
-
-MODULE_STATUSES: dict[str, str] = {
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     'presentation.widgets.collision_panel': ModuleStatus.EXPERIMENTAL.value,
     'presentation.widgets.export_panel': ModuleStatus.EXPERIMENTAL.value,
     'presentation.widgets.scene_options_panel': ModuleStatus.EXPERIMENTAL.value,
     'render.picking': ModuleStatus.EXPERIMENTAL.value,
     'render.plot_sync': ModuleStatus.EXPERIMENTAL.value,
-<<<<<<< HEAD
     'presentation.experimental.widgets.collision_panel': ModuleStatus.EXPERIMENTAL.value,
     'presentation.experimental.widgets.export_panel': ModuleStatus.EXPERIMENTAL.value,
     'presentation.experimental.widgets.scene_options_panel': ModuleStatus.EXPERIMENTAL.value,
     'render.experimental.picking': ModuleStatus.EXPERIMENTAL.value,
     'render.experimental.plot_sync': ModuleStatus.EXPERIMENTAL.value,
     'application.importers.urdf_model_importer': ModuleStatus.STABLE.value,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     'application.importers.urdf_skeleton_importer': ModuleStatus.STABLE.value,
     'core.collision.capsule_backend': ModuleStatus.EXPERIMENTAL.value,
 }
@@ -42,7 +33,6 @@ SCENE_CAPABILITIES: tuple[CapabilityDescriptor, ...] = (
         owner_module='collision.scene',
         status=ModuleStatus.STABLE,
         metadata={
-<<<<<<< HEAD
             'ui_surface': 'stable_scene_toolbar',
             'integration_scope': 'validation_export_session_scene_toolbar',
             'edit_surface': 'stable_scene_editor',
@@ -50,9 +40,6 @@ SCENE_CAPABILITIES: tuple[CapabilityDescriptor, ...] = (
             'supported_scene_shapes': ['box', 'cylinder', 'sphere'],
             'declared_backends': list(_collision_registry.declared_backend_ids()),
             'active_backends': list(_collision_registry.active_backend_ids(experimental_enabled=False)),
-=======
-            'supported_backends': list(_collision_registry.supported_backend_ids(experimental_enabled=False)),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'fallback_backend': _collision_registry.default_backend,
             'experimental_backends': [
                 descriptor.backend_id for descriptor in _collision_registry.descriptors() if descriptor.is_experimental
@@ -85,16 +72,12 @@ def render_module_status_markdown(module_statuses: Mapping[str, object] | None =
         else:
             status = str(payload)
             enabled = True
-<<<<<<< HEAD
         governance = governance_for_module(str(module_id))
         normalized[str(module_id)] = {
             'status': status,
             'enabled': enabled,
             'governance': None if governance is None else governance.summary(),
         }
-=======
-        normalized[str(module_id)] = {'status': status, 'enabled': enabled}
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     grouped: dict[str, list[tuple[str, bool]]] = {}
     for module_id, detail in normalized.items():
@@ -104,7 +87,6 @@ def render_module_status_markdown(module_statuses: Mapping[str, object] | None =
     for status in sorted(grouped):
         lines.append(f'## {status}')
         for module_id, enabled in sorted(grouped[status], key=lambda item: item[0]):
-<<<<<<< HEAD
             detail = normalized[module_id]
             lines.append(f"- `{module_id}` ({'enabled' if enabled else 'disabled_by_profile'})")
             governance = detail.get('governance') if isinstance(detail, Mapping) else None
@@ -134,9 +116,6 @@ def render_module_status_markdown(module_statuses: Mapping[str, object] | None =
                 notes = tuple(str(item) for item in governance.get('notes', ()) or ())
                 if notes:
                     lines.append(f"  - notes: `{list(notes)}`")
-=======
-            lines.append(f"- `{module_id}` ({'enabled' if enabled else 'disabled_by_profile'})")
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         lines.append('')
     return '\n'.join(lines).rstrip() + '\n'
 

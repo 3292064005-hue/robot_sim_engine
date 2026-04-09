@@ -40,7 +40,6 @@ class BenchmarkService:
 
     def default_cases(self, spec: RobotSpec) -> list[BenchmarkCase]:
         """Build the default benchmark-suite case list for a robot spec."""
-<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         home_q = np.asarray(articulated.home_q, dtype=float)
@@ -49,14 +48,6 @@ class BenchmarkService:
         mid_fk = self._fk.solve(spec, q_mid)
         q_min = np.array([limit.lower for limit in spec.runtime_joint_limits], dtype=float)
         q_max = np.array([limit.upper for limit in spec.runtime_joint_limits], dtype=float)
-=======
-        home_q = np.asarray(spec.home_q, dtype=float)
-        q_mid = np.asarray(spec.q_mid(), dtype=float)
-        home_fk = self._fk.solve(spec, home_q)
-        mid_fk = self._fk.solve(spec, q_mid)
-        q_min = np.array([row.q_min for row in spec.dh_rows], dtype=float)
-        q_max = np.array([row.q_max for row in spec.dh_rows], dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         near_limit_q = np.clip(q_mid * 1.15, q_min, q_max)
         near_limit_fk = self._fk.solve(spec, near_limit_q)
         singular_probe_q = np.clip(home_q * 0.25 + q_mid * 0.75, q_min, q_max)
@@ -81,11 +72,7 @@ class BenchmarkService:
             BenchmarkCase('near_singular_pose', singular_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version}),
             BenchmarkCase(
                 'unreachable_far',
-<<<<<<< HEAD
                 Pose(p=np.asarray(articulated.base_T[:3, 3], dtype=float) + unreachable_offset, R=np.eye(3)),
-=======
-                Pose(p=np.asarray(spec.base_T[:3, 3], dtype=float) + unreachable_offset, R=np.eye(3)),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 metadata={'seed': 'home_q', 'pack_version': pack_version},
             ),
         ]
@@ -220,20 +207,7 @@ class BenchmarkService:
         seed_name = str(case.metadata.get('seed', 'home_q'))
         if seed_name == 'q_mid':
             return np.asarray(spec.q_mid(), dtype=float)
-<<<<<<< HEAD
         return np.asarray(spec.articulated_model.home_q, dtype=float)
 
     def _rough_radius(self, spec: RobotSpec) -> float:
         return float(spec.articulated_model.rough_reach_radius())
-=======
-        return np.asarray(spec.home_q, dtype=float)
-
-    def _rough_radius(self, spec: RobotSpec) -> float:
-        total = 0.0
-        for row in spec.dh_rows:
-            try:
-                total += abs(float(row.a)) + abs(float(row.d))
-            except (TypeError, ValueError):
-                continue
-        return total if total > 0.0 else 1.0
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

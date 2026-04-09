@@ -11,15 +11,11 @@ def test_should_exclude_cache_and_build_artifacts() -> None:
     assert not should_include_path(Path('.pytest_cache/v/cache/nodeids'))
     assert not should_include_path(Path('.mypy_cache/3.10/module.meta.json'))
     assert not should_include_path(Path('.ruff_cache/0.1/index'))
-<<<<<<< HEAD
     assert not should_include_path(Path('build/lib/module.py'))
     assert not should_include_path(Path('src/robot_sim_engine.egg-info/PKG-INFO'))
     assert not should_include_path(Path('.coverage'))
     assert not should_include_path(Path('FINAL_AUDIT.md'))
     assert not should_include_path(Path('scene_capture.png'))
-=======
-    assert not should_include_path(Path('.coverage'))
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert should_include_path(Path('src/robot_sim/core/fk.py'))
 
 
@@ -56,7 +52,6 @@ def test_exports_directory_is_excluded(tmp_path: Path) -> None:
     (tmp_path / 'src' / 'kept.py').write_text('print(1)\n', encoding='utf-8')
     rels = list(iter_release_files(tmp_path))
     assert rels == [Path('src/kept.py')]
-<<<<<<< HEAD
 
 
 def test_release_zip_excludes_audits_screenshots_and_egg_info(tmp_path: Path) -> None:
@@ -84,5 +79,3 @@ def test_release_zip_built_from_project_root_excludes_runtime_exports(project_ro
         names = zf.namelist()
 
     assert not any(name.startswith('robot_sim_engine/exports/') for name in names)
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

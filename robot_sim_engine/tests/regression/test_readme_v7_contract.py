@@ -8,18 +8,10 @@ def test_readme_lists_v7_quality_gates_and_experimental_modules(project_root: Pa
     assert "## V7 质量门禁" in readme
     assert "## Experimental 模块" in readme
     for marker in [
-<<<<<<< HEAD
         "presentation.experimental.widgets.collision_panel",
         "presentation.experimental.widgets.export_panel",
         "presentation.experimental.widgets.scene_options_panel",
         "render.experimental.picking",
         "render.experimental.plot_sync",
-=======
-        "presentation.widgets.collision_panel",
-        "presentation.widgets.export_panel",
-        "presentation.widgets.scene_options_panel",
-        "render.picking",
-        "render.plot_sync",
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     ]:
         assert marker in readme

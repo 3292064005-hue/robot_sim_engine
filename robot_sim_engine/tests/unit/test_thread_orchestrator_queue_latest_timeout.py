@@ -88,7 +88,6 @@ def test_timeout_marks_task_failed(monkeypatch):
 
     assert orch.last_terminal_snapshot is not None
     assert orch.last_terminal_snapshot.stop_reason == 'timeout'
-<<<<<<< HEAD
 
 
 
@@ -164,5 +163,3 @@ def test_cancel_and_replace_ignores_stale_terminal_and_progress_events(monkeypat
     assert orch.last_terminal_snapshot is not None
     assert orch.last_terminal_snapshot.task_id == second_handle.task_id
     assert orch.last_terminal_snapshot.task_state.value == 'succeeded'
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from robot_sim.domain.module_governance import governance_for_module
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.runtime_contracts import MODULE_STATUSES, render_module_status_markdown
 
 
@@ -12,14 +9,9 @@ class ModuleStatusService:
 
     MODULE_STATUSES: dict[str, str] = MODULE_STATUSES
 
-<<<<<<< HEAD
     def __init__(self, runtime_feature_policy=None, *, quality_gate_results: dict[str, bool] | None = None) -> None:
         self._runtime_feature_policy = runtime_feature_policy
         self._quality_gate_results = {str(key): bool(value) for key, value in dict(quality_gate_results or {}).items()}
-=======
-    def __init__(self, runtime_feature_policy=None) -> None:
-        self._runtime_feature_policy = runtime_feature_policy
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def snapshot(self) -> dict[str, str]:
         """Return the current module-status snapshot.
@@ -38,7 +30,6 @@ class ModuleStatusService:
         details: dict[str, dict[str, object]] = {}
         for module_id, status in self.snapshot().items():
             enabled = bool(status != 'experimental' or experimental_enabled)
-<<<<<<< HEAD
             governance = governance_for_module(str(module_id))
             detail = {'status': str(status), 'enabled': enabled}
             if governance is not None:
@@ -46,9 +37,6 @@ class ModuleStatusService:
                 detail['governance'] = evaluation
                 detail['promotion_ready'] = bool(evaluation.get('promotion_ready', False))
             details[str(module_id)] = detail
-=======
-            details[str(module_id)] = {'status': str(status), 'enabled': enabled}
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return details
 
     def render_markdown(self) -> str:

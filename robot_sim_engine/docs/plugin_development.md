@@ -42,7 +42,6 @@
   - 若签名不接受上下文且无必需参数，则以 `factory()` 调用。
 - 工厂内部抛出的 `TypeError` 不再被解释为“签名不兼容”；这类错误会按真实执行失败向上抛出。
 - 不建议依赖模糊签名或可变位置参数来兼容不同装配环境，推荐显式声明所需上下文字段或使用无参工厂。
-<<<<<<< HEAD
 
 ## Public SDK examples
 
@@ -78,5 +77,3 @@
 - manifest 现在可选声明 `required_host_capabilities` 与 `optional_host_capabilities`。
 - `required_host_capabilities` 中任一 capability 缺失时，`PluginLoader` 会在 audit 阶段直接拒载，并返回 `required_host_capability_missing`。
 - 宿主 capability 由 profile、experimental feature switch、允许的 plugin status 等 runtime feature 组合生成，当前会投影到 runtime diagnostics。
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

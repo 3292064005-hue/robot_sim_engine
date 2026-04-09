@@ -1,24 +1,12 @@
 from __future__ import annotations
-<<<<<<< HEAD
 
 from robot_sim.presentation.qt_runtime import QLabel, QTabWidget, QVBoxLayout, QWidget, require_qt_runtime
-=======
-try:
-    from PySide6.QtWidgets import QWidget
-except Exception:  # pragma: no cover
-    QWidget = object  # type: ignore
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class PlotsPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
-<<<<<<< HEAD
         require_qt_runtime('PlotsPanel')
         super().__init__(parent)
-=======
-        super().__init__(parent)
-        from PySide6.QtWidgets import QVBoxLayout, QLabel, QTabWidget
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         layout = QVBoxLayout(self)
         self.plot_widgets = {}
         try:

@@ -1,25 +1,18 @@
 from __future__ import annotations
 
 import numpy as np
-<<<<<<< HEAD
 from typing import TYPE_CHECKING
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 from robot_sim.application.workers.ik_worker import IKWorker
 from robot_sim.presentation.coordinators._helpers import require_dependency, require_view, run_presented, set_plot_curves
 
-<<<<<<< HEAD
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.presentation.view_contracts import IKTaskView
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class IKTaskCoordinator:
     """Own the IK task orchestration previously embedded in the window shell."""
 
-<<<<<<< HEAD
     def __init__(self, window: 'IKTaskView', *, solver=None, threader=None) -> None:
         self.window = window
         self.solver = require_dependency(solver, 'solver_facade')
@@ -46,12 +39,6 @@ class IKTaskCoordinator:
         request = self._pending_request
         self._pending_request = None
         return request
-=======
-    def __init__(self, window, *, solver=None, threader=None) -> None:
-        self.window = window
-        self.solver = require_dependency(solver if solver is not None else getattr(window, 'solver_facade', None), 'solver_facade')
-        self.threader = require_dependency(threader if threader is not None else getattr(window, 'threader', None), 'threader')
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def run(self) -> None:
         """Public UI entrypoint for starting an IK task."""
@@ -63,11 +50,7 @@ class IKTaskCoordinator:
             req = require_view(self.window, 'read_ik_request')
             ik_use_case = require_dependency(getattr(self.solver, 'ik_use_case', None), 'solver_facade.ik_use_case')
             worker = IKWorker(req, ik_use_case)
-<<<<<<< HEAD
             self.remember_request(req)
-=======
-            self.window._pending_ik_request = req
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             require_view(self.window, 'project_task_started', 'ik', 'IK 任务已启动')
             task = self.threader.start(
                 worker=worker,
@@ -86,14 +69,10 @@ class IKTaskCoordinator:
         require_view(self.window, 'project_busy_state', False, '')
 
         def action() -> None:
-<<<<<<< HEAD
             request = self.pop_pending_request()
             if request is None:
                 request = require_view(self.window, 'read_ik_request')
             self.solver.apply_ik_result(request, result)
-=======
-            self.solver.apply_ik_result(self.window._pending_ik_request, result)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             summary = self.window.metrics_service.summarize_ik(result)
             require_view(self.window, 'project_ik_result', result, summary)
             if result.logs:

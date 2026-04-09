@@ -10,7 +10,6 @@ from robot_sim.model.fk_result import FKResult
 from robot_sim.model.ik_result import IKResult
 from robot_sim.model.playback_state import PlaybackState
 from robot_sim.model.pose import Pose
-<<<<<<< HEAD
 from robot_sim.model.render_runtime import RenderRuntimeState
 from robot_sim.model.render_telemetry import (
     RenderBackendPerformanceTelemetry,
@@ -19,8 +18,6 @@ from robot_sim.model.render_telemetry import (
     RenderTelemetryEvent,
 )
 from robot_sim.model.robot_geometry import RobotGeometry
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.model.task_snapshot import TaskSnapshot
 from robot_sim.model.trajectory import JointTrajectory
@@ -41,11 +38,8 @@ class SessionState:
     trajectory: Optional[JointTrajectory] = None
     playback: PlaybackState = field(default_factory=PlaybackState)
     benchmark_report: Optional[BenchmarkReport] = None
-<<<<<<< HEAD
     robot_geometry: RobotGeometry | object | None = None
     collision_geometry: RobotGeometry | object | None = None
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     planning_scene: PlanningScene | object | None = None
     is_busy: bool = False
     busy_reason: str = ""
@@ -60,7 +54,6 @@ class SessionState:
     active_warning_codes: tuple[str, ...] = ()
     capability_matrix: dict[str, object] | None = None
     module_statuses: dict[str, str] = field(default_factory=dict)
-<<<<<<< HEAD
     render_runtime: RenderRuntimeState = field(default_factory=RenderRuntimeState)
     render_telemetry: tuple[RenderTelemetryEvent, ...] = ()
     render_telemetry_sequence: int = 0
@@ -69,8 +62,6 @@ class SessionState:
     render_sampling_counters: tuple[RenderSamplingCounter, ...] = ()
     render_sampling_sequence: int = 0
     render_backend_performance: tuple[RenderBackendPerformanceTelemetry, ...] = ()
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     last_error_payload: dict[str, object] = field(default_factory=dict)
     scene_summary: dict[str, object] = field(default_factory=dict)
     last_error_code: str = ''

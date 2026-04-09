@@ -14,13 +14,9 @@ class RuntimePaths:
         project_root: User-visible root retained for compatibility with existing startup code.
         resource_root: Root containing runtime configuration assets.
         config_root: Directory containing app/solver/plugins/profile configuration files.
-<<<<<<< HEAD
         robot_root: Writable directory containing persisted robot YAML files.
         bundled_robot_root: Read-only directory containing bundled robot YAML files shipped with
             the source tree or installed package resources.
-=======
-        robot_root: Directory containing persisted robot YAML files.
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         profiles_root: Directory containing profile overlays.
         logging_config_path: Logging configuration file consumed during bootstrap.
         plugin_manifest_path: Plugin manifest path.
@@ -34,10 +30,7 @@ class RuntimePaths:
     resource_root: Path
     config_root: Path
     robot_root: Path
-<<<<<<< HEAD
     bundled_robot_root: Path
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     profiles_root: Path
     logging_config_path: Path
     plugin_manifest_path: Path
@@ -46,7 +39,6 @@ class RuntimePaths:
     export_root: Path
     source_layout_available: bool
 
-<<<<<<< HEAD
     @property
     def layout_mode(self) -> str:
         """Return the normalized runtime layout mode for diagnostics."""
@@ -63,20 +55,11 @@ _PLATFORM_EXPORT_POLICY = 'platform_default'
 
 def _package_config_root() -> Path:
     """Return the discovered packaged configuration root.
-=======
-
-_PACKAGE_CONFIG_ROOT = resource_files('robot_sim.resources').joinpath('configs')
-
-
-def _package_config_root() -> Path:
-    """Return the installed-package configuration root.
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     Returns:
         Path: Filesystem path for packaged configuration resources.
 
     Raises:
-<<<<<<< HEAD
         FileNotFoundError: If neither installed package resources nor an already-built
             staged mirror are available.
 
@@ -102,19 +85,10 @@ def _package_config_root() -> Path:
 def _repository_root() -> Path:
     """Return the source-checkout root that owns the runtime-path resolver module."""
     return Path(__file__).resolve().parents[3]
-=======
-        FileNotFoundError: If the packaged configuration directory is unavailable.
-    """
-    path = Path(str(_PACKAGE_CONFIG_ROOT))
-    if not path.exists():
-        raise FileNotFoundError(f'packaged runtime configs not found: {path}')
-    return path
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 def _normalize_project_root(project_root: str | Path | None) -> Path:
     if project_root is None:
-<<<<<<< HEAD
         return _repository_root()
     return Path(project_root)
 
@@ -176,12 +150,6 @@ def _resolve_export_root(*, root: Path, source_layout_available: bool) -> Path:
     return export_root
 
 
-=======
-        return Path(__file__).resolve().parents[3]
-    return Path(project_root)
-
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def resolve_runtime_paths(project_root: str | Path | None = None) -> RuntimePaths:
     """Resolve runtime paths for both source-tree and installed-wheel execution.
 
@@ -196,7 +164,6 @@ def resolve_runtime_paths(project_root: str | Path | None = None) -> RuntimePath
         FileNotFoundError: If neither source-tree nor packaged runtime resources can be found.
     """
     root = _normalize_project_root(project_root)
-<<<<<<< HEAD
     requested_source_config_root = _source_config_root(root)
     repository_root = _repository_root()
     repository_source_config_root = _source_config_root(repository_root)
@@ -219,36 +186,13 @@ def resolve_runtime_paths(project_root: str | Path | None = None) -> RuntimePath
 
     export_root = _resolve_export_root(root=root, source_layout_available=source_layout_available)
     bundled_robot_root = config_root / 'robots'
-=======
-    source_config_root = root / 'configs'
-    source_layout_available = source_config_root.is_dir()
-    if source_layout_available:
-        resource_root = root
-        config_root = source_config_root
-    else:
-        config_root = _package_config_root()
-        resource_root = config_root.parent
-
-    export_override = str(os.environ.get('ROBOT_SIM_EXPORT_DIR', '') or '').strip()
-    if export_override:
-        export_root = Path(export_override)
-    elif source_layout_available:
-        export_root = root / 'exports'
-    else:
-        export_root = Path.cwd() / 'exports'
-    export_root.mkdir(parents=True, exist_ok=True)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     return RuntimePaths(
         project_root=root,
         resource_root=resource_root,
         config_root=config_root,
-<<<<<<< HEAD
         robot_root=robot_root,
         bundled_robot_root=bundled_robot_root,
-=======
-        robot_root=config_root / 'robots',
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         profiles_root=config_root / 'profiles',
         logging_config_path=config_root / 'logging.yaml',
         plugin_manifest_path=config_root / 'plugins.yaml',

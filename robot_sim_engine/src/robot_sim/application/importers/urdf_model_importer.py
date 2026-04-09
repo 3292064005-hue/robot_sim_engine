@@ -231,8 +231,8 @@ class URDFModelImporter:
             structured_joints=tuple(structured_joints),
             structured_links=tuple(selected_links),
             kinematic_source='urdf_model',
-            geometry_bundle_ref='',
-            collision_bundle_ref='',
+            geometry_bundle_ref='bundle.geometry' if geometry is not None else '',
+            collision_bundle_ref='bundle.collision_geometry' if collision_geometry is not None else '',
             source_model_summary=source_model_summary,
             canonical_model=canonical_model,
         )

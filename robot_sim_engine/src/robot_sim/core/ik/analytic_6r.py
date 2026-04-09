@@ -140,13 +140,9 @@ class Analytic6RSphericalWristIKSolver:
     def _validate_structure(self, spec: RobotSpec) -> str | None:
         if spec.dof != 6:
             return 'analytic 6R solver requires a 6-DOF robot'
-<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         rows = articulated.serial_projection_rows
-=======
-        rows = spec.dh_rows
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if any(row.joint_type is not JointType.REVOLUTE for row in rows):
             return 'analytic 6R solver requires all joints to be revolute'
         checks = [
@@ -170,15 +166,10 @@ class Analytic6RSphericalWristIKSolver:
         return None
 
     def _enumerate_candidates(self, spec: RobotSpec, target: Pose) -> list[_AnalyticCandidate]:
-<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         rows = articulated.serial_projection_rows
         T_target = np.linalg.inv(np.asarray(articulated.base_T, dtype=float)) @ self._pose_to_matrix(target) @ np.linalg.inv(np.asarray(articulated.tool_T, dtype=float))
-=======
-        rows = spec.dh_rows
-        T_target = np.linalg.inv(np.asarray(spec.base_T, dtype=float)) @ self._pose_to_matrix(target) @ np.linalg.inv(np.asarray(spec.tool_T, dtype=float))
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         R06 = T_target[:3, :3]
         p06 = T_target[:3, 3]
 
@@ -196,13 +187,8 @@ class Analytic6RSphericalWristIKSolver:
         radial = float(math.hypot(float(x), float(y)))
         z_rel = float(z - d1)
         candidates: list[_AnalyticCandidate] = []
-<<<<<<< HEAD
         mins = np.asarray(articulated.joint_minima, dtype=float)
         maxs = np.asarray(articulated.joint_maxima, dtype=float)
-=======
-        mins = np.array([row.q_min for row in rows], dtype=float)
-        maxs = np.array([row.q_max for row in rows], dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         for shoulder_branch, (q1_eff, radial_signed) in enumerate(((q1_base, radial), (self._wrap(q1_base + math.pi), -radial))):
             cos_elbow = (radial_signed * radial_signed + z_rel * z_rel - a2 * a2 - elbow_link * elbow_link) / (2.0 * a2 * elbow_link)
@@ -219,11 +205,7 @@ class Analytic6RSphericalWristIKSolver:
                     self._wrap(q2_eff - rows[1].theta_offset),
                     self._wrap(q3_eff - rows[2].theta_offset),
                 ], dtype=float)
-<<<<<<< HEAD
                 T03: np.ndarray = np.eye(4, dtype=float)
-=======
-                T03 = np.eye(4, dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 for idx in range(3):
                     T03 = T03 @ dh_transform(rows[idx], float(q123[idx]))
                 R36 = T03[:3, :3].T @ R06
@@ -265,11 +247,7 @@ class Analytic6RSphericalWristIKSolver:
         return [(0, (q46, q5, 0.0))]
 
     def _pose_to_matrix(self, pose: Pose) -> np.ndarray:
-<<<<<<< HEAD
         T: np.ndarray = np.eye(4, dtype=float)
-=======
-        T = np.eye(4, dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         T[:3, :3] = np.asarray(pose.R, dtype=float)
         T[:3, 3] = np.asarray(pose.p, dtype=float)
         return T

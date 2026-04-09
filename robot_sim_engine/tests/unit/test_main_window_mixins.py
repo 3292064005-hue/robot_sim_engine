@@ -9,7 +9,6 @@ from robot_sim.domain.enums import TaskState
 from robot_sim.model.playback_state import PlaybackState
 from robot_sim.model.session_state import SessionState
 from robot_sim.model.task_snapshot import TaskSnapshot
-<<<<<<< HEAD
 from robot_sim.presentation.coordinators import (
     BenchmarkTaskCoordinator,
     ExportTaskCoordinator,
@@ -20,17 +19,12 @@ from robot_sim.presentation.coordinators import (
     StatusCoordinator,
     TrajectoryTaskCoordinator,
 )
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.presentation.main_window_actions import MainWindowActionMixin
 from robot_sim.presentation.main_window_tasks import MainWindowTaskMixin
 from robot_sim.presentation.main_window_ui import MainWindowUIMixin
 from robot_sim.presentation.state_store import StateStore
-<<<<<<< HEAD
 from robot_sim.presentation.render_telemetry_state import build_render_telemetry_panel_state
 from robot_sim.presentation.status_panel_state import build_render_runtime_panel_state
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class DummySignal:
@@ -73,21 +67,15 @@ class DummyStatusPanel:
         self.summary = DummySummary()
         self.metrics = {}
         self.messages = []
-<<<<<<< HEAD
         self.render_runtime = None
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def set_metrics(self, **kwargs):
         self.metrics.update(kwargs)
 
-<<<<<<< HEAD
     def set_render_runtime(self, panel_state):
         self.render_runtime = panel_state
         self.metrics.update(panel_state.metric_payload)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def append(self, message):
         self.messages.append(message)
 
@@ -95,20 +83,14 @@ class DummyStatusPanel:
 class DummyDiagnosticsPanel:
     def __init__(self):
         self.values = None
-<<<<<<< HEAD
         self.render_telemetry = None
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def set_values(self, **kwargs):
         self.values = kwargs
 
-<<<<<<< HEAD
     def set_render_telemetry(self, panel_state):
         self.render_telemetry = panel_state
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class DummyBenchmarkPanel:
     def __init__(self):
@@ -227,11 +209,8 @@ class DummySceneToolbar:
         self.fit_requested = DummySignal()
         self.clear_path_requested = DummySignal()
         self.screenshot_requested = DummySignal()
-<<<<<<< HEAD
         self.add_obstacle_requested = DummySignal()
         self.clear_obstacles_requested = DummySignal()
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.target_axes_toggled = DummySignal()
         self.trajectory_toggled = DummySignal()
 
@@ -242,10 +221,7 @@ class DummySceneWidget:
         self.trajectory_cleared = False
         self.target_axes_visible = None
         self.trajectory_visible = None
-<<<<<<< HEAD
         self.screenshot_service = SimpleNamespace(runtime_state=lambda _widget: SimpleNamespace(capability='screenshot', status='degraded', backend='snapshot_renderer', reason='snapshot_renderer_fallback', error_code='', message='fallback', metadata={}))
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def fit_camera(self):
         self.fit_called = True
@@ -256,7 +232,6 @@ class DummySceneWidget:
     def set_target_axes_visible(self, visible):
         self.target_axes_visible = visible
 
-<<<<<<< HEAD
     def scene_snapshot(self):
         return {
             'title': 'Robot Sim Engine',
@@ -268,23 +243,18 @@ class DummySceneWidget:
             'trajectory_visible': True,
         }
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def set_trajectory_visible(self, visible):
         self.trajectory_visible = visible
 
     def capture_screenshot(self, _path):
         return 'capture.png'
 
-<<<<<<< HEAD
     def scene_runtime_state(self):
         return SimpleNamespace(capability='scene_3d', status='degraded', backend='pyvistaqt', reason='backend_initialization_failed', error_code='render_initialization_failed', message='init failed', metadata={})
 
     def screenshot_runtime_state(self):
         return SimpleNamespace(capability='screenshot', status='degraded', backend='snapshot_renderer', reason='snapshot_renderer_fallback', error_code='', message='fallback', metadata={})
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class DummySceneController:
     def __init__(self):
@@ -293,10 +263,7 @@ class DummySceneController:
         self.playback_updates = []
         self.trajectory_points = None
         self.cleared = False
-<<<<<<< HEAD
         self.scene_updates = []
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def reset_path(self):
         self.reset_called = True
@@ -313,12 +280,9 @@ class DummySceneController:
     def clear_transient_visuals(self):
         self.cleared = True
 
-<<<<<<< HEAD
     def update_planning_scene_projection(self, scene):
         self.scene_updates.append(scene)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class DummyPlotsManager:
     def __init__(self):
@@ -333,12 +297,9 @@ class DummyPlotsManager:
     def set_cursor(self, panel, value):
         self.actions.append(('cursor', panel, value))
 
-<<<<<<< HEAD
     def runtime_state(self):
         return SimpleNamespace(capability='plots', status='available', backend='pyqtgraph', reason='plot_widgets_ready', error_code='', message='plots ready', metadata={})
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class DummyThreader:
     def __init__(self):
@@ -532,7 +493,6 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
         self.diagnostics_panel = DummyDiagnosticsPanel()
         self.benchmark_panel = DummyBenchmarkPanel()
         self.plots_manager = DummyPlotsManager()
-<<<<<<< HEAD
         self.robot_coordinator = RobotCoordinator(self, robot=self.robot_facade)
         self.ik_task_coordinator = IKTaskCoordinator(self, solver=self.solver_facade, threader=self.threader)
         self.trajectory_task_coordinator = TrajectoryTaskCoordinator(self, trajectory=self.trajectory_facade, threader=self.threader)
@@ -541,22 +501,10 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
         self.export_task_coordinator = ExportTaskCoordinator(self, runtime=self.runtime_facade, export=self.export_facade, threader=self.threader, metrics_service=self.metrics_service)
         self.scene_coordinator = SceneCoordinator(self, runtime=self.runtime_facade, threader=self.threader)
         self.status_coordinator = StatusCoordinator(self, runtime=self.runtime_facade)
-=======
-        self.ik_task_coordinator = SimpleNamespace(run=lambda: setattr(self, 'ik_run_called', True))
-        self.trajectory_task_coordinator = SimpleNamespace(run=lambda: setattr(self, 'traj_run_called', True))
-        self.benchmark_task_coordinator = SimpleNamespace(run=lambda: setattr(self, 'bench_run_called', True))
-        self.playback_task_coordinator = SimpleNamespace(play=lambda: setattr(self, 'play_called', True), pause=lambda: setattr(self, 'pause_called', True), stop=lambda: setattr(self, 'stop_called', True))
-        self.export_task_coordinator = SimpleNamespace(export_trajectory=lambda: setattr(self, 'export_traj_called', True), export_session=lambda: setattr(self, 'export_session_called', True), export_package=lambda: setattr(self, 'export_package_called', True), export_benchmark=lambda: setattr(self, 'export_bench_called', True))
-        self.scene_coordinator = SimpleNamespace(fit=lambda: setattr(self, 'fit_called', True), clear_path=lambda: setattr(self, 'clear_called', True), capture=lambda: setattr(self, 'capture_called', True))
-        self.status_coordinator = SimpleNamespace(apply_task_snapshot=lambda snap: self.controller.state_store.patch_task(snap))
-        self._pending_ik_request = None
-        self._pending_traj_request = None
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def setCentralWidget(self, widget):
         self.central = widget
 
-<<<<<<< HEAD
     def _pop_dummy_ik_request(self):
         request = self._ik_pending_request
         self._ik_pending_request = None
@@ -580,11 +528,6 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
     def build_scene_capture_request(self, path):
         return {'path': path, 'snapshot': self.scene_widget.scene_snapshot()}
 
-=======
-    def _playback_worker_factory(self, traj):
-        return SimpleNamespace(traj=traj)
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 def test_ui_mixin_helper_methods_and_signal_wiring(monkeypatch):
     from robot_sim.presentation import main_window_ui as ui_mod
@@ -612,11 +555,8 @@ def test_ui_mixin_helper_methods_and_signal_wiring(monkeypatch):
             self.fit_requested = DummySignal()
             self.clear_path_requested = DummySignal()
             self.screenshot_requested = DummySignal()
-<<<<<<< HEAD
             self.add_obstacle_requested = DummySignal()
             self.clear_obstacles_requested = DummySignal()
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             self.target_axes_toggled = DummySignal()
             self.trajectory_toggled = DummySignal()
             self.run_btn = ValueWidget()
@@ -656,15 +596,12 @@ def test_ui_mixin_helper_methods_and_signal_wiring(monkeypatch):
         def set_frame(self, *_a, **_k):
             return None
 
-<<<<<<< HEAD
         def set_metrics(self, **_kwargs):
             return None
 
         def append(self, *_args, **_kwargs):
             return None
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     monkeypatch.setattr(ui_mod, 'RobotConfigPanel', DummyPanel)
     monkeypatch.setattr(ui_mod, 'TargetPosePanel', DummyPanel)
     monkeypatch.setattr(ui_mod, 'SolverPanel', DummyPanel)
@@ -706,7 +643,6 @@ def test_ui_mixin_status_helpers_cover_busy_and_metrics():
 
 def test_action_mixin_robot_and_export_paths():
     window = DummyWindow()
-<<<<<<< HEAD
     window.on_load_robot()
     window.on_save_robot()
     window.on_fill_current_pose()
@@ -724,33 +660,12 @@ def test_action_mixin_robot_and_export_paths():
     assert window.scene_widget.fit_called is True
     assert window.scene_controller.cleared is True
     assert window.scene_controller.scene_updates
-=======
-    window._load_robot_impl('planar_2dof')
-    window._save_robot_impl()
-    window.on_fill_current_pose()
-    window.on_run_fk()
-    window._fit_scene_impl()
-    window._clear_scene_path_impl()
-    window._capture_scene_impl()
-    window._export_trajectory_impl()
-    window._export_session_impl()
-    window._export_package_impl()
-    window._export_benchmark_impl()
-    assert window.scene_controller.reset_called is True
-    assert window.scene_widget.fit_called is True
-    assert window.scene_controller.cleared is True
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.status_panel.messages
 
 
 def test_task_mixin_covers_ik_trajectory_benchmark_and_worker_terminal_paths():
     window = DummyWindow()
     window.on_run_ik()
-<<<<<<< HEAD
-=======
-    assert window.ik_run_called is True
-    window._run_ik_impl()
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.threader.started['task_kind'] == 'ik'
     window.on_cancel_ik()
     assert window.threader.cancelled is True
@@ -759,19 +674,10 @@ def test_task_mixin_covers_ik_trajectory_benchmark_and_worker_terminal_paths():
     result = SimpleNamespace(success=True, q_sol=np.array([0.3, 0.4]), message='ok', logs=[log])
     window.on_ik_finished(result)
     window.on_plan()
-<<<<<<< HEAD
-=======
-    assert window.traj_run_called is True
-    window._run_traj_impl()
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.threader.started['task_kind'] == 'trajectory'
     traj = SimpleNamespace(t=np.array([0.0, 1.0]), q=np.array([[0.0, 0.0], [1.0, 1.0]]), qd=np.zeros((2,2)), qdd=np.zeros((2,2)), ee_positions=np.array([[0,0,0],[1,0,0]]))
     window.on_trajectory_finished(traj)
     window.on_run_benchmark()
-<<<<<<< HEAD
-=======
-    assert window.bench_run_called is True
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     report = SimpleNamespace(num_cases=2, success_rate=1.0, cases=[{'name': 'a', 'success': True, 'stop_reason': 'ok', 'final_pos_err': 0.0, 'final_ori_err': 0.0}])
     window.on_benchmark_finished(report)
     snap = TaskSnapshot(task_id='x', task_kind='ik', task_state=TaskState.RUNNING)
@@ -786,23 +692,10 @@ def test_action_and_playback_mixins_cover_playback_paths():
     traj = SimpleNamespace(t=np.array([0.0, 1.0]), q=np.array([[0.0, 0.0], [1.0, 1.0]]), qd=np.zeros((2,2)), qdd=np.zeros((2,2)))
     window.controller.state_store.patch(trajectory=traj, playback=PlaybackState(is_playing=False, frame_idx=0, total_frames=2, speed_multiplier=1.0, loop_enabled=False))
     window.on_play()
-<<<<<<< HEAD
     assert window.playback_threader.started['task_kind'] == 'playback'
     window.on_pause()
     assert window.playback_threader.cancelled is True
     window.on_stop_playback()
-=======
-    assert window.play_called is True
-    window._play_impl()
-    assert window.playback_threader.started['task_kind'] == 'playback'
-    window.on_pause()
-    assert window.pause_called is True
-    window._pause_impl()
-    assert window.playback_threader.cancelled is True
-    window.on_stop_playback()
-    assert window.stop_called is True
-    window._stop_playback_impl()
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert window.playback_threader.stopped is True
     window.on_step()
     window.on_seek_frame(1)
@@ -815,7 +708,6 @@ def test_action_and_playback_mixins_cover_playback_paths():
     window.on_playback_failed('oops')
     assert window.playback_panel.frame is not None
     assert window.controller.playback_options
-<<<<<<< HEAD
 
 
 
@@ -989,5 +881,3 @@ def test_render_telemetry_panel_projection_formats_recent_event_log():
     assert '[COUNTER]' in panel_state.timeline_log_text
     assert '截图能力' in panel_state.recent_log_text
     assert 'worker_failure_projection' in panel_state.recent_log_text
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

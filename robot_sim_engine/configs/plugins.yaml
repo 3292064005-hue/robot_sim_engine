@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 plugins:
   - id: research_demo_dls
     kind: solver
@@ -49,6 +48,3 @@ plugins:
       source_format: yaml
       fidelity: native
       verification_scope: registry_smoke
-=======
-plugins: []
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

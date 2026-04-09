@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from robot_sim.presentation.models.dh_table_model import DHTableModel
-<<<<<<< HEAD
 from robot_sim.presentation.qt_runtime import (
     QComboBox,
     QDoubleSpinBox,
@@ -31,42 +30,11 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, robot_entries, importer_entries=None, parent=None):
         require_qt_runtime('RobotConfigPanel')
         super().__init__(parent)
-=======
-
-try:
-    from PySide6.QtWidgets import (
-        QWidget,
-        QLabel,
-        QDoubleSpinBox,
-    )
-except Exception:  # pragma: no cover
-    QWidget = object  # type: ignore
-
-
-class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
-    def __init__(self, robot_entries, parent=None):
-        super().__init__(parent)
-        from PySide6.QtWidgets import (
-            QVBoxLayout,
-            QLabel,
-            QPushButton,
-            QComboBox,
-            QHBoxLayout,
-            QTableView,
-            QGroupBox,
-            QFormLayout,
-        )
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         layout = QVBoxLayout(self)
         layout.addWidget(QLabel("机器人配置"))
 
         selector_row = QHBoxLayout()
         self.robot_combo = QComboBox()
-<<<<<<< HEAD
-=======
-        self._set_robot_entries(robot_entries)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.load_button = QPushButton("加载")
         self.save_button = QPushButton("保存 YAML")
         selector_row.addWidget(self.robot_combo)
@@ -74,7 +42,6 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         selector_row.addWidget(self.save_button)
         layout.addLayout(selector_row)
 
-<<<<<<< HEAD
         import_row = QHBoxLayout()
         self.importer_combo = QComboBox()
         self.import_button = QPushButton("导入机器人")
@@ -82,8 +49,6 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         import_row.addWidget(self.import_button)
         layout.addLayout(import_row)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.info_label = QLabel("尚未加载机器人")
         layout.addWidget(self.info_label)
 
@@ -99,7 +64,6 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         self.home_row_labels: list[QLabel] = []
         layout.addWidget(home_group)
 
-<<<<<<< HEAD
         self._importer_entries = []
         self.set_robot_entries(robot_entries)
         self.set_importer_entries(importer_entries or [])
@@ -110,17 +74,11 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         self.robot_combo.clear()
         selected_index = -1
         for index, entry in enumerate(robot_entries):
-=======
-    def _set_robot_entries(self, robot_entries) -> None:
-        self.robot_combo.clear()
-        for entry in robot_entries:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             if hasattr(entry, "label") and hasattr(entry, "name"):
                 label = str(entry.label)
                 if getattr(entry, "dof", None) is not None:
                     label = f"{label} ({int(entry.dof)} DOF)"
                 self.robot_combo.addItem(label, str(entry.name))
-<<<<<<< HEAD
                 if str(entry.name) == str(previous_name):
                     selected_index = index
             else:
@@ -153,17 +111,11 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
     def importer_entries(self):
         """Return the active importer descriptors backing the import selector."""
         return tuple(self._importer_entries)
-=======
-            else:
-                value = str(entry)
-                self.robot_combo.addItem(value, value)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def selected_robot_name(self) -> str:
         data = self.robot_combo.currentData()
         return str(data if data is not None else self.robot_combo.currentText())
 
-<<<<<<< HEAD
     def selected_importer_id(self) -> str | None:
         """Return the importer override selected in the UI.
 
@@ -174,11 +126,6 @@ class RobotConfigPanel(QWidget):  # pragma: no cover - GUI shell
         return None if value in {'', self.AUTO_IMPORTER_ID} else value
 
     def _ensure_home_boxes(self, dof: int) -> None:
-=======
-    def _ensure_home_boxes(self, dof: int) -> None:
-        from PySide6.QtWidgets import QLabel, QDoubleSpinBox
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         while len(self.home_boxes) < dof:
             idx = len(self.home_boxes)
             box = QDoubleSpinBox()

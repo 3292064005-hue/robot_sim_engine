@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-<<<<<<< HEAD
 import pytest
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 from robot_sim.application.services.playback_service import PlaybackService
 from robot_sim.application.use_cases.capture_scene import CaptureSceneUseCase
@@ -25,16 +22,12 @@ class _Registry:
 class _ScreenshotService:
     def __init__(self):
         self.calls = []
-<<<<<<< HEAD
         self.snapshot_calls = []
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def capture(self, widget, path):
         self.calls.append((widget, path))
         return path
 
-<<<<<<< HEAD
     def capture_from_snapshot(self, snapshot, path, **kwargs):
         self.snapshot_calls.append((snapshot, path, kwargs))
         return path
@@ -45,8 +38,6 @@ class _ScreenshotService:
     def snapshot_sample_count(self, snapshot):
         return len(snapshot)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 def _trajectory() -> JointTrajectory:
     t = np.array([0.0, 0.5, 1.0], dtype=float)
@@ -92,7 +83,6 @@ def test_step_playback_use_case_covers_current_next_previous():
     stopped_state, no_frame = uc.next(traj, service.build_state(traj, frame_idx=2, loop_enabled=False))
     assert no_frame is None
     assert stopped_state.is_playing is False
-<<<<<<< HEAD
 
 
 
@@ -115,5 +105,3 @@ def test_capture_scene_use_case_rejects_invalid_dependencies():
     uc = CaptureSceneUseCase(service)
     with pytest.raises(ValueError):
         uc.execute_snapshot(123, 'scene.png')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

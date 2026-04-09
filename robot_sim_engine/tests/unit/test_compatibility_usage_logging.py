@@ -7,9 +7,10 @@ from robot_sim.app import bootstrap as bootstrap_mod
 from robot_sim.infra.compatibility_usage import compatibility_usage_counts, reset_compatibility_usage_counts
 from robot_sim.application.services.config_service import ConfigService
 from robot_sim.application.workers.base import BaseWorker
+from robot_sim.presentation.legacy_aliases import MainWindowLegacyAliasMixin
 
 
-def test_clean_bootstrap_uses_attribute_access_without_compatibility_usage(monkeypatch) -> None:
+def test_bootstrap_records_iterable_unpacking_compatibility_usage(monkeypatch) -> None:
     reset_compatibility_usage_counts()
 
     class DummyPaths:
@@ -30,41 +31,51 @@ def test_clean_bootstrap_uses_attribute_access_without_compatibility_usage(monke
         importer_registry=object(),
         project_root=runtime_paths.project_root,
         runtime_paths=runtime_paths,
-        runtime_context={},
-        runtime_feature_policy=SimpleNamespace(as_dict=lambda: {}),
         config_service=SimpleNamespace(describe_resolution=lambda: {'profile': 'default'}),
     ))
 
     context = bootstrap_mod.bootstrap(startup_mode='headless')
+    root, container = context
 
-    assert context.project_root == Path('/tmp/fake-project')
-    assert context.container.project_root == Path('/tmp/fake-project')
-    assert compatibility_usage_counts() == {}
+    assert root == Path('/tmp/fake-project')
+    assert container.project_root == Path('/tmp/fake-project')
+    counts = compatibility_usage_counts()
+    assert counts['bootstrap iterable unpacking'] == 1
 
 
-def test_local_override_path_loads_without_legacy_usage(tmp_path: Path) -> None:
+def test_legacy_config_override_records_usage(tmp_path: Path) -> None:
     reset_compatibility_usage_counts()
-    local_dir = tmp_path / 'local'
-    local_dir.mkdir(parents=True)
-    (local_dir / 'app.local.yaml').write_text("""window:
-  title: Local Title
-""", encoding='utf-8')
-    service = ConfigService(tmp_path, profile='default', local_override_dir=local_dir)
+    (tmp_path / 'app.yaml').write_text("window:\n  title: Legacy Title\n", encoding='utf-8')
+    service = ConfigService(tmp_path, profile='default', allow_legacy_local_override=True)
 
     config = service.load_app_config()
 
-    assert config['window']['title'] == 'Local Title'
-    assert compatibility_usage_counts() == {}
+    assert config['window']['title'] == 'Legacy Title'
+    counts = compatibility_usage_counts()
+    assert counts['legacy config overrides'] == 1
 
 
-def test_base_worker_exposes_only_structured_terminal_signals() -> None:
+def test_main_window_legacy_alias_records_usage() -> None:
+    reset_compatibility_usage_counts()
+
+    class DummyWindow(MainWindowLegacyAliasMixin):
+        def on_load_robot(self):
+            return 'loaded'
+
+    window = DummyWindow()
+    assert window._load_robot_impl() == 'loaded'
+    counts = compatibility_usage_counts()
+    assert counts['main window private alias shim'] == 1
+
+
+def test_worker_legacy_signal_adapter_records_usage() -> None:
+    reset_compatibility_usage_counts()
     worker = BaseWorker()
 
-    assert hasattr(worker, 'progress_event')
-    assert hasattr(worker, 'finished_event')
-    assert hasattr(worker, 'failed_event')
-    assert hasattr(worker, 'cancelled_event')
-    assert not hasattr(worker, 'progress')
-    assert not hasattr(worker, 'finished')
-    assert not hasattr(worker, 'failed')
-    assert not hasattr(worker, 'cancelled')
+    worker.emit_progress(stage='frame', percent=10.0, payload={'value': 1})
+    worker.emit_finished({'ok': True})
+    worker.emit_failed('boom')
+    worker.emit_cancelled()
+
+    counts = compatibility_usage_counts()
+    assert counts['worker legacy lifecycle signals'] == 4

@@ -5,13 +5,8 @@
 - `model`: FK / IK / trajectory / benchmark / export manifest 等不可变结果对象。
 - `core`: 纯数学内核，不依赖 Qt。
 - `application`: DTO、registry、use case、service、worker，是业务编排中间层。
-<<<<<<< HEAD
 - `presentation`: 主窗体、线程编排器、分层 controller、workflow service、widget。
 - `render`: PyVista / pyqtgraph 适配层、截图、plot sync。render capability 降级原因统一投影到 `SessionState.render_runtime`，再通过 typed status-panel subscription flow 下发到 UI；render 状态变化会进一步生成 `SessionState.render_telemetry`，同时 UI runtime probe / screenshot capture 会写入 `render_operation_spans` / `render_sampling_counters` 并汇总为 `render_backend_performance`。这条链现在由 `presentation.render_telemetry_service.RenderTelemetryService` 统一持有，再通过兼容 `StateStore` / `RenderStateSegmentStore` 接口投影给 diagnostics / export / 质量门禁消费。
-=======
-- `presentation`: 主窗体、线程编排器、分层 controller、widget。
-- `render`: PyVista / pyqtgraph 适配层、截图、plot sync。
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 - `infra`: 配置、日志、文件、schema。
 
 ## Registry / Plugin entry
@@ -22,7 +17,6 @@ V4 开始，以下能力通过 registry 接入：
 - `planner_registry`: trajectory planner
 - `importer_registry`: robot importer
 
-<<<<<<< HEAD
 插件 manifest 现在受三层约束：
 
 - `kind / source / api_version / sdk_contract_version / status` 必须通过 `PluginLoader` 静态校验，并把 `min_host_version` 一并投影到 audit / diagnostics
@@ -30,9 +24,6 @@ V4 开始，以下能力通过 registry 接入：
 - `plugin_discovery_enabled=false` 时，仅允许 `builtin / shipped_plugin` 来源继续装配
 
 后续新增 6R 解析 IK、冗余约束求解、URDF importer、collision adapter 时，不应再直接修改主控制器或主窗口。插件 loader 现在除版本校验外，还会对 `required_host_capabilities / optional_host_capabilities` 做宿主能力协商；研究型 shipped plugin 通过 `features.plugin_status_allowlist` 与 host-capability 协商共同决定是否可加载。
-=======
-后续新增 6R 解析 IK、冗余约束求解、URDF importer、collision adapter 时，不应再直接修改主控制器或主窗口。
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 ## Presentation split
 
@@ -49,11 +40,7 @@ V4 开始，以下能力通过 registry 接入：
 ## Threading rules
 
 1. `core` 不能导入 Qt。
-<<<<<<< HEAD
 2. IK / trajectory / benchmark / playback / export / screenshot 都优先走 worker。
-=======
-2. IK / trajectory / benchmark / playback / export 都优先走 worker。
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 3. GUI 线程只做参数收集、状态更新和渲染调用。
 4. 取消与停止必须通过统一线程编排器传播。
 
@@ -63,21 +50,17 @@ V4 开始，以下能力通过 registry 接入：
 2. Playback 优先使用预缓存 FK 结果，而不是每帧在 UI 线程重算。
 3. Euler angles 只允许出现在 UI 输入层，IK 核心使用旋转矩阵 / rotation vector / quaternion。
 4. 导出对象必须版本化并能被离线分析脚本复用。
-<<<<<<< HEAD
 5. `scene_3d / plots / screenshot` 的 runtime capability 必须进入统一状态存储，而不是只停留在 placeholder 或日志层。
 6. `RobotSpec` 运行时执行语义现统一收口到 `ArticulatedRobotModel` + `RuntimeRobotModel.execution_summary`：FK/Jacobian/数值 IK 消费 articulated transforms，legacy DH execution rows 仅作为兼容 adapter / analytic solver surface。
 7. importer/registry/runtime asset/export 现在必须优先处理 `ImportedRobotPackage`：source model、runtime model、articulated model 与 visual/collision geometry 被拆成平级对象，而不是继续把所有运行时语义塞回一份 YAML metadata。
 8. scene object 摘要现同时暴露 `declared_geometry` 与 `resolved_geometry`；稳定产品面禁止只暴露解析后 AABB 而丢失声明几何语义。
 9. `planning_scene.summary()` 现在必须同时携带 `geometry_authority` 与 `scene_graph_authority`；scene edit 不允许丢失运行时机器人 frame graph；`render_runtime.screenshot` 则必须同时暴露 `level / provenance`，禁止把 live capture 与 snapshot fallback 伪装成同一种能力。
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 ## Runtime path model
 
 - `bootstrap()` / `build_container()` 使用 `RuntimePaths` 作为统一运行时路径真源。
 - `project_root` 只表示源码工程根或兼容根语义；资源读取、插件清单读取、机器人配置读取、导出目录写入必须走显式路径字段。
-<<<<<<< HEAD
 - GUI / controller / facade 不允许再直接硬编码 `project_root / "exports"` 或 `project_root / "configs"`；安装态默认导出目录必须与当前工作目录解耦。
 
 ## Coordinator dependency rule
@@ -100,12 +83,3 @@ V4 开始，以下能力通过 registry 接入：
 - benchmark / governance / runtime baseline / performance smoke 的执行结果现在可以通过 `scripts/collect_quality_evidence.py` 汇总为 `artifacts/quality_evidence.json`。
 - `docs/quality_gates.md` 保留静态契约说明，`docs/quality_evidence.md` 明确区分“checked-in contract docs”与“最近一次执行证据 artifact”。
 - release / CI 审计不应再仅凭文档说明判断闭环，必须结合 evidence artifact 与相应 gate 输出。
-=======
-- GUI / controller / facade 不允许再直接硬编码 `project_root / "exports"` 或 `project_root / "configs"`。
-
-## Coordinator dependency rule
-
-- coordinator 主路径通过显式注入获取 facade、thread orchestrator 与 view contract。
-- 兼容 fallback 仅作为迁移期旁路保留，不再作为主路径依赖解析手段。
-- `project_playback_stopped()` 与 `project_trajectory_result()` 已移除通过 action 回流触发 seek 的主路径。
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

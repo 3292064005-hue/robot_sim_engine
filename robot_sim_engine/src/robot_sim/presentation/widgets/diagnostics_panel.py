@@ -1,25 +1,13 @@
 from __future__ import annotations
-<<<<<<< HEAD
 
 from robot_sim.presentation.qt_runtime import QFormLayout, QGroupBox, QLabel, QTextEdit, QVBoxLayout, QWidget, require_qt_runtime
 from robot_sim.presentation.render_telemetry_state import RenderTelemetryPanelState
-=======
-try:
-    from PySide6.QtWidgets import QWidget
-except Exception:  # pragma: no cover
-    QWidget = object  # type: ignore
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
-<<<<<<< HEAD
         require_qt_runtime('DiagnosticsPanel')
         super().__init__(parent)
-=======
-        super().__init__(parent)
-        from PySide6.QtWidgets import QVBoxLayout, QFormLayout, QLabel, QGroupBox
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         layout = QVBoxLayout(self)
         group = QGroupBox('诊断 / 质量')
         form = QFormLayout(group)
@@ -33,7 +21,6 @@ class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
             ('bench_success', 'Benchmark 成功率'),
             ('bench_p95', 'Benchmark P95 ms'),
             ('bench_restarts', '平均重试次数'),
-<<<<<<< HEAD
             ('render_event_count', 'Render 事件数'),
             ('render_latest_event', '最新 Render 事件'),
             ('render_latest_severity', '最新事件级别'),
@@ -51,15 +38,10 @@ class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
             label = QLabel('-')
             if hasattr(label, 'setWordWrap'):
                 label.setWordWrap(True)
-=======
-        ]:
-            label = QLabel('-')
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             self.labels[key] = label
             form.addRow(title, label)
         layout.addWidget(group)
 
-<<<<<<< HEAD
         telemetry_group = QGroupBox('Render Telemetry')
         telemetry_layout = QVBoxLayout(telemetry_group)
         self.telemetry_log = QTextEdit()
@@ -95,14 +77,11 @@ class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
         timeline_layout.addWidget(self.timeline_log)
         layout.addWidget(timeline_group)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def set_values(self, **kwargs) -> None:
         for key, value in kwargs.items():
             label = self.labels.get(key)
             if label is not None:
                 label.setText(str(value))
-<<<<<<< HEAD
 
     def set_render_telemetry(self, panel_state: RenderTelemetryPanelState) -> None:
         self.set_values(**panel_state.metric_payload)
@@ -111,5 +90,3 @@ class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
         self.counter_log.setPlainText(panel_state.counters_text)
         self.backend_perf_log.setPlainText(panel_state.backend_perf_text)
         self.timeline_log.setPlainText(panel_state.timeline_text)
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

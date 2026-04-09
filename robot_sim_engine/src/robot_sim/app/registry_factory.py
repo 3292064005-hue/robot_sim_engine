@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from robot_sim.application.importers.urdf_model_importer import URDFModelImporter
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.application.importers.urdf_skeleton_importer import URDFRobotImporter
 from robot_sim.application.importers.yaml_importer import YAMLRobotImporter
 from robot_sim.application.registries.importer_registry import ImporterRegistry
@@ -139,7 +136,6 @@ def build_importer_registry(robot_registry, *, plugin_loader=None) -> ImporterRe
     importer_registry.register(
         'yaml',
         YAMLRobotImporter(robot_registry),
-<<<<<<< HEAD
         metadata={
             'source_format': 'yaml',
             'extensions': ('yaml', 'yml'),
@@ -164,9 +160,6 @@ def build_importer_registry(robot_registry, *, plugin_loader=None) -> ImporterRe
             'source': 'builtin',
         },
         aliases=('urdf',),
-=======
-        metadata={'source_format': 'yaml', 'fidelity': 'native', 'family': 'config', 'source': 'builtin'},
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         source='builtin',
     )
     importer_registry.register(
@@ -174,21 +167,14 @@ def build_importer_registry(robot_registry, *, plugin_loader=None) -> ImporterRe
         URDFRobotImporter(),
         metadata={
             'source_format': 'urdf',
-<<<<<<< HEAD
             'extensions': ('urdf',),
             'display_name': 'URDF skeleton importer',
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'fidelity': 'approximate',
             'family': 'approximate_tree_import',
             'notes': 'Approximates a serial DH-like chain from URDF joint origins. Not a full URDF tree importer.',
             'source': 'builtin',
         },
-<<<<<<< HEAD
         aliases=('urdf_approx',),
-=======
-        aliases=('urdf',),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         source='builtin',
     )
     if plugin_loader is not None:

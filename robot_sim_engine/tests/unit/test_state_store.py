@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 from robot_sim.model.session_state import SessionState
-<<<<<<< HEAD
 from robot_sim.presentation import state_store as state_store_module
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.presentation.state_store import StateStore
 
 
@@ -21,7 +18,6 @@ def test_state_store_supports_subscription_and_snapshot():
     assert seen[1] == (True, 'ik')
     assert snap.is_busy is True
     assert snap.busy_reason == 'ik'
-<<<<<<< HEAD
 
 
 
@@ -170,5 +166,3 @@ def test_state_store_selector_identity_snapshot_strategy_skips_deepcopy(monkeypa
 
     assert len(seen) == 2
     assert seen[-1][-1].capability == 'scene_3d'
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

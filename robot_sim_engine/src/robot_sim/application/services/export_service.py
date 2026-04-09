@@ -156,7 +156,6 @@ class ExportService:
             'robot_name': state.robot_spec.name if state.robot_spec is not None else None,
             'robot_label': state.robot_spec.label if state.robot_spec is not None else None,
             'robot_model_source': state.robot_spec.model_source if state.robot_spec is not None else None,
-<<<<<<< HEAD
             'runtime_model_summary': None if state.robot_spec is None else state.robot_spec.runtime_model.summary(),
             'articulated_model_summary': None if state.robot_spec is None else state.robot_spec.articulated_model.summary(),
             'geometry_model_summary': (
@@ -165,8 +164,6 @@ class ExportService:
                 else state.robot_spec.imported_package.geometry_model.summary()
             ),
             'imported_package_summary': None if state.robot_spec is None or state.robot_spec.imported_package is None else state.robot_spec.imported_package.summary(),
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'q_current': None if state.q_current is None else np.asarray(state.q_current, dtype=float).tolist(),
             'target_pose': None if state.target_pose is None else {'p': np.asarray(state.target_pose.p, dtype=float).tolist(), 'R': np.asarray(state.target_pose.R, dtype=float).tolist(), 'frame': getattr(state.target_pose.frame, 'value', str(state.target_pose.frame))},
             'ik': None if state.ik_result is None else {
@@ -202,7 +199,6 @@ class ExportService:
                 'speed_multiplier': float(state.playback.speed_multiplier),
                 'loop_enabled': bool(state.playback.loop_enabled),
             },
-<<<<<<< HEAD
             'planning_scene': None if state.planning_scene is None else (
                 state.planning_scene.summary()
                 if hasattr(state.planning_scene, 'summary')
@@ -215,16 +211,6 @@ class ExportService:
                 }
             ),
             'scene_runtime_summary': dict(getattr(state, 'scene_summary', {}) or {}),
-=======
-            'planning_scene': None if state.planning_scene is None else {
-                'revision': int(getattr(state.planning_scene, 'revision', 0)),
-                'collision_level': getattr(getattr(state.planning_scene, 'collision_level', None), 'value', str(getattr(state.planning_scene, 'collision_level', 'aabb'))),
-                'collision_backend': str(getattr(state.planning_scene, 'collision_backend', 'aabb')),
-                'obstacle_ids': list(getattr(state.planning_scene, 'obstacle_ids', ())),
-                'attached_object_ids': [obj.object_id for obj in getattr(state.planning_scene, 'attached_objects', ())],
-                'summary': dict(getattr(state, 'scene_summary', {}) or {}),
-            },
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'app_state': getattr(state.app_state, 'value', str(state.app_state)),
             'active_task_id': state.active_task_id,
             'active_task_kind': state.active_task_kind,
@@ -248,7 +234,6 @@ class ExportService:
                 'stop_reason': task_snapshot.stop_reason,
             },
             'scene_revision': int(state.scene_revision),
-<<<<<<< HEAD
             'render_runtime': state.render_runtime.as_dict() if hasattr(state.render_runtime, 'as_dict') else dict(state.render_runtime),
             'render_telemetry': {
                 'event_count': len(tuple(getattr(state, 'render_telemetry', ()) or ())),
@@ -263,7 +248,5 @@ class ExportService:
                 'backend_count': len(tuple(getattr(state, 'render_backend_performance', ()) or ())),
                 'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in tuple(getattr(state, 'render_backend_performance', ()) or ())],
             },
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         }
         return self.save_json(name, payload)

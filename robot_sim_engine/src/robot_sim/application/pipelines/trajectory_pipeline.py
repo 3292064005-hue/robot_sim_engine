@@ -70,10 +70,7 @@ class TrajectoryExecutionPipeline:
             spec=req.spec,
             q_goal=req.q_goal,
             planning_scene=req.planning_scene,
-<<<<<<< HEAD
             validation_layers=req.validation_layers,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )
         validate_elapsed_ms = (time.perf_counter() - validate_started) * 1000.0
 
@@ -91,11 +88,8 @@ class TrajectoryExecutionPipeline:
         diagnostics.metadata['timing_summary'] = timing_summary
         cache_status = getattr(retimed, 'cache_status', 'none')
         scene_revision = int(collision_summary.get('scene_revision', 0))
-<<<<<<< HEAD
         diagnostics.metadata.setdefault('cache_reuse_policy', 'retime_preserves_geometry')
         diagnostics.metadata.setdefault('cache_reuse_applied', bool(raw is retimed or getattr(retimed, 'cache_status', 'none') != 'none'))
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return TrajectoryPipelineResult(
             planner_id=planner_id,
             raw=raw,

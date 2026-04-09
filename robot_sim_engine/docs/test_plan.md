@@ -25,11 +25,7 @@
 
 ## GUI smoke
 
-<<<<<<< HEAD
 在安装 `PySide6` 与 `pytest-qt` 后启用。pytest 进程默认注入 `QT_QPA_PLATFORM=offscreen` 以避免无效桌面会话导致的 Qt abort；若需改走真实桌面显示，显式设置 `ROBOT_SIM_PYTEST_FORCE_GUI_DISPLAY=1`：
-=======
-在安装 `PySide6` 与 `pytest-qt` 后启用：
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 - MainWindow 实例化
 - load robot -> run IK -> plan trajectory

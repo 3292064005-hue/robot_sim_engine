@@ -1,14 +1,7 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from uuid import uuid4
 
-=======
-from datetime import datetime
-from uuid import uuid4
-
-from robot_sim.application.workers.task_events import WorkerCancelledEvent, WorkerFailedEvent, WorkerFinishedEvent
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.enums import TaskState
 from robot_sim.model.task_snapshot import TaskSnapshot
 from robot_sim.presentation.threading import (
@@ -19,18 +12,10 @@ from robot_sim.presentation.threading import (
     TimeoutSupervisor,
     WorkerBindingService,
 )
-<<<<<<< HEAD
 from robot_sim.presentation.thread_orchestrator_state import ThreadOrchestratorStateMixin
 from robot_sim.presentation.threading.qt_compat import QObject, QThread, Signal
 
 
-=======
-from robot_sim.presentation.threading.qt_compat import QObject, QThread, Signal
-
-
-
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 class _ModuleAwareRuntimeBridge(QtThreadRuntimeBridge):
     """Runtime bridge that preserves module-level QThread monkeypatch compatibility."""
 
@@ -39,11 +24,7 @@ class _ModuleAwareRuntimeBridge(QtThreadRuntimeBridge):
         return QThread()
 
 
-<<<<<<< HEAD
 class ThreadOrchestrator(ThreadOrchestratorStateMixin, QObject):  # pragma: no cover - GUI shell
-=======
-class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     """Coordinate a single background worker and project structured task state."""
 
     task_state_changed = Signal(object)
@@ -114,12 +95,9 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         on_finished=None,
         on_failed=None,
         on_cancelled=None,
-<<<<<<< HEAD
         on_finished_event=None,
         on_failed_event=None,
         on_cancelled_event=None,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         on_started=None,
         *,
         task_kind: str = 'generic',
@@ -132,18 +110,12 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         Args:
             worker: Worker instance exposing the legacy/structured signal set.
             on_progress: Optional external progress callback.
-<<<<<<< HEAD
             on_finished: Optional external finished callback receiving the legacy payload surface.
             on_failed: Optional external failure callback receiving the legacy message surface.
             on_cancelled: Optional external cancellation callback receiving the legacy no-arg surface.
             on_finished_event: Optional external structured success callback.
             on_failed_event: Optional external structured failure callback.
             on_cancelled_event: Optional external structured cancellation callback.
-=======
-            on_finished: Optional external finished callback.
-            on_failed: Optional external failure callback.
-            on_cancelled: Optional external cancellation callback.
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             on_started: Optional external started callback.
             task_kind: Logical task family.
             task_id: Optional explicit task identifier.
@@ -162,12 +134,9 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
             'on_finished': on_finished,
             'on_failed': on_failed,
             'on_cancelled': on_cancelled,
-<<<<<<< HEAD
             'on_finished_event': on_finished_event,
             'on_failed_event': on_failed_event,
             'on_cancelled_event': on_cancelled_event,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             'on_started': on_started,
             'task_kind': task_kind,
             'task_id': task_id,
@@ -201,12 +170,9 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         on_finished=None,
         on_failed=None,
         on_cancelled=None,
-<<<<<<< HEAD
         on_finished_event=None,
         on_failed_event=None,
         on_cancelled_event=None,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         on_started=None,
         task_kind: str = 'generic',
         task_id: str | None = None,
@@ -223,7 +189,6 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         self.active_correlation_id = self._lifecycle.active_task.correlation_id if self._lifecycle.active_task else ''
         self._timeout_supervisor.cancel()
         self._set_state(TaskState.QUEUED, message='queued')
-<<<<<<< HEAD
 
         def _is_current(bound_task_id: str) -> bool:
             active = self._lifecycle.active_task
@@ -278,26 +243,6 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
                 expected_thread=bound_thread,
                 expected_task_id=bound_task_id,
             ),
-=======
-        self._binding_service.bind(
-            worker=worker,
-            thread=thread,
-            on_started=on_started,
-            on_progress=on_progress,
-            on_finished=on_finished,
-            on_failed=on_failed,
-            on_cancelled=on_cancelled,
-            progress_event_callback=self._on_progress_event,
-            state_changed_callback=self._on_state_changed,
-            failed_event_callback=self._handle_failed_event,
-            finished_event_callback=self._handle_finished_event,
-            cancelled_event_callback=self._handle_cancelled_event,
-            failed_callback=self._handle_failed,
-            finished_callback=self._handle_finished,
-            cancelled_callback=self._handle_cancelled,
-            queued_callback=lambda: self._set_state(TaskState.RUNNING, message='running'),
-            cleanup_callback=self._cleanup,
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )
         self._runtime_bridge.start(thread)
         self._timeout_supervisor.arm(timeout_ms, task_id=task.task_id, callback=self._on_timeout)
@@ -324,7 +269,6 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         """
         if self._thread is None:
             return
-<<<<<<< HEAD
         active_thread = self._thread
         active_task_id = self._lifecycle.current_task_id()
         if self._worker is not None:
@@ -333,124 +277,3 @@ class ThreadOrchestrator(QObject):  # pragma: no cover - GUI shell
         self._runtime_bridge.stop(active_thread, wait=wait)
         self._cleanup(expected_thread=active_thread, expected_task_id=active_task_id)
 
-=======
-        if self._worker is not None:
-            self._set_state(TaskState.CANCELLING, message='cancelling', stop_reason=stop_reason)
-            self._worker.request_cancel()
-        self._runtime_bridge.stop(self._thread, wait=wait)
-        self._cleanup()
-
-    def _on_progress_event(self, event) -> None:
-        self._set_state(
-            TaskState.RUNNING,
-            stage=getattr(event, 'stage', ''),
-            percent=float(getattr(event, 'percent', 0.0) or 0.0),
-            message=str(getattr(event, 'message', '')),
-        )
-
-    @staticmethod
-    def _coerce_legacy_progress(event):
-        payload = getattr(event, 'payload', None)
-        if isinstance(payload, dict) and 'value' in payload and len(payload) == 1:
-            return payload['value']
-        if payload is not None:
-            return payload
-        return event
-
-    def _on_state_changed(self, state: str) -> None:
-        if state not in {item.value for item in TaskState}:
-            return
-        self._set_state(TaskState(state), message=state)
-
-    def _handle_failed(self, message: str) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.FAILED, message=str(message), stop_reason='exception', finished=True)
-
-    def _handle_failed_event(self, event: WorkerFailedEvent) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(
-            TaskState.FAILED,
-            message=str(getattr(event, 'message', '')),
-            stop_reason=str(getattr(event, 'stop_reason', '') or 'exception'),
-            finished=True,
-        )
-
-    def _handle_finished(self, _payload) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.SUCCEEDED, message='completed', stop_reason='completed', finished=True)
-
-    def _handle_finished_event(self, event: WorkerFinishedEvent) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(
-            TaskState.SUCCEEDED,
-            message=str(getattr(event, 'stop_reason', '') or 'completed'),
-            stop_reason=str(getattr(event, 'stop_reason', '') or 'completed'),
-            finished=True,
-            finished_at=getattr(event, 'finished_at', None),
-        )
-
-    def _handle_cancelled(self) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.CANCELLED, message='cancelled', stop_reason='cancelled', finished=True)
-
-    def _handle_cancelled_event(self, event: WorkerCancelledEvent) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(
-            TaskState.CANCELLED,
-            message=str(getattr(event, 'message', '') or 'cancelled'),
-            stop_reason=str(getattr(event, 'stop_reason', '') or 'cancelled'),
-            finished=True,
-            finished_at=getattr(event, 'finished_at', None),
-        )
-
-    def _on_timeout(self, task_id: str) -> None:
-        if self._lifecycle.active_task is None or self._lifecycle.active_task.task_id != str(task_id):
-            return
-        self._lifecycle.mark_terminal_locked(task_id)
-        self._set_state(TaskState.CANCELLED, message='timeout', stop_reason='timeout', finished=True)
-        if self._worker is not None:
-            self._worker.request_cancel()
-            if hasattr(self._worker, 'emit_cancelled'):
-                self._worker.emit_cancelled(stop_reason='timeout', message='timeout')
-        if self._thread is not None:
-            self._runtime_bridge.stop(self._thread, wait=False)
-
-    def _set_state(
-        self,
-        state: TaskState,
-        *,
-        stage: str = '',
-        percent: float = 0.0,
-        message: str = '',
-        stop_reason: str = '',
-        finished: bool = False,
-        finished_at: datetime | None = None,
-    ) -> None:
-        self._lifecycle.set_state(
-            state,
-            stage=stage,
-            percent=percent,
-            message=message,
-            stop_reason=stop_reason,
-            finished=finished,
-            finished_at=finished_at,
-        )
-
-    def _cleanup(self) -> None:
-        """Reset transient runtime state and start any queued replacement task."""
-        self._timeout_supervisor.cancel()
-        self._thread = None
-        self._worker = None
-        self.active_correlation_id = ''
-        self._lifecycle.reset_runtime()
-        queued = self._queued_start
-        self._queued_start = None
-        if queued:
-            self.start(**queued)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

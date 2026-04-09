@@ -10,17 +10,13 @@ from robot_sim.application.validators.timing_validator import evaluate_timing_su
 from robot_sim.core.kinematics.fk_solver import ForwardKinematicsSolver
 from robot_sim.model.diagnostics_report import TrajectoryDiagnosticsReport
 from robot_sim.model.pose import Pose
-<<<<<<< HEAD
 from robot_sim.model.solver_config import SUPPORTED_TRAJECTORY_VALIDATION_LAYERS
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.model.trajectory import JointTrajectory
 
 
 class ValidateTrajectoryUseCase:
     """Validate trajectory timing, limits, collisions, and goal metrics."""
 
-<<<<<<< HEAD
     _SUPPORTED_VALIDATION_LAYERS = SUPPORTED_TRAJECTORY_VALIDATION_LAYERS
 
     def __init__(self) -> None:
@@ -79,11 +75,6 @@ class ValidateTrajectoryUseCase:
             raise ValueError(f'{name} must be {ndim}D')
         return array
 
-=======
-    def __init__(self) -> None:
-        self._fk = ForwardKinematicsSolver()
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def execute(
         self,
         trajectory: JointTrajectory,
@@ -93,10 +84,7 @@ class ValidateTrajectoryUseCase:
         spec=None,
         q_goal=None,
         planning_scene=None,
-<<<<<<< HEAD
         validation_layers: tuple[str, ...] | list[str] | None = None,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     ) -> TrajectoryDiagnosticsReport:
         """Validate a trajectory and return diagnostics.
 
@@ -112,7 +100,6 @@ class ValidateTrajectoryUseCase:
             Structured trajectory diagnostics report.
         """
         reasons: list[str] = []
-<<<<<<< HEAD
         active_layers = self._resolve_validation_layers(validation_layers)
         q = self._coerce_numeric_array(trajectory.q, name='trajectory.q', ndim=2)
         qd = self._coerce_numeric_array(trajectory.qd, name='trajectory.qd', ndim=2)
@@ -124,36 +111,22 @@ class ValidateTrajectoryUseCase:
             raise ValueError('trajectory.qdd shape must match trajectory.q')
         if t.shape[0] != q.shape[0]:
             raise ValueError('trajectory.t length must match trajectory.q samples')
-=======
-        q = np.asarray(trajectory.q, dtype=float)
-        qd = np.asarray(trajectory.qd, dtype=float)
-        qdd = np.asarray(trajectory.qdd, dtype=float)
-        t = np.asarray(trajectory.t, dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if np.isnan(q).any() or np.isnan(qd).any() or np.isnan(qdd).any():
             reasons.append('nan_values')
         if np.isinf(q).any() or np.isinf(qd).any() or np.isinf(qdd).any():
             reasons.append('inf_values')
 
-<<<<<<< HEAD
         timing_summary: dict[str, object] = {}
         if 'timing' in active_layers:
             extra_reasons, timing_summary = evaluate_timing_summary(t)
             reasons.extend(extra_reasons)
-=======
-        extra_reasons, timing_summary = evaluate_timing_summary(t)
-        reasons.extend(extra_reasons)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         ee_positions = None if trajectory.ee_positions is None else np.asarray(trajectory.ee_positions, dtype=float)
         ee_rotations = None if trajectory.ee_rotations is None else np.asarray(trajectory.ee_rotations, dtype=float)
         cache_errors = tuple(getattr(trajectory, 'cache_integrity_errors', lambda: ())())
         cache_used = bool(trajectory.has_complete_fk_cache)
         cache_miss_reason = ''
-<<<<<<< HEAD
         fk_recompute_samples = 0
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         if spec is not None and q.shape[0] >= 1 and not trajectory.has_complete_fk_cache:
             if cache_errors:
                 cache_miss_reason = 'shape_mismatch'
@@ -170,7 +143,6 @@ class ValidateTrajectoryUseCase:
             ee_positions = np.asarray(ee_positions, dtype=float)
             ee_rotations = np.asarray(ee_rotations, dtype=float)
             cache_used = False
-<<<<<<< HEAD
             fk_recompute_samples = int(q.shape[0])
 
         metrics = {
@@ -183,10 +155,6 @@ class ValidateTrajectoryUseCase:
         }
         if 'path_metrics' in active_layers:
             metrics = evaluate_path_metrics(q=q, qd=qd, qdd=qdd, t=t, ee_positions=ee_positions, ee_rotations=ee_rotations)
-=======
-
-        metrics = evaluate_path_metrics(q=q, qd=qd, qdd=qdd, t=t, ee_positions=ee_positions, ee_rotations=ee_rotations)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         resolved_target_pose = target_pose
         goal_pose_source = 'explicit_target' if resolved_target_pose is not None else ''
@@ -211,7 +179,6 @@ class ValidateTrajectoryUseCase:
                 goal_fk = self._fk.solve(spec, q_goal_array)
                 resolved_target_pose = goal_fk.ee_pose
                 goal_pose_source = 'fk_goal_projection'
-<<<<<<< HEAD
         goal_metrics = {'goal_position_error': 0.0, 'goal_orientation_error': 0.0}
         if 'goal_metrics' in active_layers:
             goal_metrics = evaluate_goal_metrics(ee_positions=ee_positions, ee_rotations=ee_rotations, target_pose=resolved_target_pose)
@@ -225,15 +192,6 @@ class ValidateTrajectoryUseCase:
         if 'limits' in active_layers:
             extra_reasons, limit_summary = evaluate_limit_summary(q, spec)
             reasons.extend(extra_reasons)
-=======
-        goal_metrics = evaluate_goal_metrics(ee_positions=ee_positions, ee_rotations=ee_rotations, target_pose=resolved_target_pose)
-
-        extra_reasons, collision_summary = evaluate_collision_summary(trajectory, planning_scene=planning_scene, collision_obstacles=collision_obstacles)
-        reasons.extend(extra_reasons)
-
-        extra_reasons, limit_summary = evaluate_limit_summary(q, spec)
-        reasons.extend(extra_reasons)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
         feasible = not reasons
         metadata = {
@@ -246,13 +204,10 @@ class ValidateTrajectoryUseCase:
             'goal_pose_source': goal_pose_source,
             'cache_used': bool(cache_used),
             'cache_miss_reason': cache_miss_reason,
-<<<<<<< HEAD
             'fk_recompute_samples': int(fk_recompute_samples),
             'cache_integrity_errors': list(cache_errors),
             'validation_layers': list(active_layers),
             'cache_reuse_policy': 'retime_preserves_geometry',
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         }
         if planning_scene is not None:
             metadata['scene_revision'] = int(getattr(planning_scene, 'revision', 0))

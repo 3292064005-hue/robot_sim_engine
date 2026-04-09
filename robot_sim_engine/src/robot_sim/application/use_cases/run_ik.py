@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 import time
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 import numpy as np
 
 from robot_sim.application.adapters import (
@@ -62,15 +59,10 @@ class RunIKUseCase:
             IKResult: Final solver result with adapter and correlation metadata attached.
 
         Raises:
-<<<<<<< HEAD
             ValueError: If the request shape / masks / numeric inputs are invalid.
             Exception: Propagates solver and adapter failures unchanged.
         """
         self._validate_request(req)
-=======
-            Exception: Propagates solver and adapter failures unchanged.
-        """
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         prepared = self._adapters.prepare(req)
         adapted_req = prepared.request
         result = self._execute_solver(adapted_req, cancel_flag=cancel_flag, progress_cb=progress_cb, correlation_id=correlation_id)
@@ -86,7 +78,6 @@ class RunIKUseCase:
         )
         return self._attach_adapter_metadata(result, prepared, correlation_id=correlation_id)
 
-<<<<<<< HEAD
     def _validate_request(self, req: IKRequest) -> None:
         q0 = np.asarray(req.q0, dtype=float).reshape(-1)
         if q0.shape != (req.spec.dof,):
@@ -100,13 +91,10 @@ class RunIKUseCase:
         if req.timeout_ms is not None and float(req.timeout_ms) < 0.0:
             raise ValueError('IK request timeout_ms must be >= 0')
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def _execute_solver(self, req: IKRequest, cancel_flag=None, progress_cb=None, correlation_id: str | None = None) -> IKResult:
         solver = self._solvers.get(req.config.mode.value if hasattr(req.config.mode, 'value') else req.config.mode)
         seeds = self._candidate_seeds(req)
         best_result: IKResult | None = None
-<<<<<<< HEAD
         deadline = time.perf_counter() + (float(req.timeout_ms) / 1000.0) if req.timeout_ms and float(req.timeout_ms) > 0.0 else None
 
         def timed_cancelled() -> bool:
@@ -119,47 +107,26 @@ class RunIKUseCase:
         for attempt_idx, seed in enumerate(seeds):
             result = solver.solve(req.spec, req.target, seed, req.config, cancel_flag=timed_cancelled, progress_cb=progress_cb, attempt_idx=attempt_idx)
             result = self._decorate_result(result, req, attempt_idx, total_attempts=len(seeds), correlation_id=correlation_id, deadline=deadline)
-=======
-
-        for attempt_idx, seed in enumerate(seeds):
-            result = solver.solve(req.spec, req.target, seed, req.config, cancel_flag=cancel_flag, progress_cb=progress_cb, attempt_idx=attempt_idx)
-            result = self._decorate_result(result, attempt_idx, total_attempts=len(seeds), correlation_id=correlation_id)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             if result.success or result.message == 'cancelled':
                 return result
             if best_result is None or self._result_score(result) < self._result_score(best_result):
                 best_result = result
 
         fallback = best_result if best_result is not None else IKResult(False, np.asarray(req.q0, dtype=float).copy(), tuple(), 'no IK attempts executed')
-<<<<<<< HEAD
         return self._decorate_result(fallback, req, int(fallback.restarts_used), total_attempts=len(seeds), correlation_id=correlation_id, deadline=deadline)
-=======
-        return self._decorate_result(fallback, int(fallback.restarts_used), total_attempts=len(seeds), correlation_id=correlation_id)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _candidate_seeds(self, req: IKRequest) -> list[np.ndarray]:
         seeds: list[np.ndarray] = []
         retry_count = max(int(req.config.retry_count), 0)
-<<<<<<< HEAD
         mins = np.array([limit.lower for limit in req.spec.runtime_joint_limits], dtype=float)
         maxs = np.array([limit.upper for limit in req.spec.runtime_joint_limits], dtype=float)
-=======
-        mins = np.array([row.q_min for row in req.spec.dh_rows], dtype=float)
-        maxs = np.array([row.q_max for row in req.spec.dh_rows], dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         mids = np.asarray(req.spec.q_mid(), dtype=float)
         rng = np.random.default_rng(int(req.config.random_seed))
         base_candidates = [
             np.asarray(req.q0, dtype=float),
-<<<<<<< HEAD
             np.asarray(req.spec.runtime_model.home_q, dtype=float),
             mids,
             np.clip(0.5 * (np.asarray(req.q0, dtype=float) + np.asarray(req.spec.runtime_model.home_q, dtype=float)), mins, maxs),
-=======
-            np.asarray(req.spec.home_q, dtype=float),
-            mids,
-            np.clip(0.5 * (np.asarray(req.q0, dtype=float) + np.asarray(req.spec.home_q, dtype=float)), mins, maxs),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             np.clip(0.5 * (mids + np.asarray(req.q0, dtype=float)), mins, maxs),
         ]
         random_needed = max(0, retry_count + 1 - len(base_candidates))
@@ -181,11 +148,7 @@ class RunIKUseCase:
         penalty = 0.0 if result.success else 1000.0
         return penalty + pos + ori
 
-<<<<<<< HEAD
     def _decorate_result(self, result: IKResult, req: IKRequest, attempt_idx: int, *, total_attempts: int, correlation_id: str | None = None, deadline: float | None = None) -> IKResult:
-=======
-    def _decorate_result(self, result: IKResult, attempt_idx: int, *, total_attempts: int, correlation_id: str | None = None) -> IKResult:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         message = result.message
         if attempt_idx > 0 and message not in {'cancelled', 'converged', 'analytic branch resolved'}:
             message = f"{message} | attempts={attempt_idx + 1}/{total_attempts}"
@@ -194,7 +157,6 @@ class RunIKUseCase:
         diagnostics.setdefault('total_attempts', total_attempts)
         diagnostics.setdefault('solver_registry_ids', self.solver_ids)
         diagnostics['correlation_id'] = str(correlation_id or diagnostics.get('correlation_id', '') or '')
-<<<<<<< HEAD
         diagnostics['target_frame'] = getattr(req.target_frame, 'value', str(req.target_frame))
         diagnostics['position_mask'] = list(bool(v) for v in req.position_mask)
         diagnostics['orientation_mask'] = list(bool(v) for v in req.orientation_mask)
@@ -214,8 +176,6 @@ class RunIKUseCase:
         if not result.success and req.allow_approximate_solution:
             warnings = warnings + ('approximate solution permitted but not achieved',)
         status = 'succeeded' if result.success else (result.stop_reason or 'failed')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return IKResult(
             success=result.success,
             q_sol=result.q_sol,
@@ -232,13 +192,10 @@ class RunIKUseCase:
             best_q=result.best_q,
             restarts_used=attempt_idx,
             diagnostics=diagnostics,
-<<<<<<< HEAD
             status=status,
             residuals={'position': float(result.final_pos_err), 'orientation': float(result.final_ori_err)} if np.isfinite(result.final_pos_err) and np.isfinite(result.final_ori_err) else dict(result.residuals),
             attempt_count=max(total_attempts if result.success else attempt_idx + 1, 1),
             warnings=warnings,
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )
 
     def _attach_adapter_metadata(self, result: IKResult, prepared, *, correlation_id: str | None = None) -> IKResult:
@@ -266,11 +223,8 @@ class RunIKUseCase:
             best_q=result.best_q,
             restarts_used=result.restarts_used,
             diagnostics=diagnostics,
-<<<<<<< HEAD
             status=result.status,
             residuals=dict(result.residuals),
             attempt_count=result.attempt_count,
             warnings=tuple(result.warnings),
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         )

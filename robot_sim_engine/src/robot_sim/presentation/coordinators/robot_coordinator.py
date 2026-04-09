@@ -8,23 +8,16 @@ class RobotCoordinator:
 
     def __init__(self, window, *, robot=None) -> None:
         self.window = window
-<<<<<<< HEAD
         self.robot = require_dependency(robot, 'robot_facade')
-=======
-        self.robot = require_dependency(robot if robot is not None else getattr(window, 'robot_facade', None), 'robot_facade')
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def load_robot(self, name: str | None = None) -> None:
         """Public UI entrypoint for loading a robot into the scene."""
         self.load_robot_task(name=name)
 
-<<<<<<< HEAD
     def import_robot(self) -> None:
         """Public UI entrypoint for importing an external robot into the canonical library."""
         self.import_robot_task()
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def load_robot_task(self, name: str | None = None) -> None:
         """Load a robot and project its initial state into the UI.
 
@@ -56,7 +49,6 @@ class RobotCoordinator:
             require_view(self.window, 'project_robot_saved', path)
 
         run_presented(self.window, action, title='错误')
-<<<<<<< HEAD
 
     def import_robot_task(self) -> None:
         """Import a robot through the view boundary and project the persisted result.
@@ -81,5 +73,3 @@ class RobotCoordinator:
             require_view(self.window, 'project_robot_imported', result)
 
         run_presented(self.window, action, title='错误')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

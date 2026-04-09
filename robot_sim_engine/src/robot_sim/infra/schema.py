@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-<<<<<<< HEAD
 from robot_sim.model.solver_config import SUPPORTED_TRAJECTORY_VALIDATION_LAYERS
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class SchemaError(ValueError):
     pass
@@ -62,7 +59,6 @@ class ConfigSchema:
             raise SchemaError("trajectory.duration must be > 0")
         if "dt" in traj and float(traj["dt"]) <= 0.0:
             raise SchemaError("trajectory.dt must be > 0")
-<<<<<<< HEAD
         if "validation_layers" in traj:
             layers = traj["validation_layers"]
             if not isinstance(layers, (list, tuple)) or not layers:
@@ -82,8 +78,6 @@ class ConfigSchema:
                 seen.add(token)
                 normalized.append(token)
             traj["validation_layers"] = normalized
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return validated
 
     @staticmethod

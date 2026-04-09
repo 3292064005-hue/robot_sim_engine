@@ -19,34 +19,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.model.robot_spec import RobotSpec
 
 
-def _normalize_runtime_dispatch(
-    payload: dict[str, object] | None,
-    *,
-    default_surface: str,
-    default_adapter: str,
-) -> dict[str, object]:
-    raw = dict(payload or {})
-    compatibility = tuple(str(item) for item in raw.get('compatibility_execution_adapters', ()) or ())
-    return {
-        'primary_execution_surface': str(raw.get('primary_execution_surface', default_surface) or default_surface),
-        'primary_execution_adapter': str(raw.get('primary_execution_adapter', default_adapter) or default_adapter),
-        'compatibility_execution_adapters': list(compatibility),
-    }
-
-
-def _runtime_dispatch_from_canonical(canonical, metadata: dict[str, object]) -> dict[str, object]:
-    contract = {}
-    if canonical is not None:
-        contract = dict(getattr(canonical, 'metadata', {}).get('runtime_fidelity_contract', {}) or {})
-    if not contract:
-        contract = dict(metadata.get('runtime_fidelity_contract', {}) or {})
-    return _normalize_runtime_dispatch(
-        dict(contract.get('runtime_dispatch', {}) or {}),
-        default_surface='canonical_model',
-        default_adapter=str(getattr(canonical, 'execution_adapter', metadata.get('execution_adapter', 'robot_spec_execution_rows')) or metadata.get('execution_adapter', 'robot_spec_execution_rows') or 'robot_spec_execution_rows'),
-    )
-
-
 @dataclass(frozen=True)
 class RuntimeRobotModel:
     """Structured runtime robot semantics consumed across execution, validation, and export.
@@ -126,15 +98,6 @@ class RuntimeRobotModel:
     def has_capability_badge(self, badge: str) -> bool:
         return str(badge or '') in set(self.capability_badges)
 
-    @property
-    def runtime_dispatch(self) -> dict[str, object]:
-        """Return the normalized runtime-dispatch contract consumed by runtime services."""
-        return _normalize_runtime_dispatch(
-            dict(self.metadata.get('runtime_dispatch', {}) or {}),
-            default_surface=str(self.source_surface or 'runtime_model'),
-            default_adapter=self.execution_adapter,
-        )
-
     def require_serial_chain_execution(self) -> None:
         expected = 'semantic_family:serial_chain_execution'
         if not self.has_capability_badge(expected):
@@ -195,7 +158,6 @@ class RuntimeRobotModel:
             'tool_T': np.asarray(self.tool_T, dtype=float).tolist(),
             'home_q': np.asarray(self.home_q, dtype=float).tolist(),
             'capability_badges': capability_badges,
-            'runtime_dispatch': dict(self.runtime_dispatch),
             'provenance': dict(self.metadata),
             'articulated_model_summary': articulated_model.summary(),
         }
@@ -265,21 +227,16 @@ def build_runtime_robot_model(spec: 'RobotSpec') -> RuntimeRobotModel:
     """Project a :class:`RobotSpec` into the stable runtime semantic contract."""
     metadata = dict(spec.metadata or {})
     canonical = spec.canonical_model
-    runtime_contract = {}
     if canonical is not None:
         execution_rows = tuple(canonical.execution_rows or spec.dh_rows)
         joint_names = tuple(canonical.joint_names or tuple(spec.joint_names) or tuple(f'joint_{index}' for index in range(len(execution_rows))))
         link_names = tuple(canonical.link_names or tuple(spec.link_names) or tuple(f'link_{index}' for index in range(len(execution_rows) + 1)))
         joint_limits = tuple(canonical.joint_limits or tuple(spec.joint_limits) or tuple(RobotJointLimit(lower=float(row.q_min), upper=float(row.q_max)) for row in execution_rows))
-        runtime_contract = dict(getattr(canonical, 'metadata', {}).get('runtime_fidelity_contract', {}) or metadata.get('runtime_fidelity_contract', {}) or {})
-        runtime_dispatch = _runtime_dispatch_from_canonical(canonical, metadata)
-        execution_adapter = str(runtime_dispatch.get('primary_execution_adapter') or canonical.execution_adapter or metadata.get('execution_adapter', 'canonical_dh_chain'))
-        source_surface = str(runtime_dispatch.get('primary_execution_surface') or 'canonical_model')
+        execution_adapter = str(canonical.execution_adapter or metadata.get('execution_adapter', 'canonical_dh_chain'))
+        source_surface = 'canonical_model'
         source_format = str(canonical.source_format or spec.model_source or spec.kinematic_source or '')
         fidelity = str(canonical.fidelity or metadata.get('import_fidelity', source_format or 'generated_proxy') or 'generated_proxy')
-        semantic_family = str(metadata.get('runtime_semantic_family', runtime_contract.get('runtime_family', 'serial_chain_execution')) or runtime_contract.get('runtime_family', 'serial_chain_execution') or 'serial_chain_execution')
     else:
-        runtime_dispatch = _normalize_runtime_dispatch(None, default_surface='runtime_model', default_adapter=str(metadata.get('execution_adapter', 'robot_spec_execution_rows') or 'robot_spec_execution_rows'))
         execution_rows = tuple(spec.dh_rows)
         joint_names = tuple(spec.joint_names) or tuple(f'joint_{index}' for index in range(len(execution_rows)))
         link_names = tuple(spec.link_names) or tuple(f'link_{index}' for index in range(len(execution_rows) + 1))
@@ -288,7 +245,7 @@ def build_runtime_robot_model(spec: 'RobotSpec') -> RuntimeRobotModel:
         source_surface = str(metadata.get('execution_surface', 'robot_spec') or 'robot_spec')
         source_format = str(spec.model_source or spec.kinematic_source or 'dh_config')
         fidelity = str(metadata.get('import_fidelity', source_format or 'generated_proxy') or 'generated_proxy')
-        semantic_family = str(metadata.get('runtime_semantic_family', 'serial_chain_execution') or 'serial_chain_execution')
+    semantic_family = str(metadata.get('runtime_semantic_family', 'serial_chain_execution') or 'serial_chain_execution')
     runtime_metadata = {
         'model_source': spec.model_source,
         'kinematic_source': spec.kinematic_source,
@@ -298,7 +255,6 @@ def build_runtime_robot_model(spec: 'RobotSpec') -> RuntimeRobotModel:
         'has_canonical_model': bool(spec.has_canonical_model),
         'geometry_available': bool(spec.geometry_available),
         'collision_model': spec.collision_model,
-        'runtime_dispatch': dict(runtime_dispatch),
     }
     if canonical is not None:
         articulated_model = build_articulated_robot_model_from_canonical(

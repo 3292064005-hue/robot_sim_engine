@@ -33,7 +33,6 @@ def test_plugin_loader_resolves_whitelisted_factory(tmp_path: Path, monkeypatch)
         assert registration.plugin_id == 'demo_solver'
         assert registration.aliases == ('demo_alias',)
         assert registration.metadata['family'] == 'iterative'
-<<<<<<< HEAD
         assert registration.metadata['sdk_contract_version'] == 'v1'
         assert registration.metadata['min_host_version'] == ''
     finally:
@@ -66,8 +65,3 @@ def test_shipped_plugin_manifest_loads_without_external_discovery(tmp_path: Path
     assert registrations[0].plugin_id == 'shipped_demo'
     assert registrations[0].metadata['api_version'] == 'v1'
     assert registrations[0].metadata['sdk_contract_version'] == 'v1'
-=======
-    finally:
-        while str(tmp_path) in sys.path:
-            sys.path.remove(str(tmp_path))
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

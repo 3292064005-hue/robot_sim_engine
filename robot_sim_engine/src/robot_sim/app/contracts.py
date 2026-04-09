@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 from dataclasses import dataclass
 from pathlib import Path
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from typing import Protocol
 
 from robot_sim.application.registries.importer_registry import ImporterRegistry
@@ -17,10 +14,7 @@ from robot_sim.application.services.metrics_service import MetricsService
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.application.services.playback_service import PlaybackService
 from robot_sim.application.services.robot_registry import RobotRegistry
-<<<<<<< HEAD
 from robot_sim.application.services.runtime_feature_service import RuntimeFeaturePolicy
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.application.services.task_error_mapper import TaskErrorMapper
 from robot_sim.application.use_cases.export_package import ExportPackageUseCase
 from robot_sim.application.use_cases.export_report import ExportReportUseCase
@@ -35,7 +29,6 @@ from robot_sim.app.runtime_paths import RuntimePaths
 
 
 class MainControllerContainerProtocol(Protocol):
-<<<<<<< HEAD
     """Explicit dependency contract required to bootstrap presentation collaborators.
 
     ``MainController`` no longer reaches into the concrete container field-by-field during
@@ -43,13 +36,6 @@ class MainControllerContainerProtocol(Protocol):
     :class:`PresentationBootstrapBundle`, and the controller becomes a compatibility shell
     over that bundle. The protocol remains explicit so startup still fails fast when the
     application container is incomplete.
-=======
-    """Minimal dependency contract required by ``MainController``.
-
-    The presentation layer still depends on the application composition root for startup,
-    but only through this explicit attribute protocol rather than the concrete ``AppContainer``
-    implementation.
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     """
 
     config_service: ConfigService
@@ -72,7 +58,6 @@ class MainControllerContainerProtocol(Protocol):
     export_report_uc: ExportReportUseCase
     export_package_uc: ExportPackageUseCase
     import_robot_uc: ImportRobotUseCase
-<<<<<<< HEAD
     runtime_paths: RuntimePaths
 
 
@@ -182,7 +167,3 @@ def build_presentation_bootstrap_bundle(
             import_robot_uc=container.import_robot_uc,
         ),
     )
-=======
-
-    runtime_paths: RuntimePaths
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

@@ -143,19 +143,12 @@ class MetricsService:
     def summarize_scene(self, scene) -> dict[str, object]:
         if scene is None:
             return {'revision': 0, 'obstacle_count': 0, 'collision_backend': 'none'}
-<<<<<<< HEAD
         if hasattr(scene, 'summary'):
             return dict(scene.summary())
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         return {
             'revision': int(getattr(scene, 'revision', 0) or 0),
             'obstacle_count': int(len(getattr(scene, 'obstacles', ()))),
             'collision_backend': str(getattr(scene, 'collision_backend', 'aabb')),
             'collision_level': getattr(getattr(scene, 'collision_level', None), 'value', str(getattr(scene, 'collision_level', 'aabb'))),
-<<<<<<< HEAD
             'attached_object_count': int(len(getattr(scene, 'attached_objects', ()))),
-=======
-            'attached_objects': int(len(getattr(scene, 'attached_objects', ()))),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         }

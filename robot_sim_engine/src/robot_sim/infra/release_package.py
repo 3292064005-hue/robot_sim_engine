@@ -11,12 +11,9 @@ EXCLUDED_DIR_NAMES = {
     '.git',
     '.idea',
     '.vscode',
-<<<<<<< HEAD
     '.nox',
     '.venv',
     'build',
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     'exports',
     'dist',
 }
@@ -24,7 +21,6 @@ EXCLUDED_DIR_NAMES = {
 
 EXCLUDED_FILE_NAMES = {
     '.coverage',
-<<<<<<< HEAD
     'coverage.json',
     'scene_capture.png',
     'FINAL_AUDIT.md',
@@ -33,15 +29,12 @@ EXCLUDED_FILE_NAMES = {
     'ISSUE_BY_ISSUE_FIX_SUMMARY.md',
     'REVALIDATION_NOTE.md',
     'SECOND_ROUND_AUDIT.md',
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 }
 
 EXCLUDED_SUFFIXES = {'.pyc', '.pyo'}
 
 
 def should_include_path(path: Path) -> bool:
-<<<<<<< HEAD
     """Return True when a path should be shipped in a clean release archive.
 
     Args:
@@ -64,12 +57,6 @@ def should_include_path(path: Path) -> bool:
             return False
         if part.endswith('.egg-info'):
             return False
-=======
-    """Return True when a path should be shipped in a clean release archive."""
-    for part in path.parts:
-        if part in EXCLUDED_DIR_NAMES:
-            return False
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     if path.name in EXCLUDED_FILE_NAMES:
         return False
     if path.suffix in EXCLUDED_SUFFIXES:
@@ -89,7 +76,6 @@ def iter_release_files(root: Path):
 
 
 def build_release_zip(root: Path, output_zip: Path, *, top_level_dir: str | None = None) -> Path:
-<<<<<<< HEAD
     """Create a clean zip archive that excludes caches, audits, and local build artifacts."""
     root = root.resolve()
     output_zip = output_zip.resolve()
@@ -103,14 +89,6 @@ def build_release_zip(root: Path, output_zip: Path, *, top_level_dir: str | None
         for rel in iter_release_files(root):
             if output_rel is not None and rel == output_rel:
                 continue
-=======
-    """Create a clean zip archive that excludes caches and local build artifacts."""
-    root = root.resolve()
-    output_zip = output_zip.resolve()
-    output_zip.parent.mkdir(parents=True, exist_ok=True)
-    with ZipFile(output_zip, 'w', compression=ZIP_DEFLATED) as zf:
-        for rel in iter_release_files(root):
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             src = root / rel
             arcname = rel.as_posix() if not top_level_dir else f"{top_level_dir}/{rel.as_posix()}"
             zf.write(src, arcname=arcname)

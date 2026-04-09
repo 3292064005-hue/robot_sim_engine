@@ -4,19 +4,15 @@ from dataclasses import dataclass
 
 import numpy as np
 
-<<<<<<< HEAD
 from robot_sim.core.math.so3 import is_rotation_matrix, orthonormalize_rotation
 from robot_sim.core.rotation.quaternion import from_matrix as quaternion_from_matrix
 from robot_sim.core.rotation.quaternion import to_matrix as quaternion_to_matrix
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.enums import ReferenceFrame
 from robot_sim.domain.types import FloatArray
 
 
 @dataclass(frozen=True)
 class Pose:
-<<<<<<< HEAD
     """Rigid pose represented by translation and rotation components.
 
     Attributes:
@@ -30,13 +26,10 @@ class Pose:
         rotations can be projected onto ``SO(3)`` through :meth:`validated`.
     """
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     p: FloatArray
     R: FloatArray
     frame: ReferenceFrame = ReferenceFrame.BASE
 
-<<<<<<< HEAD
     def __post_init__(self) -> None:
         p = np.asarray(self.p, dtype=float).reshape(-1)
         R = np.asarray(self.R, dtype=float)
@@ -82,19 +75,11 @@ class Pose:
 
     def to_matrix(self) -> FloatArray:
         """Convert the pose to a homogeneous transform matrix."""
-=======
-    @staticmethod
-    def from_matrix(T: FloatArray, *, frame: ReferenceFrame = ReferenceFrame.BASE) -> "Pose":
-        return Pose(p=T[:3, 3].copy(), R=T[:3, :3].copy(), frame=frame)
-
-    def to_matrix(self) -> FloatArray:
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         T = np.eye(4, dtype=float)
         T[:3, :3] = self.R
         T[:3, 3] = self.p
         return T
 
-<<<<<<< HEAD
     def as_quaternion(self) -> FloatArray:
         """Return the pose rotation as a normalized quaternion ``[w, x, y, z]``."""
         return quaternion_from_matrix(self.validated().R)
@@ -149,7 +134,3 @@ class Pose:
     def orthonormalized(self) -> 'Pose':
         """Compatibility alias for :meth:`validated` with projection enabled."""
         return self.validated(orthonormalize=True)
-=======
-    def with_frame(self, frame: ReferenceFrame) -> "Pose":
-        return Pose(p=np.asarray(self.p, dtype=float).copy(), R=np.asarray(self.R, dtype=float).copy(), frame=frame)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

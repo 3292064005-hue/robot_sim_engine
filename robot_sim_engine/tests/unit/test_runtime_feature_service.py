@@ -1,16 +1,9 @@
 from pathlib import Path
 
-<<<<<<< HEAD
 from robot_sim.application.services.capability_service import CapabilityService
 from robot_sim.application.services.config_service import ConfigService
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.application.services.runtime_feature_service import RuntimeFeatureService
-=======
-from robot_sim.application.services.config_service import ConfigService
-from robot_sim.application.services.module_status_service import ModuleStatusService
-from robot_sim.application.services.runtime_feature_service import RuntimeFeatureService
-from robot_sim.application.services.capability_service import CapabilityService
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.domain.enums import ModuleStatus
 
 
@@ -22,34 +15,23 @@ def test_runtime_feature_policy_and_services_follow_profile_flags(tmp_path: Path
         'features:\n'
         '  experimental_modules_enabled: false\n'
         '  experimental_backends_enabled: false\n'
-<<<<<<< HEAD
         '  plugin_discovery_enabled: false\n'
         '  plugin_status_allowlist: [stable, deprecated]\n',
-=======
-        '  plugin_discovery_enabled: false\n',
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         encoding='utf-8',
     )
     (profiles / 'research.yaml').write_text(
         'features:\n'
         '  experimental_modules_enabled: true\n'
         '  experimental_backends_enabled: true\n'
-<<<<<<< HEAD
         '  plugin_discovery_enabled: true\n'
         '  plugin_status_allowlist: [stable, beta, experimental, internal, deprecated]\n',
-=======
-        '  plugin_discovery_enabled: true\n',
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         encoding='utf-8',
     )
     config_service = ConfigService(config_dir, profile='research')
     policy = RuntimeFeatureService(config_service).load_policy()
     assert policy.experimental_modules_enabled is True
     assert policy.plugin_discovery_enabled is True
-<<<<<<< HEAD
     assert policy.plugin_status_allowlist == ('stable', 'beta', 'experimental', 'internal', 'deprecated')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     module_statuses = ModuleStatusService(runtime_feature_policy=policy).snapshot_details()
     assert module_statuses['presentation.widgets.collision_panel']['enabled'] is True

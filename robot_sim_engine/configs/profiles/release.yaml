@@ -5,17 +5,11 @@ plots:
 ik:
   retry_count: 1
 trajectory:
-<<<<<<< HEAD
   validation_layers: [timing, path_metrics, goal_metrics, collision, limits]
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
   dt: 0.02
 features:
   experimental_modules_enabled: false
   experimental_backends_enabled: false
   plugin_discovery_enabled: false
   contract_doc_autogen_enabled: true
-<<<<<<< HEAD
   plugin_status_allowlist: [stable, deprecated]
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

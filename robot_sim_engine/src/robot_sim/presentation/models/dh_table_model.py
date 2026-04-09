@@ -3,16 +3,7 @@ from typing import Any
 from robot_sim.model.dh_row import DHRow
 from robot_sim.domain.enums import JointType
 
-<<<<<<< HEAD
 from PySide6.QtCore import QAbstractTableModel, Qt
-=======
-try:
-    from PySide6.QtCore import QAbstractTableModel, Qt, QModelIndex
-except Exception:  # pragma: no cover
-    QAbstractTableModel = object  # type: ignore
-    Qt = object  # type: ignore
-    QModelIndex = object  # type: ignore
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class DHTableModel(QAbstractTableModel):  # pragma: no cover - GUI shell

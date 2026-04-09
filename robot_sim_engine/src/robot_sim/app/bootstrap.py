@@ -1,26 +1,21 @@
 from __future__ import annotations
 
 import logging
-<<<<<<< HEAD
 import os
 from dataclasses import dataclass
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from pathlib import Path
+from typing import Iterator
 
 from robot_sim.app.container import AppContainer, build_container
 from robot_sim.app.runtime_paths import resolve_runtime_paths
 from robot_sim.app.version_catalog import VersionCatalog, default_version_catalog
-<<<<<<< HEAD
 from robot_sim.app.runtime_environment import evaluate_startup_environment
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
+from robot_sim.infra.compatibility_usage import record_compatibility_usage
 from robot_sim.infra.logging_setup import setup_logging
 
 logger = logging.getLogger(__name__)
 
 
-<<<<<<< HEAD
 @dataclass(frozen=True)
 class BootstrapContext:
     """Canonical bootstrap result for startup callers.
@@ -33,16 +28,63 @@ class BootstrapContext:
     Boundary behavior:
         The canonical startup surface is attribute-based access through
         ``BootstrapContext.project_root`` and ``BootstrapContext.container``.
-        Historical tuple-style bootstrap unpacking has been retired to keep startup
-        contracts explicit.
+        Iterable/indexed access is retained strictly as a compatibility path for
+        legacy callers that still unpack the historical ``(project_root, container)``
+        tuple shape.
     """
 
     project_root: Path
     container: AppContainer
 
+    def __iter__(self) -> Iterator[object]:
+        """Yield the historical tuple payload for compatibility destructuring.
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
+        Returns:
+            Iterator[object]: Iterator over ``project_root`` then ``container``.
+
+        Raises:
+            None: The compatibility surface only reads in-memory state.
+        """
+        record_compatibility_usage('bootstrap iterable unpacking', detail='iter')
+        yield self.project_root
+        yield self.container
+
+    def __len__(self) -> int:
+        """Return the historical bootstrap tuple length."""
+        return 2
+
+    def __getitem__(self, index: int):
+        """Expose tuple-style positional access for legacy callers.
+
+        Args:
+            index: Positional bootstrap item index.
+
+        Returns:
+            object: ``project_root`` for index 0 and ``container`` for index 1.
+
+        Raises:
+            IndexError: If ``index`` is outside the supported bootstrap payload.
+        """
+        record_compatibility_usage('bootstrap iterable unpacking', detail=f'index:{index}')
+        if index == 0:
+            return self.project_root
+        if index == 1:
+            return self.container
+        raise IndexError(index)
+
+    def as_tuple(self) -> tuple[Path, AppContainer]:
+        """Return the compatibility tuple payload.
+
+        Returns:
+            tuple[Path, AppContainer]: Historical bootstrap tuple payload.
+
+        Raises:
+            None: Pure projection helper.
+        """
+        record_compatibility_usage('bootstrap iterable unpacking', detail='as_tuple')
+        return self.project_root, self.container
+
+
 def get_project_root() -> Path:
     """Return the compatibility project root used by legacy startup callers.
 
@@ -84,37 +126,26 @@ def _log_startup_summary(container: AppContainer, versions: VersionCatalog) -> d
             planner_registry=container.planner_registry,
             importer_registry=container.importer_registry,
         ).as_dict()
-<<<<<<< HEAD
         plugin_catalog = dict((getattr(container, 'runtime_context', {}) or {}).get('plugin_catalog', {}) or {})
         plugin_counts = dict(plugin_catalog.get('counts', {}) or {})
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         summary['capabilities'] = {
             'solvers': len(matrix.get('solvers', [])),
             'planners': len(matrix.get('planners', [])),
             'importers': len(matrix.get('importers', [])),
-<<<<<<< HEAD
             'plugin_registrations_enabled': int(plugin_counts.get('enabled', 0)),
         }
         plugin_catalog = dict((getattr(container, 'runtime_context', {}) or {}).get('plugin_catalog', {}) or {})
         plugin_counts = dict(plugin_catalog.get('counts', {}) or {})
-=======
-        }
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         summary['runtime'] = {
             'project_root': str(container.project_root),
             'resource_root': str(container.runtime_paths.resource_root),
             'config_root': str(container.runtime_paths.config_root),
             'export_root': str(container.runtime_paths.export_root),
-<<<<<<< HEAD
             'layout_mode': container.runtime_paths.layout_mode,
             'source_layout_available': bool(container.runtime_paths.source_layout_available),
             'config_resolution': container.config_service.describe_resolution(),
             'plugin_policy': container.runtime_feature_policy.as_dict(),
             'plugin_catalog_counts': plugin_counts,
-=======
-            'source_layout_available': bool(container.runtime_paths.source_layout_available),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         }
         logger.info('robot-sim startup summary=%s', summary)
     except Exception as exc:  # pragma: no cover - defensive logging path
@@ -122,7 +153,6 @@ def _log_startup_summary(container: AppContainer, versions: VersionCatalog) -> d
     return summary
 
 
-<<<<<<< HEAD
 def bootstrap(*, startup_mode: str | None = None) -> BootstrapContext:
     """Initialize logging and build the application container.
 
@@ -136,23 +166,14 @@ def bootstrap(*, startup_mode: str | None = None) -> BootstrapContext:
     Returns:
         BootstrapContext: Canonical bootstrap result exposing ``project_root`` and
             ``container`` as named attributes.
-=======
-def bootstrap() -> tuple[Path, AppContainer]:
-    """Initialize logging and build the application container.
-
-    Returns:
-        tuple[Path, AppContainer]: Compatibility project root together with the fully built
-            application container.
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     Raises:
         Exception: Propagates logging/configuration/container construction failures.
 
     Boundary behavior:
         Runtime resource resolution is driven by ``resolve_runtime_paths()`` rather than by a
-<<<<<<< HEAD
-        repository-layout assumption. Callers must consume the returned ``BootstrapContext``
-        through its named attributes.
+        repository-layout assumption. Iterable/indexed access remains available only as a
+        compatibility surface for historical callers that still unpack bootstrap like a tuple.
     """
     runtime_paths = resolve_runtime_paths()
     setup_logging(runtime_paths.logging_config_path)
@@ -172,15 +193,3 @@ def bootstrap() -> tuple[Path, AppContainer]:
     if hasattr(container, 'startup_summary'):
         setattr(container, 'startup_summary', startup_summary)
     return BootstrapContext(project_root=runtime_paths.project_root, container=container)
-=======
-        repository-layout assumption. ``get_project_root()`` remains available for legacy callers,
-        but bootstrap itself now prefers the explicit runtime-path bundle.
-    """
-    runtime_paths = resolve_runtime_paths()
-    setup_logging(runtime_paths.logging_config_path)
-    container = build_container(runtime_paths)
-    startup_summary = _log_startup_summary(container, default_version_catalog())
-    if hasattr(container, 'startup_summary'):
-        setattr(container, 'startup_summary', startup_summary)
-    return runtime_paths.project_root, container
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

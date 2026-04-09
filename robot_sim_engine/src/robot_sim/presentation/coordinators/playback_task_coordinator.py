@@ -8,15 +8,9 @@ class PlaybackTaskCoordinator:
 
     def __init__(self, window, *, runtime=None, playback=None, playback_threader=None) -> None:
         self.window = window
-<<<<<<< HEAD
         self.runtime = require_dependency(runtime, 'runtime_facade')
         self.playback = require_dependency(playback, 'playback_facade')
         self.playback_threader = require_dependency(playback_threader, 'playback_threader')
-=======
-        self.runtime = require_dependency(runtime if runtime is not None else getattr(window, 'runtime_facade', None), 'runtime_facade')
-        self.playback = require_dependency(playback if playback is not None else getattr(window, 'playback_facade', None), 'playback_facade')
-        self.playback_threader = require_dependency(playback_threader if playback_threader is not None else getattr(window, 'playback_threader', None), 'playback_threader')
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def play(self) -> None:
         self.start_task()

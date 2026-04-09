@@ -8,11 +8,7 @@ class StatusCoordinator:
 
     def __init__(self, window, *, runtime=None) -> None:
         self.window = window
-<<<<<<< HEAD
         self.runtime = require_dependency(runtime, 'runtime_facade')
-=======
-        self.runtime = require_dependency(runtime if runtime is not None else getattr(window, 'runtime_facade', None), 'runtime_facade')
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def apply_task_snapshot(self, snapshot) -> None:
         require_view(self.window, 'project_task_snapshot', snapshot)

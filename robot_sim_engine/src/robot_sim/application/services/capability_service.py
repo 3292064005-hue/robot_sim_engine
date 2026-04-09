@@ -5,7 +5,6 @@ from robot_sim.domain.collision_backends import default_collision_backend_regist
 from robot_sim.domain.enums import ModuleStatus
 from robot_sim.domain.runtime_contracts import render_capability_matrix_markdown
 
-<<<<<<< HEAD
 _PLUGIN_STATUS_TO_MODULE_STATUS = {
     'stable': ModuleStatus.STABLE,
     'beta': ModuleStatus.BETA,
@@ -14,8 +13,6 @@ _PLUGIN_STATUS_TO_MODULE_STATUS = {
     'deprecated': ModuleStatus.DEPRECATED,
 }
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 class CapabilityService:
     """Build the runtime capability matrix exposed to the presentation layer."""
@@ -32,15 +29,11 @@ class CapabilityService:
             owner_module='collision.scene',
             status=ModuleStatus.STABLE,
             metadata={
-<<<<<<< HEAD
                 'ui_surface': 'stable_scene_toolbar',
                 'integration_scope': 'validation_export_session_scene_toolbar',
                 'edit_surface': 'stable_scene_editor',
                 'declared_backends': list(self._collision_registry.declared_backend_ids()),
                 'active_backends': list(self._collision_registry.active_backend_ids(experimental_enabled=experimental_enabled)),
-=======
-                'supported_backends': list(self._collision_registry.supported_backend_ids(experimental_enabled=experimental_enabled)),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 'fallback_backend': self._collision_registry.default_backend,
                 'experimental_backends': [
                     descriptor.backend_id for descriptor in self._collision_registry.descriptors() if descriptor.is_experimental
@@ -49,14 +42,11 @@ class CapabilityService:
         )
         return (planning_scene_descriptor, *self._collision_registry.scene_capabilities(experimental_enabled=experimental_enabled))
 
-<<<<<<< HEAD
     @staticmethod
     def _plugin_status(metadata: dict[str, object]) -> ModuleStatus:
         status = str(metadata.get('status', 'stable') or 'stable')
         return _PLUGIN_STATUS_TO_MODULE_STATUS.get(status, ModuleStatus.STABLE)
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def build_matrix(self, *, solver_registry, planner_registry, importer_registry) -> CapabilityMatrix:
         """Build a capability matrix from active registries.
 
@@ -76,11 +66,7 @@ class CapabilityService:
                 key=desc.solver_id,
                 label=desc.solver_id,
                 owner_module='solver_registry',
-<<<<<<< HEAD
                 status=self._plugin_status(dict(desc.metadata)),
-=======
-                status=ModuleStatus.STABLE,
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 metadata={'aliases': list(desc.aliases), **dict(desc.metadata)},
             )
             for desc in solver_registry.descriptors()
@@ -90,11 +76,7 @@ class CapabilityService:
                 key=desc.planner_id,
                 label=desc.planner_id,
                 owner_module='planner_registry',
-<<<<<<< HEAD
                 status=self._plugin_status(dict(desc.metadata)),
-=======
-                status=ModuleStatus.STABLE,
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 metadata={'aliases': list(desc.aliases), **dict(desc.metadata)},
             )
             for desc in planner_registry.descriptors()
@@ -104,11 +86,7 @@ class CapabilityService:
                 key=desc.importer_id,
                 label=desc.importer_id,
                 owner_module='importer_registry',
-<<<<<<< HEAD
                 status=self._plugin_status(dict(desc.metadata)),
-=======
-                status=ModuleStatus.STABLE,
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 metadata={'aliases': list(desc.aliases), **dict(desc.metadata)},
             )
             for desc in importer_registry.descriptors()

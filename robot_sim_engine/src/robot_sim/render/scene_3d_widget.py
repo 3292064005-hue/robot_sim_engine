@@ -2,38 +2,21 @@ from __future__ import annotations
 
 import numpy as np
 
-<<<<<<< HEAD
 from robot_sim.domain.errors import RenderBackendUnavailableError, RenderInitializationError, RenderOperationError
 from robot_sim.model.render_runtime import RenderCapabilityState
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.render.actor_manager import ActorManager
 from robot_sim.render.robot_visual import RobotVisual
 from robot_sim.render.screenshot_service import ScreenshotService
 from robot_sim.render.target_visual import TargetVisual
 from robot_sim.render.trajectory_visual import TrajectoryVisual
 
-<<<<<<< HEAD
 from robot_sim.presentation.qt_runtime import QLabel, QVBoxLayout, QWidget, require_qt_runtime
-=======
-try:
-    from PySide6.QtWidgets import QWidget
-except Exception:  # pragma: no cover
-    QWidget = object  # type: ignore
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
     def __init__(self, parent=None):
-<<<<<<< HEAD
         require_qt_runtime('Scene3DWidget')
         super().__init__(parent)
-=======
-        try:
-            super().__init__(parent)
-        except TypeError:  # pragma: no cover - non-Qt fallback
-            super().__init__()
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self.plotter = None
         self.actor_manager = ActorManager()
         self.screenshot_service = ScreenshotService()
@@ -51,7 +34,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         self._scene_obstacles: list[object] = []
         self._attached_objects: list[object] = []
         self._overlay_text = self._scene_title
-<<<<<<< HEAD
         self._robot_actor_names: set[str] = set()
         self._scene_actor_names: set[str] = set()
         self._scene_runtime = RenderCapabilityState(
@@ -142,52 +124,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         )
         label.setWordWrap(True)
         layout.addWidget(label)
-=======
-        try:
-            from PySide6.QtWidgets import QLabel, QVBoxLayout
-            layout = QVBoxLayout(self)
-            try:
-                from pyvistaqt import QtInteractor
-                self.plotter = QtInteractor(self)
-                layout.addWidget(self.plotter.interactor)
-                self.plotter.set_background('white')
-                self.plotter.add_axes()
-                self._set_plotter_overlay_text(self._overlay_text)
-            except Exception as exc:
-                label = QLabel(
-                    "3D 视图依赖未安装或初始化失败，当前为占位视图。\n"
-                    "请在项目目录执行: pip install -e .[gui]\n"
-                    f"详细信息: {exc.__class__.__name__}: {exc}"
-                )
-                label.setWordWrap(True)
-                layout.addWidget(label)
-        except Exception:
-            self.plotter = None
-
-    def shutdown_render_backend(self) -> None:
-        """Release pyvista/VTK resources before Qt widget teardown.
-
-        The GUI smoke tests create and close real windows in-process. Explicitly
-        closing the interactor here avoids leaving VTK cleanup to Python GC, which
-        can otherwise crash the interpreter later in the test run.
-        """
-        plotter = getattr(self, "plotter", None)
-        if plotter is None:
-            return
-        self.plotter = None
-        try:
-            close = getattr(plotter, "close", None)
-            if callable(close):
-                close()
-        except (AttributeError, RuntimeError, TypeError):
-            pass
-
-    def closeEvent(self, event) -> None:
-        self.shutdown_render_backend()
-        close_event = getattr(super(), "closeEvent", None)
-        if callable(close_event):
-            close_event(event)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _set_plotter_overlay_text(self, text: str) -> None:
         if self.plotter is None:
@@ -195,7 +131,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         self.actor_manager.remove(self.plotter, 'scene_overlay')
         try:
             actor = self.plotter.add_text(text, font_size=10, name='scene_overlay')
-<<<<<<< HEAD
         except TypeError:
             actor = self.plotter.add_text(text, font_size=10)
         except (AttributeError, RuntimeError, ValueError) as exc:
@@ -204,12 +139,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
                 metadata={'exception_type': exc.__class__.__name__, 'message': str(exc)},
             ) from exc
         self.actor_manager.set('scene_overlay', actor)
-=======
-            self.actor_manager.set('scene_overlay', actor)
-        except Exception:
-            actor = self.plotter.add_text(text, font_size=10)
-            self.actor_manager.set('scene_overlay', actor)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def _update_mesh(self, name: str, mesh, **kwargs) -> None:
         if self.plotter is None:
@@ -233,7 +162,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         self.plotter.render()
 
     def set_robot_geometry(self, robot_geometry) -> None:
-<<<<<<< HEAD
         """Store runtime geometry and refresh the live robot projection when possible.
 
         Args:
@@ -259,15 +187,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         """Store attached collision objects and refresh the live scene overlay."""
         self._attached_objects = list(attached_objects or [])
         self._render_scene_objects()
-=======
-        self._robot_geometry = robot_geometry
-
-    def set_scene_obstacles(self, obstacles) -> None:
-        self._scene_obstacles = list(obstacles or [])
-
-    def set_attached_objects(self, attached_objects) -> None:
-        self._attached_objects = list(attached_objects or [])
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     def set_overlay_text(self, text: str) -> None:
         self._overlay_text = str(text)
@@ -275,7 +194,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         self._render()
 
     def set_robot_lines(self, points: np.ndarray) -> None:
-<<<<<<< HEAD
         """Project FK skeleton points and, when available, runtime geometry meshes.
 
         Args:
@@ -348,14 +266,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         for name, mesh in payload.items():
             self._update_mesh(name, mesh, style='wireframe', opacity=0.55)
         self._scene_actor_names = active_names
-=======
-        pts = np.asarray(points, dtype=float)
-        self._robot_points = pts.copy()
-        if self.plotter is None or len(pts) < 2:
-            return
-        for name, (mesh, kwargs) in self.robot_visual.build(pts).items():
-            self._update_mesh(name, mesh, **kwargs)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         self._render()
 
     def set_target_pose(self, pose) -> None:
@@ -439,7 +349,6 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
             'attached_objects': list(self._attached_objects),
         }
 
-<<<<<<< HEAD
     def scene_runtime_state(self) -> RenderCapabilityState:
         """Return the structured runtime status for the 3D scene surface."""
         return self._scene_runtime
@@ -452,7 +361,5 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
         """Return the aggregate render runtime status exposed by the scene widget shell."""
         return {'scene_3d': self.scene_runtime_state(), 'screenshot': self.screenshot_runtime_state()}
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def capture_screenshot(self, path):
         return self.screenshot_service.capture(self, path)

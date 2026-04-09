@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-<<<<<<< HEAD
 import importlib.util
 
 import numpy as np
@@ -10,10 +9,6 @@ if importlib.util.find_spec('PySide6') is None:
 
     install_pyside6_test_shims()
 
-=======
-import numpy as np
-
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 from robot_sim.render.picking import PickingController
 from robot_sim.render.scene_controller import SceneController
 from robot_sim.render.scene_3d_widget import Scene3DWidget
@@ -23,12 +18,9 @@ class FakeWidget:
     def __init__(self):
         self.calls = []
 
-<<<<<<< HEAD
     def set_robot_geometry(self, geometry):
         self.calls.append(('geometry', geometry))
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def set_robot_lines(self, points):
         self.calls.append(('robot', np.asarray(points).shape))
 
@@ -58,19 +50,13 @@ def test_scene_controller_supports_projection_contracts():
     widget = FakeWidget()
     controller = SceneController(widget)
     fk_result = type('FK', (), {'joint_positions': np.zeros((2, 3)), 'ee_pose': type('P', (), {'p': np.array([1.0, 2.0, 3.0])})()})()
-<<<<<<< HEAD
     controller.update_robot_geometry_projection({'links': 2})
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     controller.update_fk_projection(fk_result, target_pose='pose', append_path=True)
     controller.update_playback_projection(np.zeros((2, 3)), np.array([0.0, 0.0, 1.0]), target_pose='pose2')
     controller.update_planning_scene_projection(type('S', (), {'obstacles': [1, 2], 'attached_objects': [3], 'revision': 4, 'collision_backend': 'aabb'})())
     controller.clear_transient_visuals()
     tags = [tag for tag, _ in widget.calls]
-<<<<<<< HEAD
     assert 'geometry' in tags
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     assert 'robot' in tags
     assert 'overlay' in tags
     assert 'clear' in tags
@@ -98,7 +84,6 @@ def test_picking_controller_tracks_pose_hint_and_point():
     assert picking.to_target_pose_request() == {'pose': True}
     picking.clear()
     assert picking.to_target_pose_request() is None
-<<<<<<< HEAD
 
 
 
@@ -108,5 +93,3 @@ def test_scene_widget_exposes_render_runtime_snapshot():
     assert snapshot['scene_3d'].capability == 'scene_3d'
     assert snapshot['screenshot'].capability == 'screenshot'
     assert snapshot['screenshot'].status in {'available', 'degraded', 'unsupported'}
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

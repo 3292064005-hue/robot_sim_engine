@@ -39,19 +39,12 @@ class IterativeIKSolverBase:
         raise NotImplementedError
 
     def _joint_motion_weights(self, spec: RobotSpec, q: FloatArray, config: IKConfig) -> np.ndarray:
-<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         weights = np.ones_like(q, dtype=float)
         for i, joint in enumerate(articulated.joint_models):
             q_min = float(joint.limit.lower)
             q_max = float(joint.limit.upper)
-=======
-        weights = np.ones_like(q, dtype=float)
-        for i, row in enumerate(spec.dh_rows):
-            q_min = float(row.q_min)
-            q_max = float(row.q_max)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             span = max(q_max - q_min, 1.0e-9)
             normalized = float((q[i] - q_min) / span)
             center_penalty = 1.0 + float(config.joint_limit_weight) * 0.25
@@ -100,26 +93,17 @@ class IterativeIKSolverBase:
         if target_is_certainly_outside_workspace(spec, target, margin=config.pos_tol):
             return "workspace_precheck", "target outside rough workspace envelope"
         if pos_norm > max(config.pos_tol * 25.0, 5.0e-3):
-<<<<<<< HEAD
             distance = float(np.linalg.norm(np.asarray(target.p, dtype=float) - np.asarray(spec.articulated_model.base_T[:3, 3], dtype=float)))
-=======
-            distance = float(np.linalg.norm(np.asarray(target.p, dtype=float) - np.asarray(spec.base_T[:3, 3], dtype=float)))
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
             if distance > rough_reach_radius(spec) * 0.98:
                 return "position_unreachable", "position target appears outside practical reach"
         if (not config.position_only) and pos_norm <= max(config.pos_tol * 5.0, 1.0e-3) and ori_norm > max(config.ori_tol * 10.0, 5.0e-3):
             return "orientation_not_satisfied", "position matched but orientation target not satisfied"
         if np.isfinite(cond) and cond >= config.singularity_cond_threshold:
             return "singularity_stall", "solver stalled near singular configuration"
-<<<<<<< HEAD
         articulated = spec.articulated_model
         articulated.require_serial_tree_execution()
         mins = articulated.joint_minima
         maxs = articulated.joint_maxima
-=======
-        mins = np.array([row.q_min for row in spec.dh_rows], dtype=float)
-        maxs = np.array([row.q_max for row in spec.dh_rows], dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
         at_lower = np.isclose(q, mins, atol=1.0e-6)
         at_upper = np.isclose(q, maxs, atol=1.0e-6)
         if np.any(at_lower | at_upper):
@@ -160,11 +144,7 @@ class IterativeIKSolverBase:
                 diagnostics={
                     "attempt_idx": attempt_idx,
                     "workspace_radius": rough_reach_radius(spec),
-<<<<<<< HEAD
                     "distance_to_target": float(np.linalg.norm(np.asarray(target.p, dtype=float) - np.asarray(spec.articulated_model.base_T[:3, 3], dtype=float))),
-=======
-                    "distance_to_target": float(np.linalg.norm(np.asarray(target.p, dtype=float) - np.asarray(spec.base_T[:3, 3], dtype=float))),
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
                 },
             )
 

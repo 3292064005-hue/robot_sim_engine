@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Legacy compatibility override stub.
 #
 # Repository-managed runtime baselines live in configs/profiles/*.yaml.
@@ -7,12 +6,3 @@
 #   ROBOT_SIM_ENABLE_LEGACY_LOCAL_OVERRIDE=1
 # Prefer configs/local/app.local.yaml or ROBOT_SIM_APP_CONFIG_OVERRIDE instead.
 {}
-=======
-window:
-  title: "Robot Sim Engine"
-  width: 1600
-  height: 960
-  splitter_sizes: [320, 900, 320]
-plots:
-  max_points: 5000
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

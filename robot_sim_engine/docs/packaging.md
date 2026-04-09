@@ -27,7 +27,6 @@ pip install -e .[gui,dev]
 
 ## Installed runtime contract
 
-<<<<<<< HEAD
 - `configs/` 是唯一人工维护的配置真源。
 - `build/packaged_config_staging/robot_sim/resources/configs/**` 是构建/CI 验证时使用的 staging 镜像，不再维护仓库内常驻 `src/robot_sim/resources/configs/**` 镜像目录。
 - 构建阶段通过 `robot_sim.infra.packaged_config_sync.install_packaged_configs(...)` 将 `configs/` 直接复制到 `build_lib/robot_sim/resources/configs/**`，从而进入 wheel / sdist 产物。
@@ -44,8 +43,3 @@ pip install -e .[gui,dev]
 - `python scripts/verify_release_environment.py --mode release` 会校验发布构建环境是否对齐 `Ubuntu 22.04 + Python 3.10 + build tooling`。
 - `python scripts/verify_release_environment.py --mode gui` 会校验 GUI 烟测环境是否对齐 `Ubuntu 22.04 + Python 3.10 + PySide6>=6.5`。
 - 发布结论必须区分：`headless 验证通过`、`GUI 验证通过`、`release 环境契约通过`，禁止把其中任一项夸大成整体可交付。
-=======
-- 构建产物现在随包分发 `robot_sim.resources.configs/**`，覆盖 `app.yaml`、`logging.yaml`、`plugins.yaml`、profiles、robots 与 solver 配置。
-- 安装态启动优先读取包内资源；源码态仍兼容仓库 `configs/`。
-- CI `release_validation` 已增加 wheel 安装后的真实 `bootstrap()` / `build_container()` 烟测，而不是仅做 import 验证。
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

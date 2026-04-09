@@ -1,5 +1,4 @@
 from __future__ import annotations
-<<<<<<< HEAD
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -17,18 +16,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.model.articulated_robot_model import ArticulatedRobotModel
     from robot_sim.model.imported_robot_package import ImportedRobotPackage
     from robot_sim.model.runtime_robot_model import RuntimeRobotModel
-=======
-from dataclasses import dataclass, field
-import numpy as np
-from robot_sim.model.dh_row import DHRow
-from robot_sim.domain.types import FloatArray
-from robot_sim.domain.enums import KinematicConvention
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
 
 @dataclass(frozen=True)
 class RobotSpec:
-<<<<<<< HEAD
     """Canonical robot specification used by the runtime.
 
     ``dh_rows`` remains the persisted compatibility payload, but runtime execution now resolves
@@ -37,8 +28,6 @@ class RobotSpec:
     source of truth while the current solver surface still consumes a serial DH-like adapter chain.
     """
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     name: str
     dh_rows: tuple[DHRow, ...]
     base_T: FloatArray
@@ -47,7 +36,6 @@ class RobotSpec:
     display_name: str | None = None
     description: str = ""
     metadata: dict[str, object] = field(default_factory=dict)
-<<<<<<< HEAD
     joint_names: tuple[str, ...] = ()
     link_names: tuple[str, ...] = ()
     joint_types: tuple[JointType, ...] = ()
@@ -109,15 +97,12 @@ class RobotSpec:
             raise ValueError('link_names must contain at least one link per DOF chain')
         if self.structured_links and len(self.structured_links) < dof:
             raise ValueError('structured_links must contain at least one link per DOF chain')
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 
     @property
     def dof(self) -> int:
         return len(self.dh_rows)
 
     @property
-<<<<<<< HEAD
     def runtime_model(self):
         """Return the structured runtime semantic model derived from this spec.
 
@@ -148,27 +133,23 @@ class RobotSpec:
         Raises:
             ValueError: Propagates invalid articulated-model invariants.
         """
-        runtime_model = self.runtime_model
-        runtime_dispatch = dict(runtime_model.runtime_dispatch)
-        primary_surface = str(runtime_dispatch.get('primary_execution_surface', 'runtime_model') or 'runtime_model')
-        if primary_surface == 'articulated_model':
-            imported_package = self.imported_package
-            if imported_package is not None and imported_package.articulated_model is not None:
-                return imported_package.articulated_model
-            canonical_model = self.canonical_model
-            if canonical_model is not None:
-                from robot_sim.model.articulated_robot_model import build_articulated_robot_model_from_canonical
+        imported_package = self.imported_package
+        if imported_package is not None and imported_package.articulated_model is not None:
+            return imported_package.articulated_model
+        canonical_model = self.canonical_model
+        if canonical_model is not None:
+            from robot_sim.model.articulated_robot_model import build_articulated_robot_model_from_canonical
 
-                return build_articulated_robot_model_from_canonical(
-                    canonical_model,
-                    base_T=self.base_T,
-                    tool_T=self.tool_T,
-                    home_q=self.home_q,
-                    source_surface='canonical_model',
-                    fidelity=str(canonical_model.fidelity or self.metadata.get('import_fidelity', '') or ''),
-                    metadata={'robot_spec_name': self.name, 'runtime_dispatch': runtime_dispatch},
-                )
-        return runtime_model.articulated_model
+            return build_articulated_robot_model_from_canonical(
+                canonical_model,
+                base_T=self.base_T,
+                tool_T=self.tool_T,
+                home_q=self.home_q,
+                source_surface='canonical_model',
+                fidelity=str(canonical_model.fidelity or self.metadata.get('import_fidelity', '') or ''),
+                metadata={'robot_spec_name': self.name},
+            )
+        return self.runtime_model.articulated_model
 
     @property
     def execution_rows(self) -> tuple[DHRow, ...]:
@@ -194,8 +175,6 @@ class RobotSpec:
         return self.execution_rows
 
     @property
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
     def label(self) -> str:
         return self.display_name or self.name
 
@@ -205,7 +184,6 @@ class RobotSpec:
 
     @property
     def model_source(self) -> str:
-<<<<<<< HEAD
         return str(self.metadata.get('model_source', self.kinematic_source or 'dh_config'))
 
     @property
@@ -252,7 +230,6 @@ class RobotSpec:
         summary['runtime_semantic_family'] = runtime_model.semantic_family
         summary['runtime_source_format'] = runtime_model.source_format
         summary['runtime_fidelity'] = runtime_model.fidelity
-        summary['runtime_dispatch'] = dict(runtime_model.runtime_dispatch)
         return summary
 
     @property
@@ -272,17 +249,3 @@ class RobotSpec:
 
     def q_mid(self) -> FloatArray:
         return np.array([(r.q_min + r.q_max) * 0.5 for r in self.execution_rows], dtype=float)
-=======
-        return str(self.metadata.get('model_source', 'dh_config'))
-
-    @property
-    def geometry_available(self) -> bool:
-        return bool(self.metadata.get('geometry_available', False))
-
-    @property
-    def collision_model(self) -> str:
-        return str(self.metadata.get('collision_model', 'none'))
-
-    def q_mid(self) -> FloatArray:
-        return np.array([(r.q_min + r.q_max) * 0.5 for r in self.dh_rows], dtype=float)
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3

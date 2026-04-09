@@ -45,7 +45,6 @@ class _DummyEmptySnapshotScene:
         return {'title': 'empty'}
 
 
-<<<<<<< HEAD
 class _DummyOverlayOnlySnapshotScene:
     plotter = None
 
@@ -53,8 +52,6 @@ class _DummyOverlayOnlySnapshotScene:
         return {'title': 'overlay-only', 'overlay_text': 'Robot Sim Engine'}
 
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_screenshot_service_uses_live_plotter_when_available(tmp_path):
     path = ScreenshotService().capture(_DummySceneWithPlotter(), tmp_path / 'shot.png')
     assert path.exists()
@@ -81,7 +78,6 @@ def test_screenshot_service_snapshot_render_is_deterministic(tmp_path):
     assert digest == '0ff64738775ffb7a627c2837e8cb44d9e3c197eb1da59cf087bababe1ea5693d'
 
 
-<<<<<<< HEAD
 def test_screenshot_service_snapshot_sample_count_matches_drawable_samples():
     service = ScreenshotService()
     snapshot = _DummySnapshotScene().scene_snapshot()
@@ -97,13 +93,10 @@ def test_screenshot_service_renders_overlay_only_snapshot(tmp_path):
     assert path.exists()
     assert path.stat().st_size > 0
 
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
 def test_screenshot_service_rejects_empty_snapshot_payload(tmp_path):
     with pytest.raises(ExportRobotError) as exc_info:
         ScreenshotService().capture(_DummyEmptySnapshotScene(), tmp_path / 'shot.png')
     assert exc_info.value.error_code == 'render_unavailable'
-<<<<<<< HEAD
 
 
 
@@ -133,5 +126,3 @@ def test_screenshot_service_capture_details_include_runtime_provenance(tmp_path)
     runtime_state = details['runtime_state']
     assert runtime_state.level == 'snapshot_capture'
     assert details['provenance']['render_path'] == 'snapshot_renderer'
-=======
->>>>>>> 3ed78e647985c6d680c085e4480d898855278db3
