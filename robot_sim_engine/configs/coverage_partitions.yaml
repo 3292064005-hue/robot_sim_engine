@@ -1,0 +1,14 @@
+partitions:
+  core:
+    roots:
+      - src/robot_sim/core
+    minimum: 75
+  application:
+    roots:
+      - src/robot_sim/application
+    minimum: 85
+  presentation_controllers_and_coordinators:
+    roots:
+      - src/robot_sim/presentation/controllers
+      - src/robot_sim/presentation/coordinators
+    minimum: 80

@@ -1,0 +1,15 @@
+release_environment:
+  release:
+    platform_system: Linux
+    os_id: ubuntu
+    os_version_id: '22.04'
+    python_major: 3
+    python_minor: 10
+    requires_build: true
+  gui:
+    platform_system: Linux
+    os_id: ubuntu
+    os_version_id: '22.04'
+    python_major: 3
+    python_minor: 10
+    pyside_min_version: '6.5'

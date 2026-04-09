@@ -1,0 +1,3 @@
+scenarios:
+  clean_bootstrap: {}
+  clean_headless_mainline: {}

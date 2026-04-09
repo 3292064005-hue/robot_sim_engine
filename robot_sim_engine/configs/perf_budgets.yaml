@@ -1,0 +1,146 @@
+profiles:
+  ci:
+    environment_overrides:
+      - selector:
+          platform_system: linux
+          python_major_minor: '3.13'
+        budgets:
+          ik_planar_smoke:
+            median_elapsed_ms:
+              max: 125.0
+              tolerance: 4.0
+            p95_elapsed_ms:
+              max: 145.0
+              tolerance: 4.0
+            max_single_elapsed_ms:
+              max: 165.0
+              tolerance: 6.0
+    ik_planar_smoke:
+      sampling:
+        warmup_runs: 3
+        measured_runs: 9
+      median_elapsed_ms:
+        max: 60.0
+        tolerance: 0.5
+      p95_elapsed_ms:
+        max: 72.0
+        tolerance: 1.0
+      max_single_elapsed_ms:
+        max: 80.0
+        tolerance: 2.0
+    fk_planar_smoke:
+      sampling:
+        warmup_runs: 2
+        measured_runs: 9
+      median_elapsed_ms:
+        max: 10.0
+        tolerance: 5.0
+      p95_elapsed_ms:
+        max: 15.0
+        tolerance: 5.0
+      max_single_elapsed_ms:
+        max: 20.0
+        tolerance: 8.0
+    jacobian_planar_smoke:
+      sampling:
+        warmup_runs: 2
+        measured_runs: 9
+      median_elapsed_ms:
+        max: 18.0
+        tolerance: 8.0
+      p95_elapsed_ms:
+        max: 24.0
+        tolerance: 8.0
+      max_single_elapsed_ms:
+        max: 30.0
+        tolerance: 10.0
+    snapshot_capture_smoke:
+      sampling:
+        warmup_runs: 1
+        measured_runs: 5
+      median_elapsed_ms:
+        max: 45.0
+        tolerance: 15.0
+      p95_elapsed_ms:
+        max: 60.0
+        tolerance: 15.0
+      max_single_elapsed_ms:
+        max: 80.0
+        tolerance: 20.0
+    ik_planar_default_suite:
+      p95_elapsed_ms: 50.0
+      mean_final_pos_err: 0.05
+      success_rate_min: 0.55
+    trajectory_plan_smoke:
+      total_elapsed_ms: 250.0
+      validation_elapsed_ms: 150.0
+    render_snapshot_capture:
+      p95_elapsed_ms: 32.0
+  release:
+    ik_planar_smoke:
+      sampling:
+        warmup_runs: 2
+        measured_runs: 9
+      median_elapsed_ms: 45.0
+      p95_elapsed_ms: 52.0
+      max_single_elapsed_ms: 60.0
+    fk_planar_smoke:
+      sampling:
+        warmup_runs: 2
+        measured_runs: 9
+      median_elapsed_ms:
+        max: 10.0
+        tolerance: 5.0
+      p95_elapsed_ms:
+        max: 15.0
+        tolerance: 5.0
+      max_single_elapsed_ms:
+        max: 20.0
+        tolerance: 8.0
+    jacobian_planar_smoke:
+      sampling:
+        warmup_runs: 2
+        measured_runs: 9
+      median_elapsed_ms:
+        max: 18.0
+        tolerance: 8.0
+      p95_elapsed_ms:
+        max: 24.0
+        tolerance: 8.0
+      max_single_elapsed_ms:
+        max: 30.0
+        tolerance: 10.0
+    snapshot_capture_smoke:
+      sampling:
+        warmup_runs: 1
+        measured_runs: 5
+      median_elapsed_ms:
+        max: 45.0
+        tolerance: 15.0
+      p95_elapsed_ms:
+        max: 60.0
+        tolerance: 15.0
+      max_single_elapsed_ms:
+        max: 80.0
+        tolerance: 20.0
+    ik_planar_default_suite:
+      p95_elapsed_ms: 40.0
+      mean_final_pos_err: 0.02
+      success_rate_min: 0.60
+    trajectory_plan_smoke:
+      total_elapsed_ms: 200.0
+      validation_elapsed_ms: 120.0
+    render_snapshot_capture:
+      p95_elapsed_ms: 24.0
+    fk_planar_smoke:
+      median_elapsed_ms: 8.0
+      p95_elapsed_ms: 12.0
+      max_single_elapsed_ms: 18.0
+    jacobian_planar_smoke:
+      median_elapsed_ms: 14.0
+      p95_elapsed_ms: 18.0
+      max_single_elapsed_ms: 24.0
+    snapshot_capture_smoke:
+      median_elapsed_ms: 32.0
+      p95_elapsed_ms: 42.0
+      max_single_elapsed_ms: 56.0

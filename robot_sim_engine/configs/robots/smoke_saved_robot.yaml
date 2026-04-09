@@ -1,0 +1,176 @@
+id: smoke_saved_robot
+name: Smoke Robot
+metadata:
+  importer_requested: yaml
+  importer_resolved: yaml
+  import_fidelity: native
+  geometry_available: true
+  geometry_ref: metadata.serialized_robot_geometry
+  collision_geometry_ref: metadata.serialized_collision_geometry
+  serialized_robot_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    metadata:
+      generator: simple_capsules
+    links:
+    - name: link_0
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+  serialized_collision_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    metadata:
+      generator: simple_capsules
+    links:
+    - name: link_0
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+  import_family: config
+  source_model_summary:
+    source_format: yaml
+    joint_count: 1
+    link_count: 2
+    has_visual: false
+    has_collision: false
+  canonical_model_summary:
+    name: smoke_robot
+    root_link: link_0
+    source_format: yaml
+    execution_adapter: canonical_dh_chain
+    execution_surface: canonical_model
+    execution_row_count: 1
+    fidelity: native
+    joint_count: 1
+    link_count: 2
+    has_visual: false
+    has_collision: false
+  execution_adapter: canonical_dh_chain
+dh_rows:
+- a: 0.25
+  alpha: 0.0
+  d: 0.0
+  theta_offset: 0.0
+  joint_type: revolute
+  q_min: -3.141592653589793
+  q_max: 3.141592653589793
+base_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+tool_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+home_q:
+- 0.0
+geometry_bundle_ref: metadata.serialized_robot_geometry
+collision_bundle_ref: metadata.serialized_collision_geometry
+source_model_summary:
+  source_format: yaml
+  joint_count: 1
+  link_count: 2
+  has_visual: false
+  has_collision: false
+canonical_model:
+  name: smoke_robot
+  root_link: link_0
+  source_format: yaml
+  execution_adapter: canonical_dh_chain
+  execution_rows:
+  - a: 0.25
+    alpha: 0.0
+    d: 0.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -3.141592653589793
+    q_max: 3.141592653589793
+  fidelity: native
+  metadata:
+    generated_from: robot_registry
+    execution_surface: canonical_model
+  joints:
+  - name: joint_0
+    parent_link: link_0
+    child_link: link_1
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    limit:
+      lower: -3.141592653589793
+      upper: 3.141592653589793
+      velocity: null
+      effort: null
+    origin_translation:
+    - 0.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    metadata:
+      generated_from: robot_registry
+      execution_surface: canonical_model
+  links:
+  - name: link_0
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: false
+    metadata:
+      generated_from: robot_registry
+  - name: link_1
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: false
+    metadata:
+      generated_from: robot_registry

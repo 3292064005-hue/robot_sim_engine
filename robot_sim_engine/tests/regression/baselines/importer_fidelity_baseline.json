@@ -1,0 +1,20 @@
+{
+  "urdf_structured_serial": {
+    "execution_adapter": "canonical_articulated_chain",
+    "fidelity": "serial_with_collision",
+    "has_collision": true,
+    "has_visual": true,
+    "joint_count": 1,
+    "link_count": 2,
+    "name": "baseline",
+    "warnings": []
+  },
+  "yaml_planar_2dof": {
+    "dof": 2,
+    "execution_adapter": "canonical_dh_chain",
+    "fidelity": "native",
+    "joint_count": 2,
+    "link_count": 3,
+    "name": "planar_2dof"
+  }
+}

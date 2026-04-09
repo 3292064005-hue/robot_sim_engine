@@ -1,0 +1,15 @@
+window:
+  title: "Robot Sim Engine [research]"
+plots:
+  max_points: 8000
+ik:
+  retry_count: 3
+trajectory:
+  validation_layers: [timing, path_metrics, goal_metrics, collision, limits]
+  dt: 0.01
+features:
+  experimental_modules_enabled: true
+  experimental_backends_enabled: true
+  plugin_discovery_enabled: true
+  contract_doc_autogen_enabled: true
+  plugin_status_allowlist: [stable, beta, experimental, internal, deprecated]

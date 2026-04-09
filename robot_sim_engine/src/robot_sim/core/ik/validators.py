@@ -1,0 +1,11 @@
+from __future__ import annotations
+import numpy as np
+from robot_sim.model.robot_spec import RobotSpec
+from robot_sim.domain.types import FloatArray
+
+
+def clip_to_joint_limits(spec: RobotSpec, q: FloatArray) -> FloatArray:
+    articulated = spec.articulated_model
+    articulated.require_serial_tree_execution()
+    q_out = np.asarray(q, dtype=float).copy()
+    return np.clip(q_out, articulated.joint_minima, articulated.joint_maxima)
