@@ -74,7 +74,13 @@ class IKRequest:
 
 @dataclass(frozen=True)
 class TrajectoryRequest:
-    """Trajectory planning request at the application boundary."""
+    """Trajectory planning request at the application boundary.
+
+    Boundary behavior:
+        ``planning_scene`` is the canonical collision/scene input. ``collision_obstacles`` remains
+        only as a migration adapter so older callers can be normalized onto the planning-scene
+        contract without keeping a second validation implementation alive.
+    """
 
     q_start: FloatArray
     q_goal: FloatArray | None

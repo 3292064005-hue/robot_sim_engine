@@ -9,7 +9,7 @@ class PlaybackTaskCoordinator:
     def __init__(self, window, *, runtime=None, playback=None, playback_threader=None) -> None:
         self.window = window
         self.runtime = require_dependency(runtime, 'runtime_facade')
-        self.playback = require_dependency(playback, 'playback_facade')
+        self.playback = require_dependency(playback, 'motion_workflow')
         self.playback_threader = require_dependency(playback_threader, 'playback_threader')
 
     def play(self) -> None:

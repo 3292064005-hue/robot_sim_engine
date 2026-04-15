@@ -8,4 +8,6 @@ def test_perf_budget_service_applies_environment_overrides(project_root) -> None
     base_budget = service.budget('ik_planar_smoke', profile='ci', environment={'platform_system': 'linux', 'python_major_minor': '3.10', 'platform_machine': 'x86_64'})
     override_budget = service.budget('ik_planar_smoke', profile='ci', environment={'platform_system': 'linux', 'python_major_minor': '3.13', 'platform_machine': 'x86_64'})
     assert float(base_budget['median_elapsed_ms']['max']) == 60.0
-    assert float(override_budget['median_elapsed_ms']['max']) == 125.0
+    assert float(override_budget['median_elapsed_ms']['max']) == 320.0
+    assert float(override_budget['p95_elapsed_ms']['max']) == 345.0
+    assert float(override_budget['max_single_elapsed_ms']['max']) == 360.0

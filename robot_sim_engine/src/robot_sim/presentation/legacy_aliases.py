@@ -32,7 +32,7 @@ class MainWindowLegacyAliasMixin:
             The shim remains read-only. It preserves the historical alias names only as
             thin dispatch wrappers and does not recreate separate private implementations.
         """
-        record_compatibility_usage('main window private alias shim', detail=alias_name)
+        record_compatibility_usage('main window private alias shim', detail=f'{alias_name}->{target_name}')
         try:
             handler = getattr(self, target_name)
         except AttributeError as exc:

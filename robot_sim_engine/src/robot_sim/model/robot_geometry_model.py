@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from robot_sim.model.robot_geometry import RobotGeometry
+from robot_sim.model.robot_geometry_serialization import deserialize_robot_geometry, serialize_robot_geometry
 
 
 @dataclass(frozen=True)
@@ -35,7 +36,16 @@ class RobotGeometryModel:
 
 
     def to_dict(self) -> dict[str, object]:
-        from robot_sim.application.services.runtime_asset_service import serialize_robot_geometry
+        """Serialize the geometry model without depending on application services.
+
+        Returns:
+            dict[str, object]: JSON/YAML-safe payload used by registry, export, and session
+                round-trips.
+
+        Boundary behavior:
+            Missing visual or collision bundles remain explicit ``None`` values so callers do
+            not need to guess whether a bundle was unavailable or omitted.
+        """
         return {
             'geometry_contract': str(self.geometry_contract or 'split_visual_collision'),
             'visual_geometry': serialize_robot_geometry(self.visual_geometry),
@@ -45,9 +55,21 @@ class RobotGeometryModel:
 
     @classmethod
     def from_dict(cls, payload: dict[str, object] | None) -> 'RobotGeometryModel | None':
+        """Build a geometry model from persisted payload data.
+
+        Args:
+            payload: Serialized geometry-model payload or ``None``.
+
+        Returns:
+            RobotGeometryModel | None: Structured geometry model, or ``None`` when the payload
+                is empty.
+
+        Boundary behavior:
+            Unknown fields remain in ``metadata`` only; geometry bundles are reconstructed from
+            the stable serializer contract instead of application-service helpers.
+        """
         if not isinstance(payload, dict) or not payload:
             return None
-        from robot_sim.application.services.runtime_asset_service import deserialize_robot_geometry
 
         visual_summary = payload.get('visual_geometry')
         collision_summary = payload.get('collision_geometry')

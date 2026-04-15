@@ -34,7 +34,7 @@
   - promotion_blockers: `['legacy experimental namespace retained only for migration compatibility']`
   - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
   - promotion_ready: `False`
-- `presentation.widgets.collision_panel` (disabled_by_profile)
+- `presentation.widgets.collision_panel` (deprecated_compatibility_alias)
   - owner: `presentation-runtime`
   - stable_ui_surface: `main_window_ui`
   - exit_criteria: `['widget must mount through the stable main window builder without experimental aliases', 'task orchestration must remain on explicit coordinator dependency routes']`
@@ -42,7 +42,9 @@
   - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
   - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
   - promotion_ready: `False`
-- `presentation.widgets.export_panel` (disabled_by_profile)
+  - compatibility_alias_target: `presentation.experimental.widgets.collision_panel`
+  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
+- `presentation.widgets.export_panel` (deprecated_compatibility_alias)
   - owner: `presentation-runtime`
   - stable_ui_surface: `main_window_ui`
   - exit_criteria: `['export widget must project only through stable view contracts', 'background export worker lifecycle must remain intact under GUI smoke']`
@@ -50,7 +52,9 @@
   - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
   - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
   - promotion_ready: `False`
-- `presentation.widgets.scene_options_panel` (disabled_by_profile)
+  - compatibility_alias_target: `presentation.experimental.widgets.export_panel`
+  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
+- `presentation.widgets.scene_options_panel` (deprecated_compatibility_alias)
   - owner: `presentation-runtime`
   - stable_ui_surface: `main_window_ui`
   - exit_criteria: `['scene options widget must consume typed scene authority summaries only', 'GUI smoke and planning-scene regressions must remain green']`
@@ -58,6 +62,8 @@
   - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
   - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
   - promotion_ready: `False`
+  - compatibility_alias_target: `presentation.experimental.widgets.scene_options_panel`
+  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
 - `render.experimental.picking` (disabled_by_profile)
   - owner: `render-runtime`
   - stable_ui_surface: `scene_3d_widget`

@@ -1,50 +1,84 @@
 plugins:
-  - id: research_demo_dls
+  - id: stable_demo_lm
     kind: solver
-    factory: robot_sim.plugins.research_demo_solver:build_plugin
-    aliases: [research_demo]
-    enabled_profiles: [research]
+    factory: robot_sim.plugins.stable_demo_solver:build_plugin
+    aliases: [stable_lm]
+    enabled_profiles: [default, dev, gui, ci, release]
     source: shipped_plugin
     api_version: v1
     sdk_contract_version: v1
     min_host_version: 0.7.0
-    required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
-    status: experimental
+    required_host_capabilities: [plugin_status:stable]
+    status: stable
     metadata:
       family: iterative
-      display_name: Research demo DLS solver
+      display_name: Stable shipped LM solver
       verification_scope: registry_smoke
 
-  - id: research_demo_cartesian_planner
+  - id: stable_demo_joint_planner
     kind: planner
-    factory: robot_sim.plugins.research_demo_planner:build_plugin
-    aliases: [research_cartesian]
-    enabled_profiles: [research]
+    factory: robot_sim.plugins.stable_demo_planner:build_plugin
+    aliases: [stable_joint_space]
+    enabled_profiles: [default, dev, gui, ci, release]
     source: shipped_plugin
     api_version: v1
     sdk_contract_version: v1
     min_host_version: 0.7.0
-    required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
-    status: experimental
+    required_host_capabilities: [plugin_status:stable]
+    status: stable
     metadata:
-      family: cartesian
-      display_name: Research demo Cartesian planner
+      family: joint_space
+      display_name: Stable shipped joint planner
       verification_scope: registry_smoke
 
-  - id: research_demo_yaml_importer
+  - id: stable_demo_yaml_importer
     kind: importer
-    factory: robot_sim.plugins.research_demo_importer:build_plugin
-    aliases: [research_yaml]
-    enabled_profiles: [research]
+    factory: robot_sim.plugins.stable_demo_importer:build_plugin
+    aliases: [stable_yaml]
+    enabled_profiles: [default, dev, gui, ci, release]
     source: shipped_plugin
     api_version: v1
     sdk_contract_version: v1
     min_host_version: 0.7.0
-    required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
-    status: experimental
+    required_host_capabilities: [plugin_status:stable]
+    status: stable
     metadata:
       family: config
-      display_name: Research demo YAML importer
+      display_name: Stable shipped YAML importer
       source_format: yaml
       fidelity: native
       verification_scope: registry_smoke
+
+  - id: stable_demo_scene_backend_contract
+    kind: scene_backend
+    factory: robot_sim.plugins.stable_demo_scene_backend:build_plugin
+    aliases: [stable_scene_backend_contract]
+    enabled_profiles: [default, dev, gui, ci, release]
+    source: shipped_plugin
+    api_version: v1
+    sdk_contract_version: v1
+    min_host_version: 0.7.0
+    required_host_capabilities: [plugin_status:stable, plugin_kind:scene_backend, scene_geometry_contract:v1]
+    optional_host_capabilities: [scene_validation_capability_matrix:v1, capability_matrix:v1]
+    status: stable
+    metadata:
+      family: scene_contract
+      display_name: Stable shipped scene backend contract
+      verification_scope: capability_surface
+
+  - id: stable_demo_collision_backend_contract
+    kind: collision_backend
+    factory: robot_sim.plugins.stable_demo_collision_backend:build_plugin
+    aliases: [stable_collision_backend_contract]
+    enabled_profiles: [default, dev, gui, ci, release]
+    source: shipped_plugin
+    api_version: v1
+    sdk_contract_version: v1
+    min_host_version: 0.7.0
+    required_host_capabilities: [plugin_status:stable, plugin_kind:collision_backend, collision_backend_contract:v1]
+    optional_host_capabilities: [scene_validation_capability_matrix:v1, capability_matrix:v1]
+    status: stable
+    metadata:
+      family: collision_contract
+      display_name: Stable shipped collision backend contract
+      verification_scope: capability_surface

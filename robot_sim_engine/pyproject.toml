@@ -14,6 +14,10 @@ dependencies = [
   "PyYAML>=6.0",
 ]
 
+[project.scripts]
+robot-sim = "robot_sim.app.cli:main"
+robot-sim-gui = "robot_sim.app.main:main"
+
 [project.optional-dependencies]
 gui = [
   "PySide6>=6.5",
@@ -31,8 +35,7 @@ dev = [
   "build>=1.2",
   "nox>=2024.4.15",
 ]
-
-[project.entry-points."robot_sim.plugins"]
+research = []
 
 [tool.setuptools.packages.find]
 where = ["src"]

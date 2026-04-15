@@ -24,6 +24,7 @@ class ImportedRobotPackage:
     geometry_model: RobotGeometryModel | None = None
     source_model_summary: dict[str, object] = field(default_factory=dict)
     asset_resolution_manifest: dict[str, object] = field(default_factory=dict)
+    fidelity_breakdown: dict[str, object] = field(default_factory=dict)
     fidelity: str = ''
     warnings: tuple[str, ...] = ()
     metadata: dict[str, object] = field(default_factory=dict)
@@ -39,6 +40,7 @@ class ImportedRobotPackage:
             'geometry_model': None if self.geometry_model is None else self.geometry_model.to_dict(),
             'source_model_summary': dict(self.source_model_summary or {}),
             'asset_resolution_manifest': dict(self.asset_resolution_manifest or {}),
+            'fidelity_breakdown': dict(self.fidelity_breakdown or {}),
             'fidelity': str(self.fidelity or ''),
             'warnings': [str(item) for item in self.warnings],
             'metadata': dict(self.metadata or {}),
@@ -65,6 +67,7 @@ class ImportedRobotPackage:
             geometry_model=geometry_model,
             source_model_summary=dict(payload.get('source_model_summary', {}) or {}),
             asset_resolution_manifest=dict(payload.get('asset_resolution_manifest', {}) or {}),
+            fidelity_breakdown=dict(payload.get('fidelity_breakdown', {}) or {}),
             fidelity=str(payload.get('fidelity', '') or ''),
             warnings=tuple(str(item) for item in payload.get('warnings', ()) or ()),
             metadata=dict(payload.get('metadata', {}) or {}),
@@ -82,5 +85,6 @@ class ImportedRobotPackage:
             'geometry_model': None if self.geometry_model is None else self.geometry_model.summary(),
             'source_model_summary': dict(self.source_model_summary or {}),
             'asset_resolution_manifest': dict(self.asset_resolution_manifest or {}),
+            'fidelity_breakdown': dict(self.fidelity_breakdown or {}),
             'metadata': dict(self.metadata or {}),
         }

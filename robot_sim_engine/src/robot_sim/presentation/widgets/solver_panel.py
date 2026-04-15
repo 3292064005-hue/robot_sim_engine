@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from robot_sim.application.planner_capabilities import planner_mode_options
 from robot_sim.presentation.qt_runtime import (
     QCheckBox,
     QComboBox,
@@ -82,7 +83,7 @@ class SolverPanel(QWidget):  # pragma: no cover - GUI shell
         self.retry_count.setValue(1)
 
         self.traj_mode = QComboBox()
-        self.traj_mode.addItems(["joint_space", "cartesian_pose"])
+        self.traj_mode.addItems(list(planner_mode_options()))
 
         self.traj_duration = QDoubleSpinBox()
         self.traj_duration.setRange(0.1, 120.0)

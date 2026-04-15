@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from robot_sim.core.collision.allowed_collisions import AllowedCollisionMatrix
 from robot_sim.core.collision.geometry import AABB
 from robot_sim.domain.collision_backends import default_collision_backend_registry
+from robot_sim.domain.collision_fidelity import summarize_collision_fidelity, validation_backend_capability_matrix
 from robot_sim.domain.enums import CollisionLevel
 from robot_sim.model.scene_geometry_authority import (
     SceneGeometryAuthority,
@@ -12,6 +13,7 @@ from robot_sim.model.scene_geometry_authority import (
     summarize_scene_geometry_authority,
 )
 from robot_sim.model.scene_graph_authority import SceneGraphAuthority
+from robot_sim.model.scene_validation_surface import summarize_record_validation_surface, summarize_scene_validation_surface
 
 _COLLISION_BACKEND_REGISTRY = default_collision_backend_registry()
 _COLLISION_BACKEND_FALLBACK = _COLLISION_BACKEND_REGISTRY.default_backend
@@ -69,13 +71,41 @@ class SceneObject:
 
     def summary(self) -> dict[str, object]:
         metadata = dict(self.metadata or {})
-        resolved_geometry = _scene_geometry_payload_from_metadata(metadata, 'resolved_geometry', _serialize_aabb(self.geometry))
-        declared_geometry = _scene_geometry_payload_from_metadata(metadata, 'declared_geometry', resolved_geometry)
+        validation_geometry = _scene_geometry_payload_from_metadata(
+            metadata,
+            'validation_geometry',
+            _scene_geometry_payload_from_metadata(metadata, 'resolved_geometry', _serialize_aabb(self.geometry)),
+        )
+        declaration_geometry = _scene_geometry_payload_from_metadata(
+            metadata,
+            'declaration_geometry',
+            _scene_geometry_payload_from_metadata(metadata, 'declared_geometry', validation_geometry),
+        )
+        render_geometry = _scene_geometry_payload_from_metadata(
+            metadata,
+            'render_geometry',
+            declaration_geometry,
+        )
+        validation_geometry_source = str(metadata.get('validation_geometry_source', metadata.get('resolved_geometry_source', '')) or '')
+        validation_surface = summarize_record_validation_surface(
+            validation_geometry_source=validation_geometry_source,
+            validation_geometry=validation_geometry,
+            attached=bool('attach_link' in metadata),
+        )
         return {
             'object_id': str(self.object_id),
             'metadata': _stable_scene_object_metadata(metadata),
-            'declared_geometry': declared_geometry,
-            'resolved_geometry': resolved_geometry,
+            'declaration_geometry': declaration_geometry,
+            'validation_geometry': validation_geometry,
+            'render_geometry': render_geometry,
+            'validation_surface': validation_surface,
+            # legacy aliases
+            'declared_geometry': declaration_geometry,
+            'resolved_geometry': validation_geometry,
+            'declaration_geometry_source': str(metadata.get('declaration_geometry_source', metadata.get('declared_geometry_source', metadata.get('source', ''))) or metadata.get('source', '')),
+            'validation_geometry_source': validation_geometry_source,
+            'render_geometry_source': str(metadata.get('render_geometry_source', metadata.get('source', '')) or metadata.get('source', '')),
+            **validation_surface,
         }
 
 
@@ -285,9 +315,16 @@ class PlanningScene:
 
     def summary(self) -> dict[str, object]:
         geometry_authority = self.geometry_authority.summary()
+        collision_fidelity = summarize_collision_fidelity(
+            collision_level=self.collision_level,
+            collision_backend=self.collision_backend,
+            scene_fidelity=self.scene_fidelity,
+            experimental_backends_enabled=bool(self.metadata.get('experimental_backends_enabled', self.collision_backend != 'capsule')),
+        )
         capability_badges = [
             f'collision_backend:{self.collision_backend}',
             f'collision_level:{getattr(self.collision_level, "value", str(self.collision_level))}',
+            f'collision_precision:{collision_fidelity["precision"]}',
             f'scene_authority:{self.scene_authority}',
             f'scene_fidelity:{self.scene_fidelity}',
             f'edit_surface:{self.edit_surface}',
@@ -295,6 +332,15 @@ class PlanningScene:
         capability_badges.extend(item for item in geometry_authority.get('capability_badges', []) if item not in capability_badges)
         scene_graph_authority = self.scene_graph_authority.summary()
         capability_badges.extend(item for item in scene_graph_authority.get('capability_badges', []) if item not in capability_badges)
+        validation_surface = summarize_scene_validation_surface(
+            collision_backend=str(self.collision_backend),
+            scene_fidelity=self.scene_fidelity,
+            scene_authority=self.scene_authority,
+            scene_geometry_contract=str(self.geometry_authority.scene_geometry_contract or 'declaration_validation_render'),
+            attached_object_count=len(self.attached_objects),
+            adapter_applied=bool(self.metadata.get('legacy_obstacle_adapter_applied', False)),
+            source=str(self.metadata.get('scene_source', 'planning_scene') or 'planning_scene'),
+        )
         summary = {
             'revision': int(self.revision),
             'collision_backend': str(self.collision_backend),
@@ -311,15 +357,28 @@ class PlanningScene:
             'geometry_source': str(self.geometry_source),
             'scene_authority': self.scene_authority,
             'scene_fidelity': self.scene_fidelity,
+            'collision_fidelity': collision_fidelity,
             'edit_surface': self.edit_surface,
             'clearance_policy': str(self.clearance_policy),
             'obstacle_count': int(len(self.obstacles)),
             'attached_object_count': int(len(self.attached_objects)),
-            'stable_surface_version': str(self.metadata.get('stable_surface_version', 'v2')),
-            'scene_geometry_contract': str(self.geometry_authority.scene_geometry_contract or 'resolved_only'),
+            'stable_surface_version': str(self.metadata.get('stable_surface_version', 'v3')), 
+            'scene_geometry_contract': str(self.geometry_authority.scene_geometry_contract or 'declaration_validation_render'),
+            'scene_geometry_contract_version': str(self.metadata.get('scene_geometry_contract_version', 'v1') or 'v1'),
+            'scene_validation_capability_matrix_version': str(self.metadata.get('scene_validation_capability_matrix_version', 'v1') or 'v1'),
+            'validation_backend_capabilities': validation_backend_capability_matrix(
+                experimental_enabled=bool(self.metadata.get('experimental_backends_enabled', self.collision_backend != 'capsule'))
+            ),
+            'declaration_geometry_source': str(self.geometry_authority.declaration_geometry_source or ''),
+            'validation_geometry_source': str(self.geometry_authority.validation_geometry_source or ''),
+            'render_geometry_source': str(self.geometry_authority.render_geometry_source or ''),
+            # legacy aliases
+            'declared_geometry_source': str(self.geometry_authority.declared_geometry_source or ''),
+            'resolved_geometry_source': str(self.geometry_authority.resolved_geometry_source or ''),
             'capability_badges': capability_badges,
             'geometry_authority': geometry_authority,
             'scene_graph_authority': scene_graph_authority,
+            'validation_surface': validation_surface,
             'scene_graph_diff': dict(self.metadata.get('scene_graph_diff', {}) or {}),
             'runtime_model_summary': dict(self.metadata.get('runtime_model_summary', {}) or {}),
             'execution_summary': dict(self.metadata.get('execution_summary', {}) or {}),
@@ -342,5 +401,6 @@ class PlanningScene:
                     'declared_backend_family',
                 }
             },
+            **validation_surface,
         }
         return summary

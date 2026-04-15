@@ -16,12 +16,13 @@ class DummyWindow:
     def __init__(self):
         self.runtime_facade = SimpleNamespace(state=SimpleNamespace(trajectory=SimpleNamespace()))
         self.export_facade = SimpleNamespace(
-            export_trajectory=lambda: 'trajectory.csv',
+            export_trajectory_bundle=lambda _name='trajectory_bundle.npz': 'trajectory_bundle.npz',
+            export_trajectory=lambda _name='trajectory_bundle.npz': 'trajectory_bundle.npz',
             export_trajectory_metrics=lambda _name, _metrics: 'trajectory_metrics.json',
-            export_session=lambda: 'session.json',
-            export_package=lambda: 'package.zip',
-            export_benchmark=lambda: 'benchmark.json',
-            export_benchmark_cases_csv=lambda: 'benchmark.csv',
+            export_session=lambda _name='session.json', telemetry_detail='full': 'session.json',
+            export_package=lambda _name='package.zip', telemetry_detail='minimal': 'package.zip',
+            export_benchmark=lambda _name='benchmark_report.json': 'benchmark.json',
+            export_benchmark_cases_csv=lambda _name='benchmark_cases.csv': 'benchmark.csv',
         )
         self.metrics_service = SimpleNamespace(summarize_trajectory=lambda _traj: {'mode': 'joint'})
         self.threader = DummyThreader()
@@ -45,7 +46,7 @@ def test_export_task_coordinator_routes_exports_through_background_tasks():
 
     assert [item['task_kind'] for item in window.threader.started] == ['export', 'export', 'export', 'export']
     assert window.status_panel.messages == [
-        'export:轨迹导出任务已启动',
+        'export:轨迹包导出任务已启动',
         'registered:export:export-1',
         'export:会话导出任务已启动',
         'registered:export:export-1',
@@ -61,7 +62,7 @@ def test_export_task_coordinator_routes_exports_through_background_tasks():
         start['on_finished'](payload)
 
     assert window.status_panel.messages[-6:] == [
-        '轨迹已导出：trajectory.csv',
+        '轨迹包已导出：trajectory_bundle.npz',
         '轨迹指标已导出：trajectory_metrics.json',
         '会话已导出：session.json',
         '完整导出包已生成：package.zip',

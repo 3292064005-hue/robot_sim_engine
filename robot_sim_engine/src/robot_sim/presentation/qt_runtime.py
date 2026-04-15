@@ -92,6 +92,26 @@ else:
     QT_RUNTIME_AVAILABLE = True
 
 
+_HEADLESS_QT_APP: Any | None = None
+
+
+def ensure_qt_application() -> None:
+    """Ensure widget construction has an active ``QApplication`` instance.
+
+    Qt aborts the process when a ``QWidget`` is constructed before the application
+    object exists, so this guard must run before widget ``super().__init__`` calls.
+    """
+    if not QT_RUNTIME_AVAILABLE:
+        raise RuntimeError('PySide6 GUI runtime is required for QApplication construction.')
+    instance_fn = getattr(QApplication, 'instance', None)
+    if callable(instance_fn) and instance_fn() is not None:
+        return
+    global _HEADLESS_QT_APP
+    if _HEADLESS_QT_APP is None:
+        _HEADLESS_QT_APP = QApplication([])
+        setattr(_HEADLESS_QT_APP, '_robot_sim_headless_helper', True)
+
+
 def require_qt_runtime(feature: str) -> None:
     """Raise a deterministic error when a stable GUI surface is constructed without Qt.
 
@@ -102,5 +122,6 @@ def require_qt_runtime(feature: str) -> None:
         RuntimeError: If the real Qt runtime is unavailable.
     """
     if QT_RUNTIME_AVAILABLE:
+        ensure_qt_application()
         return
     raise RuntimeError(f'{feature} requires PySide6 GUI runtime.')

@@ -45,11 +45,12 @@ def test_scene_authority_service_applies_obstacle_and_allowed_pairs():
     assert updated.obstacles[0].metadata['declared_geometry']['kind'] == 'box'
     assert updated.obstacles[0].metadata['resolved_geometry']['kind'] == 'aabb'
     assert updated.metadata['last_edit_source'] == 'scene_toolbar'
-    assert updated.summary()['scene_geometry_contract'] == 'declared_and_resolved'
+    assert updated.summary()['scene_geometry_contract'] == 'declaration_validation_render'
     assert updated.summary()['collision_filter_pair_count'] == 2
     authority = updated.summary()['geometry_authority']
-    assert authority['declared_geometry_source'] == 'stable_scene_editor'
-    assert authority['resolved_geometry_source'] == 'aabb_planning_scene'
+    assert authority['declaration_geometry_source'] == 'stable_scene_editor'
+    assert authority['validation_geometry_source'] == 'aabb_planning_scene'
+    assert authority['render_geometry_source'] == 'stable_scene_editor'
 
 
 def test_scene_authority_service_suffixes_duplicate_obstacle_ids_without_replace():

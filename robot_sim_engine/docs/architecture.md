@@ -8,6 +8,8 @@
 - `presentation`: 主窗体、线程编排器、分层 controller、workflow service、widget。
 - `render`: PyVista / pyqtgraph 适配层、截图、plot sync。render capability 降级原因统一投影到 `SessionState.render_runtime`，再通过 typed status-panel subscription flow 下发到 UI；render 状态变化会进一步生成 `SessionState.render_telemetry`，同时 UI runtime probe / screenshot capture 会写入 `render_operation_spans` / `render_sampling_counters` 并汇总为 `render_backend_performance`。这条链现在由 `presentation.render_telemetry_service.RenderTelemetryService` 统一持有，再通过兼容 `StateStore` / `RenderStateSegmentStore` 接口投影给 diagnostics / export / 质量门禁消费。
 - `infra`: 配置、日志、文件、schema。
+- `domain.quality_gate_catalog` 现承载跨层共享的 quality-gate 定义；governance / benchmark 读取 catalog 时不再通过 `infra` 反向回灌到领域层。
+- `model.robot_geometry_serialization` 现承载 `RobotGeometry` 的持久化协议；`RobotGeometryModel` 与 registry/export round-trip 不再依赖 application service 侧 helper。
 
 ## Registry / Plugin entry
 
@@ -17,7 +19,10 @@ V4 开始，以下能力通过 registry 接入：
 - `planner_registry`: trajectory planner
 - `importer_registry`: robot importer
 
-插件 manifest 现在受三层约束：
+插件 manifest / SDK 现在受三层约束：
+
+- `src/robot_sim/plugin_sdk/plugin_payload(...)` 是公共 SDK payload builder，仓库示例与 shipped plugin 都通过同一 helper 暴露 manifest-compatible payload
+
 
 - `kind / source / api_version / sdk_contract_version / status` 必须通过 `PluginLoader` 静态校验，并把 `min_host_version` 一并投影到 audit / diagnostics
 - profile 通过 `features.plugin_status_allowlist` 决定允许装配的 plugin rollout 等级
@@ -53,7 +58,7 @@ V4 开始，以下能力通过 registry 接入：
 5. `scene_3d / plots / screenshot` 的 runtime capability 必须进入统一状态存储，而不是只停留在 placeholder 或日志层。
 6. `RobotSpec` 运行时执行语义现统一收口到 `ArticulatedRobotModel` + `RuntimeRobotModel.execution_summary`：FK/Jacobian/数值 IK 消费 articulated transforms，legacy DH execution rows 仅作为兼容 adapter / analytic solver surface。
 7. importer/registry/runtime asset/export 现在必须优先处理 `ImportedRobotPackage`：source model、runtime model、articulated model 与 visual/collision geometry 被拆成平级对象，而不是继续把所有运行时语义塞回一份 YAML metadata。
-8. scene object 摘要现同时暴露 `declared_geometry` 与 `resolved_geometry`；稳定产品面禁止只暴露解析后 AABB 而丢失声明几何语义。
+8. scene object 摘要现同时暴露 `declaration_geometry` / `validation_geometry` / `render_geometry`；稳定产品面禁止只暴露解析后 AABB 而丢失声明或渲染几何语义，同时保留 `declared_geometry` / `resolved_geometry` 兼容别名。
 9. `planning_scene.summary()` 现在必须同时携带 `geometry_authority` 与 `scene_graph_authority`；scene edit 不允许丢失运行时机器人 frame graph；`render_runtime.screenshot` 则必须同时暴露 `level / provenance`，禁止把 live capture 与 snapshot fallback 伪装成同一种能力。
 
 

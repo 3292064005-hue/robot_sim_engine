@@ -56,3 +56,30 @@ def test_public_importer_plugin_example_stays_loader_compatible(project_root, mo
         while str(examples_root) in sys.path:
             sys.path.remove(str(examples_root))
         manifest.unlink(missing_ok=True)
+
+
+
+def test_public_planner_plugin_example_stays_loader_compatible(project_root, monkeypatch):
+    examples_root = project_root / 'examples'
+    manifest = project_root / 'configs' / 'plugins_example_planner.yaml'
+    manifest.write_text(
+        """plugins:
+  - id: example_planner
+    kind: planner
+    factory: plugins.minimal_planner_plugin:build_plugin
+    enabled_profiles: [research]
+""",
+        encoding='utf-8',
+    )
+    monkeypatch.syspath_prepend(str(examples_root))
+    sys.path.insert(0, str(examples_root))
+    try:
+        loader = PluginLoader(manifest, policy=RuntimeFeaturePolicy(active_profile='research', plugin_discovery_enabled=True))
+        registrations = loader.registrations('planner')
+        assert len(registrations) == 1
+        assert registrations[0].metadata['display_name'] == 'Example Cartesian planner'
+        assert registrations[0].aliases == ('example_planner_alias',)
+    finally:
+        while str(examples_root) in sys.path:
+            sys.path.remove(str(examples_root))
+        manifest.unlink(missing_ok=True)

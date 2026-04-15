@@ -57,28 +57,28 @@ class MainWindowUIMixin(MainWindowRenderRuntimeUIMixin, MainWindowRequestReaders
         return require_dependency(getattr(self, 'runtime_facade', None), 'runtime_facade')
 
     def _robot_ops(self: 'MainWindowUIContract'):
-        """Return the required robot façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'robot_facade', None), 'robot_facade')
+        """Return the required robot workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'robot_workflow', None), 'robot_workflow')
 
     def _solver_ops(self: 'MainWindowUIContract'):
-        """Return the required solver façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'solver_facade', None), 'solver_facade')
+        """Return the required motion workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
 
     def _trajectory_ops(self: 'MainWindowUIContract'):
-        """Return the required trajectory façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'trajectory_facade', None), 'trajectory_facade')
+        """Return the required motion workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
 
     def _playback_ops(self: 'MainWindowUIContract'):
-        """Return the required playback façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'playback_facade', None), 'playback_facade')
+        """Return the required motion workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
 
     def _benchmark_ops(self: 'MainWindowUIContract'):
-        """Return the required benchmark façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'benchmark_facade', None), 'benchmark_facade')
+        """Return the required motion workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
 
     def _export_ops(self: 'MainWindowUIContract'):
-        """Return the required export façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'export_facade', None), 'export_facade')
+        """Return the required export workflow injected by the main window shell."""
+        return require_dependency(getattr(self, 'export_workflow', None), 'export_workflow')
 
     def _projection_bindings(self: 'MainWindowUIContract') -> MainWindowProjectionBindings:
         """Return the lazily constructed main-window projection binding helper."""

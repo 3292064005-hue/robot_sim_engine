@@ -198,6 +198,8 @@ class QWidget:
         self._visible = False
         self._enabled = True
         self._size = (0, 0)
+        self._style_sheet = ''
+        self._tool_tip = ''
 
     def setLayout(self, layout) -> None:
         self._layout = layout
@@ -214,11 +216,29 @@ class QWidget:
     def show(self) -> None:
         self._visible = True
 
+    def close(self) -> None:
+        self._visible = False
+
     def setVisible(self, visible: bool) -> None:
         self._visible = bool(visible)
 
+    def isVisible(self) -> bool:
+        return self._visible
+
     def setEnabled(self, enabled: bool) -> None:
         self._enabled = bool(enabled)
+
+    def setStyleSheet(self, style: str) -> None:
+        self._style_sheet = str(style)
+
+    def styleSheet(self) -> str:
+        return self._style_sheet
+
+    def setToolTip(self, text: str) -> None:
+        self._tool_tip = str(text)
+
+    def toolTip(self) -> str:
+        return self._tool_tip
 
 
 class QMainWindow(QWidget):

@@ -14,7 +14,7 @@ class TrajectoryTaskCoordinator:
 
     def __init__(self, window: 'TrajectoryTaskView', *, trajectory=None, threader=None) -> None:
         self.window = window
-        self.trajectory = require_dependency(trajectory, 'trajectory_facade')
+        self.trajectory = require_dependency(trajectory, 'motion_workflow')
         self.threader = require_dependency(threader, 'threader')
         self._pending_request = None
 
@@ -39,7 +39,7 @@ class TrajectoryTaskCoordinator:
             req = require_view(self.window, 'read_trajectory_request')
             self.remember_request(req)
             require_view(self.window, 'project_task_started', 'trajectory', '轨迹任务已启动')
-            trajectory_use_case = require_dependency(getattr(self.trajectory, 'trajectory_use_case', None), 'trajectory_facade.trajectory_use_case')
+            trajectory_use_case = require_dependency(getattr(self.trajectory, 'trajectory_use_case', None), 'motion_workflow.trajectory_use_case')
             task = self.threader.start(
                 worker=TrajectoryWorker(req, trajectory_use_case),
                 on_finished=self.window.on_trajectory_finished,

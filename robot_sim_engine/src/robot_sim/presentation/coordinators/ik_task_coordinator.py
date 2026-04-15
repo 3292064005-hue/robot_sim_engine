@@ -15,7 +15,7 @@ class IKTaskCoordinator:
 
     def __init__(self, window: 'IKTaskView', *, solver=None, threader=None) -> None:
         self.window = window
-        self.solver = require_dependency(solver, 'solver_facade')
+        self.solver = require_dependency(solver, 'motion_workflow')
         self.threader = require_dependency(threader, 'threader')
         self._pending_request = None
 
@@ -48,7 +48,7 @@ class IKTaskCoordinator:
         """Start the IK worker using the shared background-thread orchestrator."""
         def action() -> None:
             req = require_view(self.window, 'read_ik_request')
-            ik_use_case = require_dependency(getattr(self.solver, 'ik_use_case', None), 'solver_facade.ik_use_case')
+            ik_use_case = require_dependency(getattr(self.solver, 'ik_use_case', None), 'motion_workflow.ik_use_case')
             worker = IKWorker(req, ik_use_case)
             self.remember_request(req)
             require_view(self.window, 'project_task_started', 'ik', 'IK 任务已启动')

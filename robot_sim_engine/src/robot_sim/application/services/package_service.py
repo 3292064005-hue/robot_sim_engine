@@ -31,7 +31,25 @@ class PackageService:
         self._versions = version_catalog or current_version_catalog()
         self._manifest_builder = ManifestBuilder(self._versions)
 
-    def build_manifest(self, *, robot_id: str | None = None, solver_id: str | None = None, planner_id: str | None = None, files: list[str] | None = None, reproducibility_seed: int | None = None, metadata: dict[str, object] | None = None, correlation_id: str | None = None) -> ExportManifest:
+    def build_manifest(
+        self,
+        *,
+        robot_id: str | None = None,
+        solver_id: str | None = None,
+        planner_id: str | None = None,
+        files: list[str] | None = None,
+        reproducibility_seed: int | None = None,
+        metadata: dict[str, object] | None = None,
+        correlation_id: str | None = None,
+        bundle_kind: str = 'artifact_bundle',
+        bundle_contract: str = 'artifact_audit_bundle',
+        replayable: bool = False,
+        environment: dict[str, object] | None = None,
+        config_snapshot: dict[str, object] | None = None,
+        scene_snapshot: dict[str, object] | None = None,
+        plugin_snapshot: dict[str, object] | None = None,
+        capability_snapshot: dict[str, object] | None = None,
+    ) -> ExportManifest:
         """Build the canonical package-export manifest."""
         return self._manifest_builder.build_manifest(
             robot_id=robot_id,
@@ -41,6 +59,14 @@ class PackageService:
             reproducibility_seed=reproducibility_seed,
             metadata=metadata,
             correlation_id=correlation_id,
+            bundle_kind=bundle_kind,
+            bundle_contract=bundle_contract,
+            replayable=replayable,
+            environment=environment,
+            config_snapshot=config_snapshot,
+            scene_snapshot=scene_snapshot,
+            plugin_snapshot=plugin_snapshot,
+            capability_snapshot=capability_snapshot,
         )
 
     def export_package(self, name: str, files: list[Path], manifest: ExportManifest) -> Path:

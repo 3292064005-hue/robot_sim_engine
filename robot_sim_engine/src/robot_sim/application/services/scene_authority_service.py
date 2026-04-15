@@ -22,7 +22,7 @@ from robot_sim.application.services.scene_authority_support import (
 _COLLISION_BACKEND_REGISTRY = default_collision_backend_registry()
 
 
-def _declared_geometry_payload(*, shape: str, center: np.ndarray, size: np.ndarray) -> dict[str, object]:
+def _declaration_geometry_payload(*, shape: str, center: np.ndarray, size: np.ndarray) -> dict[str, object]:
     payload: dict[str, object] = {
         'kind': str(shape),
         'center': [float(value) for value in center.tolist()],
@@ -36,12 +36,16 @@ def _declared_geometry_payload(*, shape: str, center: np.ndarray, size: np.ndarr
     return payload
 
 
-def _resolved_geometry_payload(geometry: AABB) -> dict[str, object]:
+def _validation_geometry_payload(geometry: AABB) -> dict[str, object]:
     return {
         'kind': 'aabb',
         'minimum': [float(value) for value in geometry.minimum.tolist()],
         'maximum': [float(value) for value in geometry.maximum.tolist()],
     }
+
+
+def _render_geometry_payload(*, shape: str, center: np.ndarray, size: np.ndarray) -> dict[str, object]:
+    return _declaration_geometry_payload(shape=shape, center=center, size=size)
 
 
 @dataclass(frozen=True)
@@ -158,7 +162,9 @@ class SceneAuthorityService:
                     'scene_authority': str(authority),
                     'edit_surface': str(edit_surface),
                     'scene_fidelity': str(summary.get('scene_fidelity', summary.get('geometry_source', 'generated')) or 'generated'),
-                    'stable_surface_version': str(summary.get('stable_surface_version', 'v2') or 'v2'),
+                    'stable_surface_version': str(summary.get('stable_surface_version', 'v3') or 'v3'),
+                    'scene_geometry_contract_version': 'v1',
+                    'scene_validation_capability_matrix_version': 'v1',
                 },
             )
             acm = AllowedCollisionMatrix()
@@ -175,8 +181,9 @@ class SceneAuthorityService:
                 summary,
                 authority=str((summary.get('geometry_authority') or {}).get('authority', authority) if isinstance(summary.get('geometry_authority'), Mapping) else authority),
                 authority_kind=str((summary.get('geometry_authority') or {}).get('authority_kind', 'planning_scene') if isinstance(summary.get('geometry_authority'), Mapping) else 'planning_scene'),
-                declared_geometry_source=str(summary.get('declared_geometry_source', summary.get('geometry_source', 'generated')) or summary.get('geometry_source', 'generated')),
-                resolved_geometry_source=str(summary.get('resolved_geometry_source', f"{summary.get('collision_backend', 'aabb')}_planning_scene") or f"{summary.get('collision_backend', 'aabb')}_planning_scene"),
+                declaration_geometry_source=str(summary.get('declaration_geometry_source', summary.get('declared_geometry_source', summary.get('geometry_source', 'generated'))) or summary.get('geometry_source', 'generated')),
+                validation_geometry_source=str(summary.get('validation_geometry_source', summary.get('resolved_geometry_source', f"{summary.get('collision_backend', 'aabb')}_planning_scene")) or f"{summary.get('collision_backend', 'aabb')}_planning_scene"),
+                render_geometry_source=str(summary.get('render_geometry_source', summary.get('geometry_source', 'generated')) or summary.get('geometry_source', 'generated')),
                 supported_scene_shapes=tuple(sorted(SUPPORTED_SCENE_SHAPES)),
                 collision_backend=normalized_backend,
                 scene_fidelity=str(summary.get('scene_fidelity', summary.get('geometry_source', 'generated')) or 'generated'),
@@ -186,8 +193,13 @@ class SceneAuthorityService:
         metadata_updates = {
             'scene_authority': str(authority),
             'edit_surface': str(edit_surface),
-            'stable_surface_version': str(scene.metadata.get('stable_surface_version', 'v2') or 'v2'),
+            'stable_surface_version': str(scene.metadata.get('stable_surface_version', 'v3') or 'v3'),
             'geometry_authority_scope': str(scene.metadata.get('geometry_authority_scope', authority) or authority),
+            'declaration_geometry_source': str(scene.metadata.get('declaration_geometry_source', scene.metadata.get('declared_geometry_source', scene.geometry_source)) or scene.geometry_source),
+            'validation_geometry_source': str(scene.metadata.get('validation_geometry_source', scene.metadata.get('resolved_geometry_source', f'{scene.collision_backend}_planning_scene')) or f'{scene.collision_backend}_planning_scene'),
+            'render_geometry_source': str(scene.metadata.get('render_geometry_source', scene.geometry_source) or scene.geometry_source),
+            'scene_geometry_contract_version': 'v1',
+            'scene_validation_capability_matrix_version': 'v1',
         }
         if 'scene_fidelity' not in scene.metadata:
             metadata_updates['scene_fidelity'] = str(scene.geometry_source or 'generated')
@@ -231,11 +243,21 @@ class SceneAuthorityService:
             'shape': str(edit.shape),
             'size': [float(value) for value in size.tolist()],
             'editor': 'stable_scene_editor',
-            'declared_geometry': _declared_geometry_payload(shape=edit.shape, center=center, size=size),
-            'resolved_geometry': _resolved_geometry_payload(geometry),
+            'declaration_geometry': _declaration_geometry_payload(shape=edit.shape, center=center, size=size),
+            'validation_geometry': _validation_geometry_payload(geometry),
+            'render_geometry': _render_geometry_payload(shape=edit.shape, center=center, size=size),
+            # legacy aliases
+            'declared_geometry': _declaration_geometry_payload(shape=edit.shape, center=center, size=size),
+            'resolved_geometry': _validation_geometry_payload(geometry),
+            'declaration_geometry_source': 'stable_scene_editor',
+            'validation_geometry_source': f'{scene.collision_backend}_planning_scene',
+            'render_geometry_source': 'stable_scene_editor',
+            'scene_geometry_contract_version': 'v1',
+            'scene_validation_capability_matrix_version': 'v1',
             **dict(edit.metadata),
         }
         scene.geometry_authority.require_declared_and_resolved()
+        scene.geometry_authority.require_three_layer_contract()
         scene.geometry_authority.require_supported_shape(edit.shape)
         if edit.attached:
             metadata['attach_link'] = str(edit.attach_link)
@@ -257,9 +279,10 @@ class SceneAuthorityService:
         authority = SceneGeometryAuthority(
             authority=refreshed.authority,
             authority_kind=refreshed.authority_kind,
-            scene_geometry_contract='declared_and_resolved',
-            declared_geometry_source='stable_scene_editor',
-            resolved_geometry_source=f'{updated_scene.collision_backend}_planning_scene',
+            scene_geometry_contract='declaration_validation_render',
+            declaration_geometry_source='stable_scene_editor',
+            validation_geometry_source=f'{updated_scene.collision_backend}_planning_scene',
+            render_geometry_source='stable_scene_editor',
             supported_scene_shapes=tuple(sorted(SUPPORTED_SCENE_SHAPES)),
             records=refreshed.records,
             metadata=dict(refreshed.metadata),

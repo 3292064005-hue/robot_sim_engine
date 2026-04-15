@@ -8,7 +8,7 @@ class RobotCoordinator:
 
     def __init__(self, window, *, robot=None) -> None:
         self.window = window
-        self.robot = require_dependency(robot, 'robot_facade')
+        self.robot = require_dependency(robot, 'robot_workflow')
 
     def load_robot(self, name: str | None = None) -> None:
         """Public UI entrypoint for loading a robot into the scene."""

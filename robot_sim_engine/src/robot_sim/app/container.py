@@ -148,16 +148,20 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
     task_error_mapper = TaskErrorMapper()
     runtime_feature_service = build_runtime_feature_service(config_service)
     runtime_feature_policy = runtime_feature_service.load_policy()
-    plugin_loader = PluginLoader(runtime_paths.plugin_manifest_path, policy=runtime_feature_policy)
+    plugin_manifest_paths = config_service.plugin_manifest_paths()
+    plugin_loader = PluginLoader(plugin_manifest_paths, policy=runtime_feature_policy)
     plugin_catalog = plugin_loader.audit()
-    capability_matrix_service = build_capability_service(runtime_feature_policy=runtime_feature_policy)
+    capability_matrix_service = build_capability_service(
+        runtime_feature_policy=runtime_feature_policy,
+        plugin_loader=plugin_loader,
+    )
     module_status_service = build_module_status_service(runtime_feature_policy=runtime_feature_policy)
 
     solver_registry = build_solver_registry(plugin_loader=plugin_loader)
-    seed_ik_uc = RunIKUseCase(solver_registry)
-    planner_registry = build_planner_registry(seed_ik_uc, plugin_loader=plugin_loader)
+    shared_ik_uc = RunIKUseCase(solver_registry)
+    planner_registry = build_planner_registry(shared_ik_uc, plugin_loader=plugin_loader)
     importer_registry = build_importer_registry(robot_registry, plugin_loader=plugin_loader)
-    benchmark_service: BenchmarkService = build_benchmark_service(seed_ik_uc)
+    benchmark_service: BenchmarkService = build_benchmark_service(shared_ik_uc)
     use_cases = build_use_case_bundle(
         solver_registry=solver_registry,
         planner_registry=planner_registry,
@@ -166,6 +170,7 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         export_service=export_service,
         package_service=package_service,
         playback_service=playback_service,
+        ik_uc=shared_ik_uc,
     )
 
     container_kwargs: dict[str, object] = dict(
@@ -184,6 +189,7 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         task_error_mapper=task_error_mapper,
         runtime_feature_policy=runtime_feature_policy,
         playback_service=playback_service,
+        ik_uc=shared_ik_uc,
     )
     container = AppContainer(**_attach_use_cases(container_kwargs, use_cases))
     container.runtime_context = {
@@ -194,6 +200,7 @@ def build_container(project_root: str | Path | RuntimePaths) -> AppContainer:
         'bundled_robot_root': str(runtime_paths.bundled_robot_root),
         'profiles_root': str(runtime_paths.profiles_root),
         'plugin_manifest_path': str(runtime_paths.plugin_manifest_path),
+        'plugin_manifest_paths': [str(path) for path in plugin_manifest_paths],
         'export_root': str(runtime_paths.export_root),
         'layout_mode': runtime_paths.layout_mode,
         'runtime_feature_policy': runtime_feature_policy.as_dict(),

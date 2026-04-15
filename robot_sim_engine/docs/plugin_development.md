@@ -47,11 +47,12 @@
 
 - `examples/plugins/minimal_solver_plugin.py` 展示最小 solver plugin 工厂。
 - `examples/plugins/minimal_importer_plugin.py` 展示最小 importer plugin 工厂。
-- 这两个样板都受 `tests/unit/test_plugin_sdk_examples.py` 约束，保证文档示例不是失效伪代码。
+- `examples/plugins/minimal_planner_plugin.py` 展示最小 planner plugin 工厂。
+- 三个样板都通过 `robot_sim.plugin_sdk.plugin_payload(...)` 生成稳定 payload，并受 `tests/unit/test_plugin_sdk_examples.py` 约束，保证文档示例不是失效伪代码。
 
 ## Packaging notes
 
-- 外部插件推荐通过 `configs/plugins.yaml` 白名单声明后，再由 `PluginLoader` 受控装配；manifest 需显式声明 `api_version: v1`，并建议同时声明 `sdk_contract_version: v1` 与 `min_host_version`。
+- 外部插件推荐通过共享清单 `configs/plugins.yaml` 白名单声明后，再由 `PluginLoader` 受控装配；profile 专属 shipped plugin 建议放到 `configs/profiles/<profile>.plugins.yaml`。manifest 需显式声明 `api_version: v1`，并建议同时声明 `sdk_contract_version: v1` 与 `min_host_version`。当前保留的正式 kind 为 `solver / planner / importer / scene_backend / collision_backend`。
 - manifest 现在要求显式 `status`，允许值为 `stable / beta / experimental / internal / deprecated`。
 - profile 通过 `features.plugin_status_allowlist` 控制可装配插件等级：
   - `default / gui / release / ci`: `stable`, `deprecated`
@@ -63,8 +64,8 @@
 
 ## Repository-shipped fixtures
 
-- `configs/plugins.yaml` 现在内置 `research_demo_dls`、`research_demo_cartesian_planner`、`research_demo_yaml_importer` 三个 shipped fixtures。
-- 三者都只在 `research` profile 启用，用来持续验证 solver / planner / importer 三条插件装配链。
+- `configs/plugins.yaml` 现在承载 stable/default shipped plugin 主干清单；除 solver / planner / importer 外，还保留 `scene_backend` 与 `collision_backend` 两个正式预留 kind 的 stable shipped fixtures。
+- `research_demo_dls`、`research_demo_cartesian_planner`、`research_demo_yaml_importer` 仍只在 `configs/profiles/research.plugins.yaml` 启用，用来持续验证 research profile 的扩展链。
 - shipped plugin 在 `plugin_discovery_enabled=false` 时仍允许通过 allowlist 装配；外部 plugin 仍必须显式开启 discovery。
 
 ## SDK governance
@@ -77,3 +78,9 @@
 - manifest 现在可选声明 `required_host_capabilities` 与 `optional_host_capabilities`。
 - `required_host_capabilities` 中任一 capability 缺失时，`PluginLoader` 会在 audit 阶段直接拒载，并返回 `required_host_capability_missing`。
 - 宿主 capability 由 profile、experimental feature switch、允许的 plugin status 等 runtime feature 组合生成，当前会投影到 runtime diagnostics。
+
+
+## Entry-point packaging
+
+- `PluginLoader` 仍支持 `entry_point: <group>:<name>` 的受控装配路径，供外部插件或安装态插件使用。
+- 仓库内 research demo plugins 不再通过 `pyproject.toml` 暴露 repository 级 `robot_sim.plugins` entry points；它们只通过 `configs/profiles/research.plugins.yaml` 的 shipped-plugin manifest 进入 research profile，避免污染 stable/default 主干心智模型。

@@ -33,7 +33,7 @@ COMPATIBILITY_MATRIX: tuple[CompatibilityEntry, ...] = (
         surface='main window private alias shim',
         owner='robot_sim.presentation.legacy_aliases.MainWindowLegacyAliasMixin',
         compatibility_path='historical *_impl names redirected to public on_* handlers',
-        rationale='A small amount of out-of-repo automation still probes removed private names.',
+        rationale='Historical automation may still probe removed private names during staged migration.',
         removal_target='v0.9',
     ),
     CompatibilityEntry(
@@ -41,6 +41,13 @@ COMPATIBILITY_MATRIX: tuple[CompatibilityEntry, ...] = (
         owner='robot_sim.application.workers.base.BaseWorker',
         compatibility_path='legacy progress/finished/failed/cancelled signals mirrored from structured events',
         rationale='Existing callbacks and ad-hoc workers still consume the legacy signal surface.',
+        removal_target='v0.9',
+    ),
+    CompatibilityEntry(
+        surface='presentation facade alias adapters',
+        owner='robot_sim.presentation.facades',
+        compatibility_path='historical robot/solver/trajectory/playback/benchmark/export facades forwarded to workflow services',
+        rationale='Historical callers may still depend on facade names or concrete facade classes during staged migration.',
         removal_target='v0.9',
     ),)
 

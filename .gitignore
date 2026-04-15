@@ -1,0 +1,5 @@
+# Local workspace files outside the Python package root
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

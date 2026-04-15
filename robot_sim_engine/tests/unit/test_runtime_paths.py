@@ -39,6 +39,7 @@ def test_resolve_runtime_paths_uses_packaged_resources_when_source_layout_missin
     assert paths.robot_root == tmp_path / 'xdg-data' / 'robot-sim-engine' / 'robots'
     assert paths.bundled_robot_root == packaged_root / 'robots'
     assert paths.layout_mode == 'packaged'
+    assert paths.project_root == packaged_root.parent
 
 
 
@@ -72,6 +73,7 @@ def test_resolve_runtime_paths_uses_platform_data_root_for_packaged_exports_and_
     monkeypatch.setenv('XDG_DATA_HOME', str(tmp_path / 'xdg-data'))
     paths = resolve_runtime_paths(tmp_path / 'missing-root')
     assert paths.layout_mode == 'packaged'
+    assert paths.project_root == packaged_root.parent
     assert paths.export_root == tmp_path / 'xdg-data' / 'robot-sim-engine' / 'exports'
     assert paths.robot_root == tmp_path / 'xdg-data' / 'robot-sim-engine' / 'robots'
 
@@ -86,6 +88,7 @@ def test_resolve_runtime_paths_supports_legacy_cwd_packaged_export_policy(tmp_pa
     monkeypatch.setenv('XDG_DATA_HOME', str(tmp_path / 'xdg-data'))
     monkeypatch.chdir(tmp_path)
     paths = resolve_runtime_paths(tmp_path / 'missing-root')
+    assert paths.project_root == packaged_root.parent
     assert paths.export_root == tmp_path / 'exports'
     assert paths.robot_root == tmp_path / 'xdg-data' / 'robot-sim-engine' / 'robots'
 

@@ -11,7 +11,9 @@ class RuntimePaths:
     """Resolved runtime filesystem layout.
 
     Attributes:
-        project_root: User-visible root retained for compatibility with existing startup code.
+        project_root: User-visible compatibility root that owns the active runtime resources.
+            Source runtimes retain the requested/source checkout root; packaged runtimes project
+            the packaged resource root instead of an arbitrary ancestor directory.
         resource_root: Root containing runtime configuration assets.
         config_root: Directory containing app/solver/plugins/profile configuration files.
         robot_root: Writable directory containing persisted robot YAML files.
@@ -120,7 +122,7 @@ def _resolve_packaged_export_root() -> Path:
     return _user_data_root() / _EXPORT_SUBDIR_NAME
 
 
-def _resolve_packaged_robot_root() -> Path:
+def _resolve_packaged_robot_root(*, create_dirs: bool = True) -> Path:
     """Return the writable packaged robot-library directory.
 
     Returns:
@@ -134,11 +136,12 @@ def _resolve_packaged_robot_root() -> Path:
         imports must therefore target a per-user writable overlay instead of ``site-packages``.
     """
     robot_root = _user_data_root() / _ROBOT_LIBRARY_SUBDIR_NAME
-    robot_root.mkdir(parents=True, exist_ok=True)
+    if create_dirs:
+        robot_root.mkdir(parents=True, exist_ok=True)
     return robot_root
 
 
-def _resolve_export_root(*, root: Path, source_layout_available: bool) -> Path:
+def _resolve_export_root(*, root: Path, source_layout_available: bool, create_dirs: bool = True) -> Path:
     export_override = str(os.environ.get('ROBOT_SIM_EXPORT_DIR', '') or '').strip()
     if export_override:
         export_root = Path(export_override)
@@ -146,11 +149,12 @@ def _resolve_export_root(*, root: Path, source_layout_available: bool) -> Path:
         export_root = root / _EXPORT_SUBDIR_NAME
     else:
         export_root = _resolve_packaged_export_root()
-    export_root.mkdir(parents=True, exist_ok=True)
+    if create_dirs:
+        export_root.mkdir(parents=True, exist_ok=True)
     return export_root
 
 
-def resolve_runtime_paths(project_root: str | Path | None = None) -> RuntimePaths:
+def resolve_runtime_paths(project_root: str | Path | None = None, *, create_dirs: bool = True) -> RuntimePaths:
     """Resolve runtime paths for both source-tree and installed-wheel execution.
 
     Args:
@@ -182,13 +186,15 @@ def resolve_runtime_paths(project_root: str | Path | None = None) -> RuntimePath
         config_root = _package_config_root()
         source_layout_available = False
         resource_root = config_root.parent
-        robot_root = _resolve_packaged_robot_root()
+        robot_root = _resolve_packaged_robot_root(create_dirs=create_dirs)
 
-    export_root = _resolve_export_root(root=root, source_layout_available=source_layout_available)
+    export_root = _resolve_export_root(root=root, source_layout_available=source_layout_available, create_dirs=create_dirs)
     bundled_robot_root = config_root / 'robots'
 
+    compatibility_project_root = root if source_layout_available else resource_root
+
     return RuntimePaths(
-        project_root=root,
+        project_root=compatibility_project_root,
         resource_root=resource_root,
         config_root=config_root,
         robot_root=robot_root,

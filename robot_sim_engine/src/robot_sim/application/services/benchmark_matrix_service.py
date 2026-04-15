@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 
 from robot_sim.domain.benchmark_target_contracts import benchmark_target_contract
-from robot_sim.infra.quality_gate_catalog import ensure_quality_gates_registered
+from robot_sim.domain.quality_gate_catalog import ensure_quality_gates_registered
 
 
 @dataclass(frozen=True)

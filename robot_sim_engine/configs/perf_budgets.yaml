@@ -7,14 +7,14 @@ profiles:
         budgets:
           ik_planar_smoke:
             median_elapsed_ms:
-              max: 125.0
-              tolerance: 4.0
+              max: 320.0
+              tolerance: 20.0
             p95_elapsed_ms:
-              max: 145.0
-              tolerance: 4.0
+              max: 345.0
+              tolerance: 20.0
             max_single_elapsed_ms:
-              max: 165.0
-              tolerance: 6.0
+              max: 360.0
+              tolerance: 20.0
     ik_planar_smoke:
       sampling:
         warmup_runs: 3

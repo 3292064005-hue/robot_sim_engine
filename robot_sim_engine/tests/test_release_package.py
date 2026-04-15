@@ -79,3 +79,12 @@ def test_release_zip_built_from_project_root_excludes_runtime_exports(project_ro
         names = zf.namelist()
 
     assert not any(name.startswith('robot_sim_engine/exports/') for name in names)
+
+
+def test_packaged_config_staging_is_excluded(tmp_path: Path) -> None:
+    (tmp_path / 'build' / 'packaged_config_staging').mkdir(parents=True)
+    (tmp_path / 'build' / 'packaged_config_staging' / 'app.yaml').write_text('x: 1\n', encoding='utf-8')
+    (tmp_path / 'src').mkdir()
+    (tmp_path / 'src' / 'kept.py').write_text('print(1)\n', encoding='utf-8')
+    rels = list(iter_release_files(tmp_path))
+    assert rels == [Path('src/kept.py')]

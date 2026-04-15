@@ -10,8 +10,10 @@ from robot_sim.core.collision.capsule_backend import CapsuleCollisionBackend
 from robot_sim.core.collision.collision_result import CollisionResult
 from robot_sim.core.collision.environment_collision import environment_collision_flags, evaluate_environment_collision_pairs
 from robot_sim.core.collision.geometry import AABB, aabb_from_points
+from robot_sim.core.collision.scene import PlanningScene, SceneObject
 from robot_sim.core.collision.self_collision import evaluate_self_collision_pairs, self_collision_pair_hits, self_collision_pair_specs
 from robot_sim.domain.collision_backends import default_collision_backend_registry
+from robot_sim.model.scene_validation_surface import summarize_scene_validation_surface
 from robot_sim.model.trajectory_digest import ensure_trajectory_digest_metadata
 
 
@@ -65,8 +67,10 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
 
     Args:
         trajectory: Trajectory-like object exposing joint positions.
-        planning_scene: Optional planning-scene object with revision and ACM metadata.
-        collision_obstacles: Legacy obstacle collection used when no planning scene is present.
+        planning_scene: Optional canonical planning-scene object with revision and ACM metadata.
+        collision_obstacles: Legacy obstacle collection. Legacy inputs are adapted into a
+            canonical planning-scene snapshot before evaluation so validation now flows
+            through one scene authority path only.
 
     Returns:
         tuple[list[str], dict[str, object]]: Validation reasons and structured collision summary.
@@ -75,7 +79,8 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
         None: Invalid or missing data is normalized into an empty collision result.
     """
     reasons: list[str] = []
-    result = _collision_result(trajectory, planning_scene=planning_scene, collision_obstacles=collision_obstacles)
+    scene, adapter_metadata = _coerce_planning_scene(planning_scene=planning_scene, collision_obstacles=collision_obstacles)
+    result = _collision_result(trajectory, planning_scene=scene)
     summary = {
         'self_collision': result.self_collision,
         'environment_collision': result.environment_collision,
@@ -86,9 +91,10 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
         'scene_revision': result.scene_revision,
         'collision_level': result.collision_level,
         'clearance_metric': result.clearance_metric,
-        'scene_available': bool(planning_scene is not None),
-        'collision_input': 'planning_scene' if planning_scene is not None else ('legacy_obstacles' if collision_obstacles else 'none'),
+        'scene_available': bool(scene is not None),
+        'collision_input': adapter_metadata['collision_input'],
         **dict(result.metadata),
+        **adapter_metadata,
     }
     if result.self_collision:
         reasons.append('self_collision_risk')
@@ -98,8 +104,8 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
 
 
 
-def _collision_result(trajectory, *, collision_obstacles=(), planning_scene=None) -> CollisionResult:
-    """Compute the collision result, using bounded caches for repeated evaluations."""
+def _collision_result(trajectory, *, planning_scene=None) -> CollisionResult:
+    """Compute the collision result using the canonical planning-scene authority only."""
     trajectory_digest = _resolve_trajectory_digest(trajectory)
     if trajectory.joint_positions is None:
         return CollisionResult(
@@ -117,11 +123,7 @@ def _collision_result(trajectory, *, collision_obstacles=(), planning_scene=None
     link_names = [f'link_{i}' for i in range(max(joint_positions.shape[1] - 1, 0))]
     scene_revision = int(getattr(planning_scene, 'revision', 0) or 0)
     collision_level = str(getattr(getattr(planning_scene, 'collision_level', None), 'value', getattr(planning_scene, 'collision_level', 'aabb')))
-    cache_key = _build_cache_key(
-        trajectory_digest,
-        planning_scene=planning_scene,
-        collision_obstacles=collision_obstacles,
-    )
+    cache_key = _build_cache_key(trajectory_digest, planning_scene=planning_scene)
     cached = _COLLISION_CACHE.get(cache_key)
     if cached is not None:
         assert isinstance(cached, CollisionResult)
@@ -144,12 +146,29 @@ def _collision_result(trajectory, *, collision_obstacles=(), planning_scene=None
             trajectory_digest=trajectory_digest,
         )
     else:
-        result = _evaluate_legacy_collision(
-            joint_positions,
-            collision_obstacles=tuple(collision_obstacles),
-            scene_revision=scene_revision,
-            collision_level=collision_level,
-            trajectory_digest=trajectory_digest,
+        result = CollisionResult(
+            scene_revision=0,
+            collision_level='aabb',
+            metadata={
+                'requested_backend': 'aabb',
+                'resolved_backend': 'aabb',
+                'backend_available': True,
+                'cache_hit': False,
+                'geometry_cache_hit': False,
+                'candidate_pair_count': 0,
+                'trajectory_digest': trajectory_digest,
+                'collision_input': 'none',
+                'degraded_reason': 'planning_scene_missing',
+                **summarize_scene_validation_surface(
+                    collision_backend='aabb',
+                    scene_fidelity='none',
+                    scene_authority='none',
+                    scene_geometry_contract='none',
+                    attached_object_count=0,
+                    adapter_applied=False,
+                    source='none',
+                ),
+            },
         )
     _COLLISION_CACHE.put(cache_key, result)
     return result
@@ -330,99 +349,14 @@ def _build_scene_frame_geometry(
 
 
 
-def _evaluate_legacy_collision(
-    joint_positions: np.ndarray,
-    *,
-    collision_obstacles: tuple[object, ...],
-    scene_revision: int,
-    collision_level: str,
-    trajectory_digest: str,
-) -> CollisionResult:
-    """Evaluate collision status against the legacy obstacle list.
+def _evaluate_legacy_collision(*_args, **_kwargs) -> CollisionResult:
+    """Compatibility stub retained only to keep old imports explicit during migration.
 
-    Args:
-        joint_positions: Per-frame joint-position arrays for the sampled trajectory.
-        collision_obstacles: Legacy obstacle collection supplied by older callers.
-        scene_revision: Stable scene revision propagated into diagnostics metadata.
-        collision_level: Requested collision level label.
-        trajectory_digest: Stable digest used for bounded cache keys.
-
-    Returns:
-        CollisionResult: Legacy collision result with explicit degradation metadata.
-
-    Raises:
-        None: Missing legacy obstacles are normalized into a non-colliding degraded result.
-
-    Boundary behavior:
-        Legacy validation now evaluates a conservative self-collision approximation rather
-        than silently forcing ``self_collision=False``. When no planning scene or legacy
-        obstacles are present, the result reports ``collision_input='none'`` in metadata so
-        callers can surface the degraded validation mode honestly.
+    The legacy obstacle path is no longer a first-class validation branch. Callers must
+    adapt obstacle collections into a planning scene through ``_coerce_planning_scene`` so
+    collision evaluation flows through one canonical scene authority.
     """
-    checked_pairs: set[tuple[str, str]] = set()
-    accepted_self_pairs: set[tuple[str, str]] = set()
-    accepted_env_pairs: set[tuple[str, str]] = set()
-    clearance_values: list[float] = []
-    env_padding = 0.02
-    self_padding = 0.03
-    candidate_pair_count = 0
-    geometry, geometry_cache_hit = _legacy_geometry(joint_positions, padding=env_padding, trajectory_digest=trajectory_digest)
-    link_names = [f'link_{i}' for i in range(max(joint_positions.shape[1] - 1, 0))]
-    pair_specs = self_collision_pair_specs(link_names, ignore_adjacent=True)
-    self_hits = self_collision_pair_hits(
-        joint_positions,
-        link_padding=self_padding,
-        ignore_adjacent=True,
-        link_names=link_names,
-    )
-    for frame, robot_box, seen_self in zip(joint_positions, geometry.robot_boxes, self_hits):
-        self_boxes = _frame_link_boxes(np.asarray(frame, dtype=float), padding=self_padding)
-        self_eval = evaluate_self_collision_pairs(
-            self_boxes,
-            pair_specs=pair_specs,
-            seen_pairs=seen_self,
-            allowed_collision_matrix=None,
-        )
-        accepted_self_pairs.update(self_eval['accepted_pairs'])
-        checked_pairs.update(self_eval['checked_pairs'])
-        clearance_values.extend(self_eval['clearance_values'])
-        candidate_pair_count += int(self_eval['candidate_pair_count'])
-
-        env_flags = environment_collision_flags(frame[None, ...], list(collision_obstacles), padding=env_padding)
-        frame_candidate_count = 0
-        for idx, obstacle in enumerate(collision_obstacles):
-            pair = ('robot', f'environment_{idx}')
-            checked_pairs.add(pair)
-            frame_candidate_count += 1
-            if isinstance(obstacle, AABB):
-                clearance_values.append(robot_box.distance(obstacle))
-        if any(env_flags):
-            accepted_env_pairs.add(('robot', 'environment'))
-            checked_pairs.add(('robot', 'environment'))
-        candidate_pair_count += frame_candidate_count
-
-    return CollisionResult(
-        self_collision=bool(accepted_self_pairs),
-        environment_collision=bool(accepted_env_pairs),
-        self_pairs=tuple(sorted(accepted_self_pairs)),
-        environment_pairs=tuple(sorted(accepted_env_pairs)),
-        ignored_pairs=(),
-        checked_pairs=tuple(sorted(checked_pairs)),
-        scene_revision=scene_revision,
-        collision_level=collision_level,
-        clearance_metric=float(min(clearance_values)) if clearance_values else 0.0,
-        metadata={
-            'requested_backend': 'legacy',
-            'resolved_backend': 'legacy',
-            'backend_available': True,
-            'cache_hit': False,
-            'geometry_cache_hit': bool(geometry_cache_hit),
-            'candidate_pair_count': int(candidate_pair_count),
-            'trajectory_digest': trajectory_digest,
-            'collision_input': 'legacy_obstacles' if collision_obstacles else 'none',
-            'degraded_reason': '' if collision_obstacles else 'planning_scene_missing',
-        },
-    )
+    raise RuntimeError('legacy obstacle collision validation has been removed; adapt legacy obstacles into a planning scene first')
 
 
 
@@ -439,6 +373,86 @@ def _legacy_geometry(joint_positions: np.ndarray, *, padding: float, trajectory_
     _GEOMETRY_CACHE.put(key, built)
     return built, False
 
+
+
+def _coerce_planning_scene(*, planning_scene=None, collision_obstacles=()) -> tuple[PlanningScene | None, dict[str, object]]:
+    """Return one canonical planning-scene validation source.
+
+    Args:
+        planning_scene: Canonical planning scene when already available.
+        collision_obstacles: Legacy obstacle collection accepted only as a migration adapter.
+
+    Returns:
+        tuple[PlanningScene | None, dict[str, object]]: Canonical planning scene plus adapter metadata.
+
+    Raises:
+        ValueError: If ``planning_scene`` is not a planning-scene instance.
+    """
+    if planning_scene is not None and not isinstance(planning_scene, PlanningScene):
+        raise ValueError('planning_scene must be a PlanningScene instance or None')
+    if planning_scene is not None:
+        return planning_scene, {
+            'collision_input': 'planning_scene',
+            'adapter_applied': False,
+            'degraded_reason': '',
+        }
+    legacy = tuple(collision_obstacles or ())
+    if not legacy:
+        return None, {
+            'collision_input': 'none',
+            'adapter_applied': False,
+            'degraded_reason': 'planning_scene_missing',
+        }
+    adapted_scene = _planning_scene_from_legacy_obstacles(legacy)
+    return adapted_scene, {
+        'collision_input': 'legacy_obstacle_adapter',
+        'adapter_applied': True,
+        'degraded_reason': 'legacy_obstacle_adapter',
+    }
+
+
+def _planning_scene_from_legacy_obstacles(collision_obstacles: tuple[object, ...]) -> PlanningScene:
+    """Adapt legacy obstacle collections into the canonical planning-scene authority."""
+    obstacles: list[SceneObject] = []
+    for index, obstacle in enumerate(collision_obstacles):
+        geometry = obstacle if isinstance(obstacle, AABB) else None
+        if geometry is None:
+            minimum = getattr(obstacle, 'minimum', None)
+            maximum = getattr(obstacle, 'maximum', None)
+            if minimum is not None and maximum is not None:
+                geometry = AABB(np.asarray(minimum, dtype=float), np.asarray(maximum, dtype=float))
+        if geometry is None:
+            continue
+        metadata = {
+            'source': 'legacy_collision_obstacles',
+            'shape': 'box',
+            'editor': 'legacy_collision_adapter',
+            'declaration_geometry_source': 'legacy_collision_obstacles',
+            'validation_geometry_source': 'aabb_planning_scene',
+            'render_geometry_source': 'legacy_collision_obstacles',
+            'declaration_geometry': _digest_geometry(geometry),
+            'validation_geometry': _digest_geometry(geometry),
+            'render_geometry': _digest_geometry(geometry),
+            'declared_geometry': _digest_geometry(geometry),
+            'resolved_geometry': _digest_geometry(geometry),
+        }
+        obstacles.append(SceneObject(object_id=f'legacy_obstacle_{index}', geometry=geometry, metadata=metadata))
+    scene = PlanningScene(
+        obstacles=tuple(obstacles),
+        revision=0,
+        geometry_source='legacy_collision_adapter',
+        metadata={
+            'scene_authority': 'planning_scene',
+            'scene_source': 'legacy_collision_adapter',
+            'scene_fidelity': 'legacy_obstacle_adapter',
+            'stable_surface_version': 'v2',
+            'legacy_obstacle_adapter_applied': True,
+            'declaration_geometry_source': 'legacy_collision_obstacles',
+            'validation_geometry_source': 'aabb_planning_scene',
+            'render_geometry_source': 'legacy_collision_obstacles',
+        },
+    )
+    return scene.with_metadata_patch(scene_geometry_contract='declaration_validation_render')
 
 
 def _resolve_backend_id(planning_scene) -> str:
@@ -472,16 +486,26 @@ def _backend_metadata(
     backend_id = resolved_backend or _resolve_backend_id(planning_scene)
     backend_available = bool(metadata.get('collision_backend_available', backend_id == requested_backend))
     authority = getattr(planning_scene, 'geometry_authority', None) if planning_scene is not None else None
+    validation_surface = summarize_scene_validation_surface(
+        collision_backend=backend_id,
+        scene_fidelity=str(metadata.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'legacy')) or getattr(planning_scene, 'scene_fidelity', 'legacy')) if planning_scene is not None else 'legacy',
+        scene_authority=str(getattr(authority, 'authority', getattr(planning_scene, 'scene_authority', 'planning_scene')) or getattr(planning_scene, 'scene_authority', 'planning_scene')) if planning_scene is not None else 'legacy',
+        scene_geometry_contract=str(getattr(authority, 'scene_geometry_contract', metadata.get('scene_geometry_contract', 'resolved_only')) or 'resolved_only') if planning_scene is not None else 'legacy',
+        attached_object_count=len(tuple(getattr(planning_scene, 'attached_objects', ()) or ())) if planning_scene is not None else 0,
+        adapter_applied=bool(metadata.get('legacy_obstacle_adapter_applied', False)),
+        source=str(metadata.get('scene_source', 'planning_scene') if planning_scene is not None else 'none'),
+    )
     payload = {
         'requested_backend': requested_backend,
         'resolved_backend': backend_id,
         'backend_available': backend_available,
         'cache_hit': bool(cache_hit),
         'candidate_pair_count': int(candidate_pair_count),
-        'scene_authority': str(getattr(authority, 'authority', getattr(planning_scene, 'scene_authority', 'planning_scene')) or getattr(planning_scene, 'scene_authority', 'planning_scene')) if planning_scene is not None else 'legacy',
-        'scene_fidelity': str(metadata.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'legacy')) or getattr(planning_scene, 'scene_fidelity', 'legacy')) if planning_scene is not None else 'legacy',
+        'scene_authority': validation_surface['scene_authority'],
+        'scene_fidelity': validation_surface['scene_fidelity'],
         'geometry_source': str(getattr(planning_scene, 'geometry_source', 'legacy') if planning_scene is not None else 'legacy'),
-        'scene_geometry_contract': str(getattr(authority, 'scene_geometry_contract', metadata.get('scene_geometry_contract', 'resolved_only')) or 'resolved_only') if planning_scene is not None else 'legacy',
+        'scene_geometry_contract': validation_surface['scene_geometry_contract'],
+        **validation_surface,
     }
     if geometry_cache_hit is not None:
         payload['geometry_cache_hit'] = bool(geometry_cache_hit)
@@ -494,12 +518,12 @@ def _backend_metadata(
 
 
 
-def _build_cache_key(trajectory_digest: str, *, planning_scene=None, collision_obstacles=()) -> tuple[object, ...]:
+def _build_cache_key(trajectory_digest: str, *, planning_scene=None) -> tuple[object, ...]:
     payload = {
         'trajectory_digest': str(trajectory_digest),
         'scene_revision': int(getattr(planning_scene, 'revision', 0) or 0),
         'collision_backend': str(getattr(planning_scene, 'collision_backend', 'none') if planning_scene is not None else 'none'),
-        'obstacles_digest': _digest_obstacles(planning_scene=planning_scene, collision_obstacles=collision_obstacles),
+        'obstacles_digest': _digest_obstacles(planning_scene=planning_scene),
     }
     digest = hashlib.sha1(json.dumps(payload, sort_keys=True).encode('utf-8')).hexdigest()
     return ('collision_result', digest)
@@ -512,7 +536,7 @@ def _resolve_trajectory_digest(trajectory) -> str:
 
 
 
-def _digest_obstacles(*, planning_scene=None, collision_obstacles=()) -> tuple[object, ...]:
+def _digest_obstacles(*, planning_scene=None) -> tuple[object, ...]:
     if planning_scene is not None:
         obstacles = []
         for obstacle in getattr(planning_scene, 'obstacles', ()):
@@ -521,14 +545,22 @@ def _digest_obstacles(*, planning_scene=None, collision_obstacles=()) -> tuple[o
             obstacles.append((
                 str(getattr(obstacle, 'object_id', '')),
                 _digest_geometry(geometry),
-                metadata.get('declared_geometry', {}),
-                metadata.get('resolved_geometry', {}),
+                metadata.get('declared_geometry', metadata.get('declaration_geometry', {})),
+                metadata.get('resolved_geometry', metadata.get('validation_geometry', {})),
             ))
-        return tuple(obstacles)
-    legacy = []
-    for index, obstacle in enumerate(collision_obstacles):
-        legacy.append((index, _digest_geometry(obstacle)))
-    return tuple(legacy)
+        attached = []
+        for obstacle in getattr(planning_scene, 'attached_objects', ()):
+            geometry = getattr(obstacle, 'geometry', None)
+            metadata = dict(getattr(obstacle, 'metadata', {}) or {})
+            attached.append((
+                str(getattr(obstacle, 'object_id', '')),
+                _digest_geometry(geometry),
+                metadata.get('declared_geometry', metadata.get('declaration_geometry', {})),
+                metadata.get('resolved_geometry', metadata.get('validation_geometry', {})),
+                str(metadata.get('attach_link', '')),
+            ))
+        return (tuple(obstacles), tuple(attached), tuple(sorted(getattr(planning_scene, 'allowed_collision_pairs', ()) or ())))
+    return ()
 
 
 

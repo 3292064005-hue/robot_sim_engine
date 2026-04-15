@@ -34,4 +34,14 @@ class DiagnosticsController:
             'backend_count': len(tuple(getattr(state, 'render_backend_performance', ()) or ())),
             'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in tuple(getattr(state, 'render_backend_performance', ()) or ())],
         }
+        payload['capability_matrix'] = dict(getattr(state, 'capability_matrix', {}) or {})
+        payload['module_statuses'] = dict(getattr(state, 'module_statuses', {}) or {})
+        payload['scene_summary'] = dict(getattr(state, 'scene_summary', {}) or {})
+        if payload['scene_summary']:
+            payload['scene_validation_surface'] = dict(payload['scene_summary'].get('validation_surface', {}) or {})
+            payload['scene_validation_fidelity'] = {
+                'scene_fidelity': payload['scene_summary'].get('scene_fidelity', 'unknown'),
+                'collision_fidelity': dict(payload['scene_summary'].get('collision_fidelity', {}) or {}),
+                'validation_backend_capabilities': list(payload['scene_summary'].get('validation_backend_capabilities', []) or []),
+            }
         return payload

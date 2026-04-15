@@ -70,8 +70,17 @@ def build_benchmark_service(ik_uc) -> BenchmarkService:
     return BenchmarkService(ik_uc)
 
 
-def build_capability_service(*, runtime_feature_policy=None) -> CapabilityService:
-    return CapabilityService(runtime_feature_policy=runtime_feature_policy)
+def build_capability_service(*, runtime_feature_policy=None, plugin_loader=None) -> CapabilityService:
+    """Construct the capability service.
+
+    Args:
+        runtime_feature_policy: Active runtime feature policy.
+        plugin_loader: Optional plugin loader used to project plugin-surface diagnostics.
+
+    Returns:
+        CapabilityService: Capability service bound to the active runtime environment.
+    """
+    return CapabilityService(runtime_feature_policy=runtime_feature_policy, plugin_loader=plugin_loader)
 
 
 def build_module_status_service(*, runtime_feature_policy=None) -> ModuleStatusService:

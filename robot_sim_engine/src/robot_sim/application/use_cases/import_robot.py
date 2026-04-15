@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import replace
 from pathlib import Path
 
@@ -13,6 +14,54 @@ class ImportRobotUseCase:
     def __init__(self, importer_registry) -> None:
         self._importers = importer_registry
 
+
+
+    @staticmethod
+    def _build_import_fidelity_breakdown(bundle: RobotModelBundle) -> dict[str, object]:
+        """Build a normalized fidelity breakdown for importer outputs.
+
+        Args:
+            bundle: Structured importer bundle returned by the selected importer.
+
+        Returns:
+            dict[str, object]: Normalized fidelity semantics separating source recovery,
+                runtime executability, and geometry recoverability.
+        """
+        summary = dict(bundle.source_model_summary or {})
+        runtime_contract = dict(summary.get('runtime_fidelity_contract', {}) or {})
+        raw_downgrade_records = runtime_contract.get('downgrade_records', ()) or summary.get('downgrade_records', ()) or ()
+        downgrade_records: list[dict[str, object]] = []
+        degradation_reasons: list[str] = []
+        for item in raw_downgrade_records:
+            if isinstance(item, Mapping):
+                record = {str(key): value for key, value in dict(item).items()}
+            else:
+                record = {'kind': 'unstructured_record', 'detail': str(item)}
+            downgrade_records.append(record)
+            reason = str(record.get('kind', '') or record.get('detail', '') or '').strip()
+            if reason:
+                degradation_reasons.append(reason)
+        selected_joint_names = [str(item) for item in runtime_contract.get('selected_joint_names', ()) or ()]
+        geometry_recoverable = bool(bundle.geometry is not None or bundle.collision_geometry is not None)
+        roadmap = dict(summary.get('fidelity_roadmap', {}) or {})
+        source_recovered = bool(summary)
+        runtime_executable = bool(bundle.spec.runtime_model is not None)
+        mesh_assets_recoverable = bool((bundle.metadata or {}).get('mesh_assets_recoverable', geometry_recoverable))
+        return {
+            'roadmap_level': str(roadmap.get('roadmap_level', bundle.fidelity or '')),
+            'source_recovered': source_recovered,
+            'runtime_executable': runtime_executable,
+            'geometry_recoverable': geometry_recoverable,
+            'source_model_state': str(roadmap.get('source_model_state', 'structured_source') if source_recovered else 'missing'),
+            'runtime_state': str(roadmap.get('runtime_state', 'runtime_executable') if runtime_executable else 'missing'),
+            'geometry_state': str(roadmap.get('geometry_state', 'geometry_recoverable' if geometry_recoverable else 'proxy_only')),
+            'branched_tree_supported': bool(runtime_contract.get('branched_tree_supported', False)),
+            'pruned_dynamic_joint_names': [str(item) for item in runtime_contract.get('pruned_dynamic_joint_names', ()) or ()],
+            'mesh_assets_recoverable': mesh_assets_recoverable,
+            'selected_joint_names': selected_joint_names,
+            'degradation_reasons': degradation_reasons,
+            'downgrade_records': downgrade_records,
+        }
 
     @staticmethod
     def build_imported_package(bundle: RobotModelBundle) -> ImportedRobotPackage:
@@ -51,6 +100,7 @@ class ImportRobotUseCase:
                 'has_visual_geometry': bool(bundle.geometry is not None),
                 'has_collision_geometry': bool(bundle.collision_geometry is not None),
             },
+            fidelity_breakdown=ImportRobotUseCase._build_import_fidelity_breakdown(bundle),
             fidelity=str(bundle.fidelity or ''),
             warnings=tuple(str(item) for item in bundle.warnings),
             metadata=dict(bundle.metadata or {}),

@@ -3,53 +3,72 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from robot_sim.application.export_artifacts import DEFAULT_EXPORT_ARTIFACTS
+
 
 @dataclass(frozen=True)
 class RobotWorkflowService:
-    """Robot-library and FK workflow grouped away from the main controller."""
+    """Canonical robot capability port for presentation and task coordinators.
 
-    facade: Any
+    Historical façade references are intentionally collapsed into this workflow service so
+    new presentation code has exactly one robot-domain dependency surface.
+    """
+
+    registry: Any
+    controller: Any
+    importer_registry: Any | None = None
 
     def robot_names(self) -> list[str]:
-        return self.facade.robot_names()
+        return self.registry.list_names()
 
     def robot_entries(self):
-        return self.facade.robot_entries()
+        return self.registry.list_entries()
 
     def available_specs(self):
-        return self.facade.available_specs()
+        return self.registry.list_specs()
 
     def importer_entries(self):
-        return self.facade.importer_entries()
+        if self.importer_registry is None:
+            return []
+        return list(self.importer_registry.descriptors())
 
     def import_robot(self, source: str, importer_id: str | None = None):
-        return self.facade.import_robot(source, importer_id=importer_id)
+        return self.controller.import_robot(source, importer_id=importer_id)
 
     def load_robot(self, name: str):
-        return self.facade.load_robot(name)
+        return self.controller.load_robot(name)
 
     def build_robot_from_editor(self, existing_spec, rows, home_q):
-        return self.facade.build_robot_from_editor(existing_spec, rows, home_q)
+        return self.controller.build_robot_from_editor(existing_spec, rows, home_q)
 
     def save_current_robot(self, rows=None, home_q=None, name: str | None = None):
-        return self.facade.save_current_robot(rows=rows, home_q=home_q, name=name)
+        return self.controller.save_current_robot(rows=rows, home_q=home_q, name=name)
 
     def run_fk(self, q=None):
-        return self.facade.run_fk(q=q)
+        return self.controller.run_fk(q=q)
 
     def sample_ee_positions(self, q_samples):
-        return self.facade.sample_ee_positions(q_samples)
+        return self.controller.sample_ee_positions(q_samples)
 
 
 @dataclass(frozen=True)
 class MotionWorkflowService:
-    """Motion-planning and playback workflow grouped away from the main controller."""
+    """Canonical motion capability port consumed by Qt tasks and widgets.
 
-    solver_facade: Any
-    trajectory_facade: Any
-    benchmark_facade: Any
-    playback_facade: Any
+    The workflow is the only stable presentation dependency for IK, trajectory planning,
+    playback, and benchmark orchestration. Historical solver/trajectory/playback/benchmark
+    façades are intentionally projected as compatibility aliases that point back here.
+    """
+
     solver_settings: Any
+    ik_controller: Any
+    trajectory_controller: Any
+    benchmark_controller: Any
+    playback_controller: Any
+    playback_service: Any
+    ik_use_case: Any
+    trajectory_use_case: Any
+    benchmark_use_case: Any
 
     def solver_defaults(self) -> dict[str, object]:
         return self.solver_settings.ik.as_dict()
@@ -58,71 +77,79 @@ class MotionWorkflowService:
         return self.solver_settings.trajectory.as_dict()
 
     def build_target_pose(self, values6, orientation_mode: str = 'rvec'):
-        return self.solver_facade.build_target_pose(values6, orientation_mode=orientation_mode)
+        return self.ik_controller.build_target_pose(values6, orientation_mode=orientation_mode)
 
     def build_ik_request(self, values6, **kwargs):
-        return self.solver_facade.build_ik_request(values6, **kwargs)
+        return self.ik_controller.build_ik_request(values6, **kwargs)
 
     def apply_ik_result(self, req, result) -> None:
-        self.solver_facade.apply_ik_result(req, result)
+        self.ik_controller.apply_ik_result(req, result)
 
     def run_ik(self, values6, **kwargs):
-        return self.solver_facade.run_ik(values6, **kwargs)
+        return self.ik_controller.run_ik(values6, **kwargs)
 
     def build_benchmark_config(self, **kwargs):
-        return self.benchmark_facade.build_benchmark_config(**kwargs)
+        return self.benchmark_controller.build_benchmark_config(**kwargs)
 
     def run_benchmark(self, config=None):
-        return self.benchmark_facade.run_benchmark(config=config)
+        return self.benchmark_controller.run_benchmark(config=config)
 
     def trajectory_goal_or_raise(self):
-        return self.trajectory_facade.trajectory_goal_or_raise()
+        return self.trajectory_controller.trajectory_goal_or_raise()
 
     def build_trajectory_request(self, **kwargs):
-        return self.trajectory_facade.build_trajectory_request(**kwargs)
+        return self.trajectory_controller.build_trajectory_request(**kwargs)
 
     def plan_trajectory(self, **kwargs):
-        return self.trajectory_facade.plan_trajectory(**kwargs)
+        return self.trajectory_controller.plan_trajectory(**kwargs)
 
     def apply_trajectory(self, traj) -> None:
-        self.trajectory_facade.apply_trajectory(traj)
+        self.trajectory_controller.apply_trajectory(traj)
 
     def current_playback_frame(self):
-        return self.playback_facade.current_playback_frame()
+        return self.playback_controller.current_playback_frame()
 
     def set_playback_frame(self, frame_idx: int):
-        return self.playback_facade.set_playback_frame(frame_idx)
+        return self.playback_controller.set_playback_frame(frame_idx)
 
     def next_playback_frame(self):
-        return self.playback_facade.next_playback_frame()
+        return self.playback_controller.next_playback_frame()
 
     def set_playback_options(self, *, speed_multiplier=None, loop_enabled=None) -> None:
-        self.playback_facade.set_playback_options(speed_multiplier=speed_multiplier, loop_enabled=loop_enabled)
+        self.playback_controller.set_playback_options(speed_multiplier=speed_multiplier, loop_enabled=loop_enabled)
+
+    def ensure_playback_ready(self, *, strict: bool = True) -> None:
+        self.playback_controller.ensure_playback_ready(strict=strict)
 
 
 @dataclass(frozen=True)
 class ExportWorkflowService:
-    """Export/report/package workflow grouped away from the main controller."""
+    """Canonical export capability port for presentation callers.
 
-    export_facade: Any
+    Trajectory export is defined in terms of a trajectory bundle artifact. The historical
+    ``export_trajectory`` name is preserved only as a compatibility alias to the canonical
+    ``export_trajectory_bundle`` operation.
+    """
 
-    def export_trajectory(self, name: str = 'trajectory.csv'):
-        return self.export_facade.export_trajectory(name=name)
+    export_controller: Any
 
-    def export_trajectory_bundle(self, name: str = 'trajectory_bundle.npz'):
-        return self.export_facade.export_trajectory_bundle(name=name)
+    def export_trajectory_bundle(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_bundle_name):
+        return self.export_controller.export_trajectory_bundle(name=name)
 
-    def export_trajectory_metrics(self, name: str = 'trajectory_metrics.json', metrics: dict[str, object] | None = None):
-        return self.export_facade.export_trajectory_metrics(name=name, metrics=metrics)
+    def export_trajectory(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_bundle_name):
+        return self.export_trajectory_bundle(name=name)
 
-    def export_benchmark(self, name: str = 'benchmark_report.json'):
-        return self.export_facade.export_benchmark(name=name)
+    def export_trajectory_metrics(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_metrics_name, metrics: dict[str, object] | None = None):
+        return self.export_controller.export_trajectory_metrics(name=name, metrics=metrics)
 
-    def export_benchmark_cases_csv(self, name: str = 'benchmark_cases.csv'):
-        return self.export_facade.export_benchmark_cases_csv(name=name)
+    def export_benchmark(self, name: str = DEFAULT_EXPORT_ARTIFACTS.benchmark_report_name):
+        return self.export_controller.export_benchmark(name=name)
 
-    def export_session(self, name: str = 'session.json'):
-        return self.export_facade.export_session(name=name)
+    def export_benchmark_cases_csv(self, name: str = DEFAULT_EXPORT_ARTIFACTS.benchmark_cases_name):
+        return self.export_controller.export_benchmark_cases_csv(name=name)
 
-    def export_package(self, name: str = 'robot_sim_package.zip'):
-        return self.export_facade.export_package(name=name)
+    def export_session(self, name: str = DEFAULT_EXPORT_ARTIFACTS.session_name, *, telemetry_detail: str = 'full'):
+        return self.export_controller.export_session(name=name, telemetry_detail=telemetry_detail)
+
+    def export_package(self, name: str = DEFAULT_EXPORT_ARTIFACTS.package_name, *, telemetry_detail: str = 'minimal'):
+        return self.export_controller.export_package(name=name, telemetry_detail=telemetry_detail)

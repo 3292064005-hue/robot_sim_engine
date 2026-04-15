@@ -60,6 +60,6 @@ benchmark_matrix:
       capture_mode: live_capture_capability_probe
       execution_targets:
         - kind: pytest
-          selector: tests/gui/test_scene_capture_offscreen.py::test_scene_widget_snapshot_available_without_plotter
+          selector: tests/unit/test_scene_render_contracts.py::test_scene_widget_snapshot_tracks_scene_fields
         - kind: pytest
-          selector: tests/gui/test_scene_render_runtime_offscreen.py::test_scene_widget_exposes_render_runtime_snapshot_offscreen
+          selector: tests/unit/test_scene_render_contracts.py::test_scene_widget_exposes_render_runtime_snapshot

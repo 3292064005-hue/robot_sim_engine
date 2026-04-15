@@ -8,12 +8,9 @@ from robot_sim.presentation import assembly as mod
 class _StubController:
     def __init__(self, *_args, **_kwargs) -> None:
         self.runtime_facade = SimpleNamespace(app_config={'window': {'title': 'Robot Sim Engine'}}, metrics_service='metrics')
-        self.robot_facade = 'robot'
-        self.solver_facade = 'solver'
-        self.trajectory_facade = 'trajectory'
-        self.playback_facade = 'playback'
-        self.benchmark_facade = 'benchmark'
-        self.export_facade = 'export'
+        self.robot_workflow = 'robot-workflow'
+        self.motion_workflow = 'motion-workflow'
+        self.export_workflow = 'export-workflow'
 
 
 def test_build_presentation_assembly_returns_grouped_window_runtime(monkeypatch) -> None:
@@ -32,7 +29,9 @@ def test_build_presentation_assembly_returns_grouped_window_runtime(monkeypatch)
     assembly = mod.build_presentation_assembly('.', container=object(), window_parent=None)
 
     assert assembly.window_runtime.runtime_services.runtime_facade.app_config['window']['title'] == 'Robot Sim Engine'
-    assert assembly.window_runtime.workflow_facades.robot_facade == 'robot'
+    assert assembly.window_runtime.workflow_services.robot_workflow == 'robot-workflow'
+    assert assembly.window_runtime.workflow_facades is None
+    assert assembly.window_runtime._compatibility_facades().robot_facade.workflow == 'robot-workflow'
     assert assembly.window_runtime.task_orchestration.threader.policy == 'cancel_and_replace'
     assert assembly.window_runtime.task_orchestration.playback_threader.policy == 'queue_latest'
     assert assembly.window_runtime.task_orchestration.status_coordinator == 'status_coord'

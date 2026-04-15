@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import time
 
 from robot_sim.application.dto import TrajectoryRequest
+from robot_sim.application.planner_capabilities import resolve_default_planner_id
 from robot_sim.application.use_cases.validate_trajectory import ValidateTrajectoryUseCase
 from robot_sim.core.trajectory.retiming import retime_trajectory
 from robot_sim.model.trajectory import JointTrajectory
@@ -42,12 +43,9 @@ class TrajectoryExecutionPipeline:
         self._validate_uc = validate_uc or ValidateTrajectoryUseCase()
 
     def resolve_planner_id(self, req: TrajectoryRequest) -> str:
-        if req.waypoint_graph is not None:
-            return str(req.planner_id or 'waypoint_graph')
         if req.planner_id:
             return str(req.planner_id)
-        mode = getattr(req.mode, 'value', req.mode)
-        return 'cartesian_sampled' if str(mode) == 'cartesian_pose' else 'joint_quintic'
+        return resolve_default_planner_id(req.mode, waypoint_graph_present=req.waypoint_graph is not None)
 
     def execute(self, req: TrajectoryRequest) -> TrajectoryPipelineResult:
         started = time.perf_counter()

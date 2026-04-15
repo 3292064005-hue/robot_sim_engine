@@ -20,7 +20,7 @@ from robot_sim.presentation.runtime_bundles import (
     RuntimeServiceBundle,
     TaskOrchestrationBundle,
     WindowRuntime,
-    WorkflowFacadeBundle,
+    WorkflowServiceBundle,
 )
 from robot_sim.presentation.thread_orchestrator import ThreadOrchestrator
 
@@ -30,8 +30,9 @@ class PresentationAssembly:
     """Composition bundle used by the Qt shell.
 
     This bundle centralizes presentation-layer object-graph construction so the main window
-    consumes a stable assembly instead of constructing controllers, orchestrators, façades,
-    and coordinators inline.
+    consumes a stable assembly instead of constructing controllers, orchestrators, compatibility
+    adapters, and coordinators inline. Canonical workflow services remain primary while legacy
+    facade adapters are created lazily only when compatibility accessors are used.
     """
 
     controller: MainController
@@ -56,13 +57,10 @@ def build_presentation_assembly(project_root: str | Path, *, container: AppConta
         raise ValueError('build_presentation_assembly requires an explicit application container')
     controller = MainController(project_root, container=container)
     runtime_facade = controller.runtime_facade
-    workflow_facades = WorkflowFacadeBundle(
-        robot_facade=controller.robot_facade,
-        solver_facade=controller.solver_facade,
-        trajectory_facade=controller.trajectory_facade,
-        playback_facade=controller.playback_facade,
-        benchmark_facade=controller.benchmark_facade,
-        export_facade=controller.export_facade,
+    workflow_services = WorkflowServiceBundle(
+        robot_workflow=controller.robot_workflow,
+        motion_workflow=controller.motion_workflow,
+        export_workflow=controller.export_workflow,
     )
     runtime_services = RuntimeServiceBundle(
         runtime_facade=runtime_facade,
@@ -76,25 +74,25 @@ def build_presentation_assembly(project_root: str | Path, *, container: AppConta
         threader=threader,
         playback_threader=playback_threader,
         playback_render_scheduler=playback_render_scheduler,
-        robot_coordinator=RobotCoordinator(window_parent, robot=workflow_facades.robot_facade),
-        ik_task_coordinator=IKTaskCoordinator(window_parent, solver=workflow_facades.solver_facade, threader=threader),
-        trajectory_task_coordinator=TrajectoryTaskCoordinator(window_parent, trajectory=workflow_facades.trajectory_facade, threader=threader),
+        robot_coordinator=RobotCoordinator(window_parent, robot=workflow_services.robot_workflow),
+        ik_task_coordinator=IKTaskCoordinator(window_parent, solver=workflow_services.motion_workflow, threader=threader),
+        trajectory_task_coordinator=TrajectoryTaskCoordinator(window_parent, trajectory=workflow_services.motion_workflow, threader=threader),
         benchmark_task_coordinator=BenchmarkTaskCoordinator(
             window_parent,
             runtime=runtime_facade,
-            benchmark=workflow_facades.benchmark_facade,
+            benchmark=workflow_services.motion_workflow,
             threader=threader,
         ),
         playback_task_coordinator=PlaybackTaskCoordinator(
             window_parent,
             runtime=runtime_facade,
-            playback=workflow_facades.playback_facade,
+            playback=workflow_services.motion_workflow,
             playback_threader=playback_threader,
         ),
         export_task_coordinator=ExportTaskCoordinator(
             window_parent,
             runtime=runtime_facade,
-            export=workflow_facades.export_facade,
+            export=workflow_services.export_workflow,
             threader=threader,
             metrics_service=runtime_facade.metrics_service,
         ),
@@ -109,7 +107,8 @@ def build_presentation_assembly(project_root: str | Path, *, container: AppConta
         controller=controller,
         window_runtime=WindowRuntime(
             runtime_services=runtime_services,
-            workflow_facades=workflow_facades,
+            workflow_services=workflow_services,
+            workflow_facades=None,
             task_orchestration=task_orchestration,
         ),
     )

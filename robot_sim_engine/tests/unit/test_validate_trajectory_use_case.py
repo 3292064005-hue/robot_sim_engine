@@ -71,3 +71,56 @@ def test_validate_trajectory_rejects_shape_mismatch() -> None:
     )
     with pytest.raises(ValueError, match='trajectory.qd shape must match trajectory.q'):
         ValidateTrajectoryUseCase().execute(traj)
+
+
+
+def test_validate_trajectory_projects_scene_validation_summary_for_legacy_adapter() -> None:
+    traj = JointTrajectory(
+        t=np.array([0.0, 0.1], dtype=float),
+        q=np.zeros((2, 2), dtype=float),
+        qd=np.zeros((2, 2), dtype=float),
+        qdd=np.zeros((2, 2), dtype=float),
+        joint_positions=np.array(
+            [
+                [[0.0, 0.0, 0.0], [0.4, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                [[0.0, 0.0, 0.0], [0.4, 0.0, 0.0], [0.8, 0.0, 0.0]],
+            ],
+            dtype=float,
+        ),
+    )
+    report = ValidateTrajectoryUseCase().execute(
+        traj,
+        collision_obstacles=(
+            type('LegacyObstacle', (), {
+                'minimum': np.array([0.2, -0.1, -0.1], dtype=float),
+                'maximum': np.array([0.6, 0.1, 0.1], dtype=float),
+            })(),
+        ),
+    )
+    summary = report.metadata['scene_validation_summary']
+    assert summary['adapter_applied'] is True
+    assert summary['scene_source'] == 'legacy_collision_adapter'
+    assert report.metadata['collision_summary']['collision_input'] == 'legacy_obstacle_adapter'
+
+
+def test_validate_trajectory_reports_no_scene_validation_when_scene_is_missing() -> None:
+    traj = JointTrajectory(
+        t=np.array([0.0, 0.1], dtype=float),
+        q=np.zeros((2, 2), dtype=float),
+        qd=np.zeros((2, 2), dtype=float),
+        qdd=np.zeros((2, 2), dtype=float),
+        joint_positions=np.array(
+            [
+                [[0.0, 0.0, 0.0], [0.4, 0.0, 0.0], [0.8, 0.0, 0.0]],
+                [[0.0, 0.0, 0.0], [0.4, 0.0, 0.0], [0.8, 0.0, 0.0]],
+            ],
+            dtype=float,
+        ),
+    )
+    report = ValidateTrajectoryUseCase().execute(traj)
+    summary = report.metadata['scene_validation_summary']
+    assert summary['scene_validation_effective'] is False
+    assert summary['scene_validation_mode'] == 'none'
+    assert summary['scene_validation_precision'] == 'none'
+    assert summary['scene_source'] == 'none'
+    assert report.metadata['collision_summary']['collision_input'] == 'none'

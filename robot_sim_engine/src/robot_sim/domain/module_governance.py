@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Mapping
 
-from robot_sim.infra.quality_gate_catalog import ensure_quality_gates_registered
+from robot_sim.domain.quality_gate_catalog import ensure_quality_gates_registered
 
 
 @dataclass(frozen=True)
@@ -161,7 +161,7 @@ def governance_for_module(module_id: str) -> ModulePromotionPolicy | None:
 
 
 def verify_experimental_module_governance(
-    module_statuses: Mapping[str, str],
+    module_statuses: Mapping[str, object],
     *,
     repo_root: str | None = None,
     gate_results: Mapping[str, bool] | None = None,
@@ -170,7 +170,15 @@ def verify_experimental_module_governance(
     """Verify that every experimental module has an explicit promotion policy and optionally enforce executed gate results."""
     errors: list[str] = []
     normalized_gate_results = {str(key): bool(value) for key, value in dict(gate_results or {}).items()}
-    experimental_modules = {str(module_id) for module_id, status in dict(module_statuses).items() if str(status) == 'experimental'}
+
+    experimental_modules: set[str] = set()
+    for module_id, payload in dict(module_statuses).items():
+        if isinstance(payload, Mapping):
+            status = str(payload.get('status', 'unknown'))
+        else:
+            status = str(payload)
+        if status == 'experimental':
+            experimental_modules.add(str(module_id))
     governed_modules = set(EXPERIMENTAL_MODULE_GOVERNANCE)
     for module_id in sorted(experimental_modules - governed_modules):
         errors.append(f'missing promotion policy for experimental module: {module_id}')

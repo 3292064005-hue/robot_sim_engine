@@ -1,0 +1,170 @@
+compatibility_retirement:
+- surface: bootstrap iterable unpacking
+  owner: robot_sim.app.bootstrap.bootstrap
+  removal_target: v0.9
+  inventory_scope: audited_downstream_inventory
+  out_of_tree_status: audited_absent
+  migration_owner: bootstrap-runtime
+  inventory_evidence:
+  - configs/compatibility_downstream_inventory.yaml
+  - docs/compatibility_downstream_inventory.md
+  - docs/compatibility_support_boundary.md
+  - artifacts/compatibility_usage_report.json
+  known_consumers:
+  - consumer_id: tests/unit/test_compatibility_usage_logging.py::test_bootstrap_records_iterable_unpacking_compatibility_usage
+    scope: in_repo
+    usage_kind: bootstrap_destructuring_regression
+    status: deprecated
+    evidence: tests/unit/test_compatibility_usage_logging.py
+  removal_checklist:
+  - Remove iterable and indexed access from BootstrapContext after the shipped-tree
+    inventory remains clean for one release cycle.
+  - Delete tuple-style compatibility tests and runtime usage allowance for bootstrap
+    iterable unpacking.
+  - Update bootstrap migration docs and release notes to require attribute-based access
+    only.
+  rollback_strategy:
+  - Restore BootstrapContext __iter__/__getitem__ compatibility and re-enable the
+    tuple-unpacking regression test.
+- surface: legacy config overrides
+  owner: robot_sim.application.services.config_service.ConfigService
+  removal_target: v0.9
+  inventory_scope: audited_downstream_inventory
+  out_of_tree_status: audited_absent
+  migration_owner: config-runtime
+  inventory_evidence:
+  - configs/compatibility_downstream_inventory.yaml
+  - docs/compatibility_downstream_inventory.md
+  - docs/compatibility_support_boundary.md
+  - artifacts/compatibility_usage_report.json
+  known_consumers:
+  - consumer_id: tests/unit/test_compatibility_usage_logging.py::test_legacy_config_override_records_usage
+    scope: in_repo
+    usage_kind: override_compatibility_regression
+    status: deprecated
+    evidence: tests/unit/test_compatibility_usage_logging.py
+  - consumer_id: tests/unit/test_config_service.py::test_config_service_can_opt_into_legacy_repository_overrides
+    scope: in_repo
+    usage_kind: override_compatibility_regression
+    status: deprecated
+    evidence: tests/unit/test_config_service.py
+  removal_checklist:
+  - Confirm packaged profiles remain sufficient and no checked-in workflow requires
+    repository-root override files.
+  - Remove repository-level override loading branches from ConfigService and update
+    migration docs.
+  - Delete compatibility budget allowance for legacy config overrides after a clean
+    shipped-tree usage report.
+  rollback_strategy:
+  - Re-enable repository-level override loading behind the previous compatibility
+    branch and restore override regression coverage.
+- surface: main window private alias shim
+  owner: robot_sim.presentation.legacy_aliases.MainWindowLegacyAliasMixin
+  removal_target: v0.9
+  inventory_scope: audited_downstream_inventory
+  out_of_tree_status: audited_absent
+  migration_owner: presentation-runtime
+  inventory_evidence:
+  - configs/compatibility_downstream_inventory.yaml
+  - docs/compatibility_downstream_inventory.md
+  - docs/compatibility_support_boundary.md
+  - artifacts/compatibility_usage_report.json
+  known_consumers:
+  - consumer_id: tests/unit/test_main_window_legacy_aliases.py::test_legacy_main_window_aliases_redirect_to_public_handlers
+    scope: in_repo
+    usage_kind: alias_redirect_regression
+    status: deprecated
+    evidence: tests/unit/test_main_window_legacy_aliases.py
+  - consumer_id: tests/unit/test_compatibility_usage_logging.py::test_main_window_legacy_alias_records_usage
+    scope: in_repo
+    usage_kind: alias_redirect_regression
+    status: deprecated
+    evidence: tests/unit/test_compatibility_usage_logging.py
+  removal_checklist:
+  - Verify runtime usage report shows only audited compatibility accesses for private
+    alias shims.
+  - Remove MainWindowLegacyAliasMixin redirects and update any automation to call
+    public on_* handlers.
+  - Delete alias-specific regression tests once shipped-tree usage remains zero for
+    one release cycle.
+  rollback_strategy:
+  - Restore MainWindowLegacyAliasMixin redirect methods and the alias redirect regression
+    tests.
+- surface: worker legacy lifecycle signals
+  owner: robot_sim.application.workers.base.BaseWorker
+  removal_target: v0.9
+  inventory_scope: audited_downstream_inventory
+  out_of_tree_status: audited_absent
+  migration_owner: task-runtime
+  inventory_evidence:
+  - configs/compatibility_downstream_inventory.yaml
+  - docs/compatibility_downstream_inventory.md
+  - docs/compatibility_support_boundary.md
+  - artifacts/compatibility_usage_report.json
+  known_consumers:
+  - consumer_id: src/robot_sim/presentation/threading/worker_binding.py::WorkerBindingService.bind
+    scope: in_repo
+    usage_kind: worker_signal_adapter
+    status: deprecated
+    evidence: src/robot_sim/presentation/threading/worker_binding.py
+  - consumer_id: tests/unit/test_compatibility_usage_logging.py::test_worker_legacy_signal_adapter_records_usage
+    scope: in_repo
+    usage_kind: worker_signal_regression
+    status: deprecated
+    evidence: tests/unit/test_compatibility_usage_logging.py
+  - consumer_id: tests/unit/test_thread_orchestrator_progress_routing.py::test_thread_orchestrator_routes_legacy_progress_signal_to_callback
+    scope: in_repo
+    usage_kind: worker_signal_regression
+    status: deprecated
+    evidence: tests/unit/test_thread_orchestrator_progress_routing.py
+  removal_checklist:
+  - Confirm structured worker events cover all shipped lifecycle observers without
+    mirrored legacy signals.
+  - Remove mirrored progress/finished/failed/cancelled signals from BaseWorker and
+    worker adapters.
+  - Update worker migration docs and delete legacy signal compatibility tests after
+    shipped-tree usage remains zero for one release cycle.
+  rollback_strategy:
+  - Restore mirrored worker signals and the worker lifecycle regression tests.
+- surface: presentation facade alias adapters
+  owner: robot_sim.presentation.facades
+  removal_target: v0.9
+  inventory_scope: audited_downstream_inventory
+  out_of_tree_status: audited_absent
+  migration_owner: presentation-runtime
+  inventory_evidence:
+  - configs/compatibility_downstream_inventory.yaml
+  - docs/compatibility_downstream_inventory.md
+  - docs/compatibility_support_boundary.md
+  - artifacts/compatibility_usage_report.json
+  known_consumers:
+  - consumer_id: src/robot_sim/presentation/runtime_bundles.py::WindowRuntime.robot_facade
+    scope: in_repo
+    usage_kind: facade_alias_adapter
+    status: deprecated
+    evidence: src/robot_sim/presentation/runtime_bundles.py
+  - consumer_id: src/robot_sim/presentation/main_window.py::MainWindow.robot_facade
+    scope: in_repo
+    usage_kind: facade_alias_adapter
+    status: deprecated
+    evidence: src/robot_sim/presentation/main_window.py
+  - consumer_id: src/robot_sim/presentation/main_controller_support.py::build_legacy_main_controller_collaborators
+    scope: in_repo
+    usage_kind: facade_alias_adapter
+    status: deprecated
+    evidence: src/robot_sim/presentation/main_controller_support.py
+  - consumer_id: tests/unit/test_facade_alias_adapters.py::test_facade_alias_adapters_preserve_concrete_types_and_record_usage
+    scope: in_repo
+    usage_kind: facade_alias_regression
+    status: deprecated
+    evidence: tests/unit/test_facade_alias_adapters.py
+  removal_checklist:
+  - Verify internal coordinators and controllers no longer access compatibility facades
+    on the clean mainline.
+  - Remove adapter-only facade bundle exports after shipped-tree consumers are migrated
+    to workflow services.
+  - Delete facade compatibility usage allowances and update migration notes to workflow-only
+    access.
+  rollback_strategy:
+  - Restore adapter-only facade bundle exposure from runtime bundles and keep facade
+    alias usage logging enabled.

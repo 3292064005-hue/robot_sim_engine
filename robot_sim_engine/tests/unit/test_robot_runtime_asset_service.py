@@ -20,5 +20,7 @@ def test_runtime_asset_service_builds_canonical_scene(planar_spec):
     assert assets.planning_scene.metadata['robot_geometry_fidelity']
     assert assets.planning_scene.metadata['collision_geometry_fidelity']
     assert assets.planning_scene.metadata['runtime_semantic_family'] == 'serial_chain_execution'
+    assert assets.geometry_model.geometry_contract == 'split_visual_collision'
     assert assets.scene_summary['runtime_model_summary']['execution_row_count'] == planar_spec.dof
     assert assets.scene_summary['geometry_authority']['authority_kind'] == 'runtime_robot_scene'
+    assert assets.scene_summary['geometry_authority']['scene_geometry_contract'] == 'declaration_validation_render'

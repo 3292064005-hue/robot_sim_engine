@@ -22,6 +22,9 @@
 
 ## 本轮已收口债务
 
+- 领域层 quality-gate catalog 反向依赖 infra：已把 catalog 下沉到 `domain.quality_gate_catalog`，保留 `infra.quality_gate_catalog` 兼容导出壳。
+- `RobotGeometryModel` 序列化依赖 application service：已抽到 `model.robot_geometry_serialization`，registry/import/export 共用同一持久化协议。
+- status panel render-runtime 投影契约漂移：已统一 `RenderRuntimePanelState` 的 compact metric / detail rows 双视图契约，并补齐 widget/GUI 回归覆盖。
 - 执行真源分散 metadata：FK/Jacobian/数值 IK 已切到 `RobotSpec.articulated_model` 真执行面；`RobotSpec.execution_summary` 仅保留 runtime/export/compatibility 摘要职责。
 - screenshot service 直连 coordinator：已收口到 `CaptureSceneUseCase`，coordinator 仅保留编排职责。
 - export workflow 语义漂移：`ExportWorkflowService` 不再承载 `import_robot()` 旁路。

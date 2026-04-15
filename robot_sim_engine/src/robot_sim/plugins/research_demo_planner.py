@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from robot_sim.application.planner_plugins import CartesianSampledTrajectoryPlugin
+from robot_sim.plugin_sdk import plugin_payload
 
 
 def build_plugin(*, ik_uc):
@@ -9,10 +10,10 @@ def build_plugin(*, ik_uc):
     The plugin intentionally reuses the stable Cartesian sampled planner so the plugin path
     exercises context injection without creating a forked planning implementation.
     """
-    return {
-        'instance': CartesianSampledTrajectoryPlugin(ik_uc),
-        'aliases': ('research_cartesian',),
-        'metadata': {
+    return plugin_payload(
+        CartesianSampledTrajectoryPlugin(ik_uc),
+        aliases=('research_cartesian',),
+        metadata={
             'family': 'cartesian',
             'goal_space': 'cartesian',
             'requires_ik': True,
@@ -22,4 +23,4 @@ def build_plugin(*, ik_uc):
             'source': 'shipped_plugin',
             'verification_scope': 'registry_smoke',
         },
-    }
+    )

@@ -14,7 +14,7 @@ pip install -e .[gui,dev]
 
 ## Package export
 
-应用层支持一键导出 ZIP package，内含：
+应用层支持一键导出 ZIP package。当前 package 语义已明确为 **artifact/audit bundle**，而不是可重放 runtime bundle；manifest 会同步记录 runtime/config/scene/plugin snapshots。内含：
 
 - trajectory bundle
 - benchmark report

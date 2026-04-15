@@ -23,6 +23,8 @@ class CapabilityMatrix:
     render_features: tuple[CapabilityDescriptor, ...] = ()
     export_features: tuple[CapabilityDescriptor, ...] = ()
     scene_features: tuple[CapabilityDescriptor, ...] = ()
+    collision_features: tuple[CapabilityDescriptor, ...] = ()
+    plugin_features: tuple[CapabilityDescriptor, ...] = ()
 
     def as_dict(self) -> dict[str, list[dict[str, object]]]:
         def _serialize(items: tuple[CapabilityDescriptor, ...]) -> list[dict[str, object]]:
@@ -45,4 +47,6 @@ class CapabilityMatrix:
             'render_features': _serialize(self.render_features),
             'export_features': _serialize(self.export_features),
             'scene_features': _serialize(self.scene_features),
+            'collision_features': _serialize(self.collision_features),
+            'plugin_features': _serialize(self.plugin_features),
         }

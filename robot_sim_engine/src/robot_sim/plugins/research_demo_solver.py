@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from robot_sim.core.ik.dls import DLSIKSolver
 from robot_sim.domain.enums import SolverFamily
+from robot_sim.plugin_sdk import plugin_payload
 
 
 class ResearchDemoDLSIKSolver(DLSIKSolver):
@@ -18,13 +19,13 @@ def build_plugin():
     Returns:
         dict[str, object]: Registry payload compatible with ``PluginLoader``.
     """
-    return {
-        'instance': ResearchDemoDLSIKSolver(),
-        'aliases': ('research_demo',),
-        'metadata': {
+    return plugin_payload(
+        ResearchDemoDLSIKSolver(),
+        aliases=('research_demo',),
+        metadata={
             'family': SolverFamily.ITERATIVE.value,
             'display_name': 'Research demo DLS solver',
             'notes': 'Repository-shipped plugin fixture used to exercise controlled plugin discovery.',
             'source': 'shipped_plugin',
         },
-    }
+    )

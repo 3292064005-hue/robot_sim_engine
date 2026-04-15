@@ -85,8 +85,9 @@ class DiagnosticsPanel(QWidget):  # pragma: no cover - GUI shell
 
     def set_render_telemetry(self, panel_state: RenderTelemetryPanelState) -> None:
         self.set_values(**panel_state.metric_payload)
-        self.telemetry_log.setPlainText(panel_state.events_text)
-        self.span_log.setPlainText(panel_state.spans_text)
-        self.counter_log.setPlainText(panel_state.counters_text)
-        self.backend_perf_log.setPlainText(panel_state.backend_perf_text)
-        self.timeline_log.setPlainText(panel_state.timeline_text)
+        sections = {section.section_id: section for section in panel_state.log_sections}
+        self.telemetry_log.setPlainText(sections.get('events').body_text if 'events' in sections else panel_state.events_text)
+        self.span_log.setPlainText(sections.get('spans').body_text if 'spans' in sections else panel_state.spans_text)
+        self.counter_log.setPlainText(sections.get('counters').body_text if 'counters' in sections else panel_state.counters_text)
+        self.backend_perf_log.setPlainText(sections.get('backend_performance').body_text if 'backend_performance' in sections else panel_state.backend_perf_text)
+        self.timeline_log.setPlainText(sections.get('timeline').body_text if 'timeline' in sections else panel_state.timeline_text)

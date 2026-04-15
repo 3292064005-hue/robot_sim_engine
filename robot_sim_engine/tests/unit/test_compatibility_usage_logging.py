@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from robot_sim.app import bootstrap as bootstrap_mod
-from robot_sim.infra.compatibility_usage import compatibility_usage_counts, reset_compatibility_usage_counts
+from robot_sim.infra.compatibility_usage import compatibility_usage_counts, compatibility_usage_snapshot, reset_compatibility_usage_counts
 from robot_sim.application.services.config_service import ConfigService
 from robot_sim.application.workers.base import BaseWorker
 from robot_sim.presentation.legacy_aliases import MainWindowLegacyAliasMixin
@@ -79,3 +79,17 @@ def test_worker_legacy_signal_adapter_records_usage() -> None:
 
     counts = compatibility_usage_counts()
     assert counts['worker legacy lifecycle signals'] == 4
+
+
+def test_compatibility_usage_snapshot_preserves_detail_counts() -> None:
+    reset_compatibility_usage_counts()
+
+    class DummyWindow(MainWindowLegacyAliasMixin):
+        def on_load_robot(self):
+            return 'loaded'
+
+    window = DummyWindow()
+    assert window._load_robot_impl() == 'loaded'
+    snapshot = compatibility_usage_snapshot()
+    assert snapshot['surface_counts']['main window private alias shim'] == 1
+    assert snapshot['detail_counts']['main window private alias shim']['_load_robot_impl->on_load_robot'] == 1

@@ -55,6 +55,8 @@ def test_import_robot_use_case_builds_imported_package(tmp_path: Path) -> None:
     assert summary['runtime_model']['execution_adapter'] == 'canonical_articulated_chain'
     assert summary['articulated_model']['semantic_family'] == 'articulated_serial_tree'
     assert summary['geometry_model']['geometry_contract'] == 'split_visual_collision'
+    assert summary['fidelity_breakdown']['runtime_executable'] is True
+    assert summary['fidelity_breakdown']['source_recovered'] is True
 
 
 def test_robot_registry_round_trips_imported_package_summaries(tmp_path: Path, project_root) -> None:

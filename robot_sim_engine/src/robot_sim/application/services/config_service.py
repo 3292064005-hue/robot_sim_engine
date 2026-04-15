@@ -36,6 +36,8 @@ class ConfigService:
     APP_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_APP_CONFIG_OVERRIDE'
     SOLVER_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_SOLVER_CONFIG_OVERRIDE'
     ENABLE_LEGACY_OVERRIDE_ENV = 'ROBOT_SIM_ENABLE_LEGACY_LOCAL_OVERRIDE'
+    PLUGIN_MANIFEST_NAME = 'plugins.yaml'
+    PROFILE_PLUGIN_MANIFEST_SUFFIX = '.plugins.yaml'
     DEFAULT_APP_CONFIG: dict[str, object] = {
         'window': {
             'title': 'Robot Sim Engine',
@@ -138,7 +140,13 @@ class ConfigService:
         """
         if not self.profile_dir.exists():
             return ()
-        return tuple(sorted(path.stem for path in self.profile_dir.glob('*.yaml') if path.is_file()))
+        return tuple(
+            sorted(
+                path.stem
+                for path in self.profile_dir.glob('*.yaml')
+                if path.is_file() and not path.name.endswith(self.PROFILE_PLUGIN_MANIFEST_SUFFIX)
+            )
+        )
 
     def describe_resolution(self) -> dict[str, object]:
         """Describe the active configuration resolution chain.
@@ -246,6 +254,42 @@ class ConfigService:
         if not isinstance(data, dict):
             raise ValueError(f'profile config must be a mapping: {profile_path}')
         return data
+
+    def describe_effective_snapshot(self) -> dict[str, object]:
+        """Return the effective validated configuration snapshot.
+
+        Returns:
+            dict[str, object]: Stable resolved app/solver configuration together with the
+                resolution chain used to build them.
+
+        Raises:
+            None: Pure projection of validated configuration state.
+        """
+        return {
+            'profile': self.profile,
+            'app': self.load_app_config(),
+            'solver': self.load_solver_config(),
+            'resolution': self.describe_resolution(),
+        }
+
+    def plugin_manifest_paths(self) -> tuple[Path, ...]:
+        """Return the canonical plugin-manifest chain for the active profile.
+
+        Returns:
+            tuple[Path, ...]: Ordered manifest paths. The shared manifest is always first;
+                an optional profile-scoped manifest is appended when present.
+
+        Raises:
+            None: Missing manifests are simply skipped from the chain.
+        """
+        manifest_paths: list[Path] = []
+        shared_manifest = self.config_dir / self.PLUGIN_MANIFEST_NAME
+        if shared_manifest.exists():
+            manifest_paths.append(shared_manifest)
+        profile_manifest = self.profile_dir / f'{self.profile}{self.PROFILE_PLUGIN_MANIFEST_SUFFIX}'
+        if profile_manifest.exists() and profile_manifest not in manifest_paths:
+            manifest_paths.append(profile_manifest)
+        return tuple(manifest_paths)
 
     def load_app_config(self) -> dict[str, object]:
         """Load the validated application UI configuration as a plain mapping."""

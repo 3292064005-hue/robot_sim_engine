@@ -120,8 +120,8 @@
   - line `113`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.set_curve)
   - line `163`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.set_cursor)
 - `src/robot_sim/render/scene_3d_widget.py`
-  - line `64`: `ImportError` (Scene3DWidget._initialize_plotter_shell)
-  - line `106`: `AttributeError, RuntimeError, TypeError, ValueError, OSError` (Scene3DWidget._initialize_plotter_shell)
-  - line `134`: `TypeError` (Scene3DWidget._set_plotter_overlay_text)
-  - line `136`: `AttributeError, RuntimeError, ValueError` (Scene3DWidget._set_plotter_overlay_text)
-  - line `240`: `TypeError, ValueError` (Scene3DWidget._render_scene_objects)
+  - line `101`: `ImportError` (Scene3DWidget._initialize_plotter_shell)
+  - line `143`: `AttributeError, RuntimeError, TypeError, ValueError, OSError` (Scene3DWidget._initialize_plotter_shell)
+  - line `178`: `TypeError` (Scene3DWidget._set_plotter_overlay_text)
+  - line `180`: `AttributeError, RuntimeError, ValueError` (Scene3DWidget._set_plotter_overlay_text)
+  - line `284`: `TypeError, ValueError` (Scene3DWidget._render_scene_objects)

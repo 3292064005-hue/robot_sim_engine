@@ -184,9 +184,13 @@ class MainWindowActionMixin:
         self.scene_coordinator.clear_obstacles()
 
 
+    def on_export_trajectory_bundle(self: 'MainWindowActionView') -> None:
+        """Entry point wired to the trajectory-bundle export button."""
+        self.export_task_coordinator.export_trajectory_bundle()
+
     def on_export_trajectory(self: 'MainWindowActionView') -> None:
-        """Entry point wired to the trajectory-export button."""
-        self.export_task_coordinator.export_trajectory()
+        """Compatibility alias for the canonical trajectory-bundle export action."""
+        self.on_export_trajectory_bundle()
 
 
     def on_export_session(self: 'MainWindowActionView') -> None:

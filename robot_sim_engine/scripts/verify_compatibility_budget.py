@@ -16,7 +16,12 @@ _configure_path()
 
 from robot_sim.app.bootstrap import bootstrap  # noqa: E402
 from robot_sim.infra.compatibility_budget import evaluate_compatibility_budget, load_compatibility_budgets  # noqa: E402
-from robot_sim.infra.compatibility_usage import compatibility_usage_counts, reset_compatibility_usage_counts  # noqa: E402
+from robot_sim.infra.compatibility_retirement import verify_compatibility_retirement_plan  # noqa: E402
+from robot_sim.infra.compatibility_usage import (  # noqa: E402
+    compatibility_usage_counts,
+    reset_compatibility_usage_counts,
+    write_compatibility_usage_snapshot,
+)
 from robot_sim.presentation.controllers.robot_controller import RobotController  # noqa: E402
 from robot_sim.presentation.state_store import StateStore  # noqa: E402
 
@@ -54,7 +59,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description='Verify runtime compatibility usage stays within the configured budget.')
     parser.add_argument('--root', type=Path, default=REPO_ROOT, help='Repository root containing configs/compatibility_budget.yaml')
     parser.add_argument('--scenario', choices=tuple(_SCENARIOS), default='clean_headless_mainline')
+    parser.add_argument('--report-out', type=Path, default=REPO_ROOT / 'artifacts' / 'compatibility_usage_report.json', help='Optional JSON path used to persist a structured compatibility-usage snapshot.')
     args = parser.parse_args(argv)
+
+    retirement_errors = verify_compatibility_retirement_plan(args.root / 'configs' / 'compatibility_retirement.yaml')
+    if retirement_errors:
+        for item in retirement_errors:
+            print(item)
+        return 1
 
     budgets = load_compatibility_budgets(args.root / 'configs' / 'compatibility_budget.yaml')
     budget = budgets[args.scenario]
@@ -64,6 +76,12 @@ def main(argv: list[str] | None = None) -> int:
         scenario=args.scenario,
         observed_counts=compatibility_usage_counts(),
         budget=budget,
+    )
+    write_compatibility_usage_snapshot(
+        args.report_out,
+        scenario=args.scenario,
+        budget=budget,
+        violations=report.violations,
     )
     if report.ok:
         print(f'compatibility budget verified for {args.scenario}')

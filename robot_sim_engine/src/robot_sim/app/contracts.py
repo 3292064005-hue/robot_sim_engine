@@ -84,6 +84,8 @@ class PresentationServiceBundle:
     playback_service: PlaybackService
     runtime_paths: RuntimePaths | None
     runtime_feature_policy: RuntimeFeaturePolicy | None = None
+    runtime_context: dict[str, object] | None = None
+    startup_summary: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -154,6 +156,8 @@ def build_presentation_bootstrap_bundle(
             playback_service=container.playback_service,
             runtime_paths=getattr(container, 'runtime_paths', None),
             runtime_feature_policy=getattr(container, 'runtime_feature_policy', None),
+            runtime_context=getattr(container, 'runtime_context', None),
+            startup_summary=getattr(container, 'startup_summary', None),
         ),
         use_cases=PresentationUseCaseBundle(
             fk_uc=container.fk_uc,

@@ -10,7 +10,7 @@ from robot_sim.render.screenshot_service import ScreenshotService
 from robot_sim.render.target_visual import TargetVisual
 from robot_sim.render.trajectory_visual import TrajectoryVisual
 
-from robot_sim.presentation.qt_runtime import QLabel, QVBoxLayout, QWidget, require_qt_runtime
+from robot_sim.presentation.qt_runtime import QApplication, QLabel, QVBoxLayout, QWidget, require_qt_runtime
 
 
 class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
@@ -59,6 +59,43 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
 
     def _initialize_plotter_shell(self) -> None:
         layout = QVBoxLayout(self)
+        qt_platform = self._qt_platform_name()
+        if qt_platform in {'offscreen', 'minimal'}:
+            self._scene_runtime = RenderCapabilityState(
+                capability='scene_3d',
+                status='degraded',
+                backend='pyvistaqt',
+                reason='qt_platform_snapshot_only',
+                message=(
+                    'The Qt platform is running without a live window surface; '
+                    'the scene uses snapshot-only rendering.'
+                ),
+                level='snapshot_only',
+                metadata={'qt_platform': qt_platform},
+                provenance={'render_path': 'snapshot_only', 'provider': 'scene_3d_widget', 'qt_platform': qt_platform},
+            )
+            self._screenshot_runtime = RenderCapabilityState(
+                capability='screenshot',
+                status='degraded',
+                backend='snapshot_renderer',
+                reason='snapshot_renderer_active',
+                message='Scene screenshots are running through the snapshot fallback renderer.',
+                level='snapshot_capture',
+                metadata={'qt_platform': qt_platform},
+                provenance={
+                    'capture_source': 'scene_snapshot',
+                    'render_path': 'snapshot_renderer',
+                    'provider': 'scene_3d_widget',
+                },
+            )
+            self._install_placeholder(
+                layout,
+                RenderInitializationError(
+                    '3D backend is disabled for the current Qt platform',
+                    metadata={'qt_platform': qt_platform},
+                ),
+            )
+            return
         try:
             from pyvistaqt import QtInteractor
         except ImportError as exc:
@@ -114,6 +151,13 @@ class Scene3DWidget(QWidget):  # pragma: no cover - GUI shell
                     metadata={'exception_type': exc.__class__.__name__, 'message': str(exc)},
                 ),
             )
+
+    @staticmethod
+    def _qt_platform_name() -> str:
+        app = QApplication.instance()
+        if app is not None and hasattr(app, 'platformName'):
+            return str(app.platformName() or '').strip().lower()
+        return ''
 
     @staticmethod
     def _install_placeholder(layout, exc: RenderBackendUnavailableError | RenderInitializationError) -> None:

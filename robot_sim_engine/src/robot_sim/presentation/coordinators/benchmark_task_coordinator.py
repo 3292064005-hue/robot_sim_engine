@@ -10,7 +10,7 @@ class BenchmarkTaskCoordinator:
     def __init__(self, window, *, runtime=None, benchmark=None, threader=None) -> None:
         self.window = window
         self.runtime = require_dependency(runtime, 'runtime_facade')
-        self.benchmark = require_dependency(benchmark, 'benchmark_facade')
+        self.benchmark = require_dependency(benchmark, 'motion_workflow')
         self.threader = require_dependency(threader, 'threader')
 
     def run(self) -> None:
@@ -22,7 +22,7 @@ class BenchmarkTaskCoordinator:
             if spec is None:
                 raise RuntimeError('robot not loaded')
             config = self.benchmark.build_benchmark_config(**require_view(self.window, 'read_solver_kwargs'))
-            benchmark_use_case = require_dependency(getattr(self.benchmark, 'benchmark_use_case', None), 'benchmark_facade.benchmark_use_case')
+            benchmark_use_case = require_dependency(getattr(self.benchmark, 'benchmark_use_case', None), 'motion_workflow.benchmark_use_case')
             require_view(self.window, 'project_task_started', 'benchmark', 'Benchmark 已启动')
             task = self.threader.start(
                 worker=BenchmarkWorker(spec, config, benchmark_use_case),

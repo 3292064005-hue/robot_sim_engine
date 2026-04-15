@@ -8,6 +8,7 @@ from robot_sim.application.services.benchmark_service import BenchmarkService
 from robot_sim.application.services.export_service import ExportService
 from robot_sim.application.services.package_service import PackageService
 from robot_sim.application.services.playback_service import PlaybackService
+from robot_sim.application.use_cases.run_ik import RunIKUseCase
 
 
 class DummyExporter(ExportService):
@@ -34,3 +35,19 @@ def test_build_use_case_bundle_constructs_expected_use_cases(tmp_path):
     assert bundle.ik_uc is not None
     assert bundle.traj_uc is not None
     assert bundle.import_robot_uc is not None
+
+
+
+def test_build_use_case_bundle_reuses_explicit_shared_ik_use_case(tmp_path):
+    shared_ik = RunIKUseCase(SolverRegistry())
+    bundle = build_use_case_bundle(
+        solver_registry=SolverRegistry(),
+        planner_registry=TrajectoryPlannerRegistry(),
+        importer_registry=ImporterRegistry(),
+        benchmark_service=BenchmarkService(run_ik_uc=shared_ik),
+        export_service=DummyExporter(),
+        package_service=DummyPackageService(),
+        playback_service=PlaybackService(),
+        ik_uc=shared_ik,
+    )
+    assert bundle.ik_uc is shared_ik

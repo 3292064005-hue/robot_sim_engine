@@ -13,7 +13,7 @@ from robot_sim.application.services.runtime_feature_service import RuntimeFeatur
 from robot_sim.app.version_catalog import current_version_catalog
 
 _SUPPORTED_PLUGIN_API_VERSION = 'v1'
-_SUPPORTED_PLUGIN_KINDS = {'solver', 'planner', 'importer'}
+_SUPPORTED_PLUGIN_KINDS = {'solver', 'planner', 'importer', 'scene_backend', 'collision_backend'}
 _SUPPORTED_PLUGIN_STATUSES = {'stable', 'beta', 'experimental', 'internal', 'deprecated'}
 _ALWAYS_ALLOWED_PLUGIN_SOURCES = {'builtin', 'shipped_plugin'}
 _EXTERNAL_PLUGIN_SOURCES = {'external', 'entry_point'}
@@ -41,14 +41,12 @@ class PluginManifest:
     optional_host_capabilities: tuple[str, ...] = ()
 
     def allows_profile(self, profile: str) -> bool:
-        """Return whether the plugin is enabled for the supplied profile."""
         if not self.enabled_profiles:
             return True
         return str(profile) in set(self.enabled_profiles)
 
     @property
     def is_external(self) -> bool:
-        """Return whether this manifest depends on externally discoverable plugin loading."""
         return self.source not in _ALWAYS_ALLOWED_PLUGIN_SOURCES
 
 
@@ -69,13 +67,19 @@ class PluginRegistration:
 class PluginLoader:
     """Load declared plugins under a strict allowlist and API-version contract."""
 
-    def __init__(self, config_path: str | Path, *, policy: RuntimeFeaturePolicy, host_version: str | None = None) -> None:
-        self._config_path = Path(config_path)
+    def __init__(
+        self,
+        config_path: str | Path | tuple[str | Path, ...] | list[str | Path],
+        *,
+        policy: RuntimeFeaturePolicy,
+        host_version: str | None = None,
+    ) -> None:
+        raw_paths = config_path if isinstance(config_path, (list, tuple)) else (config_path,)
+        self._config_paths = tuple(Path(path) for path in raw_paths)
         self._policy = policy
         self._host_version = str(host_version or current_version_catalog().app_version or '').strip()
 
     def manifests(self, kind: str) -> tuple[PluginManifest, ...]:
-        """Return validated manifests of the requested plugin kind."""
         manifests: list[PluginManifest] = []
         for manifest in self._load_manifests():
             enabled, _reason = self._decision_for_manifest(manifest, requested_kind=kind)
@@ -84,7 +88,6 @@ class PluginLoader:
         return tuple(manifests)
 
     def registrations(self, kind: str, **context) -> tuple[PluginRegistration, ...]:
-        """Resolve manifests into callable registry payloads."""
         registrations: list[PluginRegistration] = []
         for manifest in self.manifests(kind):
             factory = self._resolve_factory(manifest)
@@ -121,14 +124,6 @@ class PluginLoader:
         return tuple(registrations)
 
     def audit(self, kind: str | None = None) -> tuple[dict[str, object], ...]:
-        """Return a deterministic plugin catalog with enable/skip reasons.
-
-        Args:
-            kind: Optional manifest kind filter.
-
-        Returns:
-            tuple[dict[str, object], ...]: Serializable audit rows for diagnostics/startup logs.
-        """
         rows: list[dict[str, object]] = []
         for manifest in self._load_manifests():
             enabled, reason = self._decision_for_manifest(manifest, requested_kind=kind)
@@ -158,49 +153,50 @@ class PluginLoader:
         return tuple(rows)
 
     def _load_manifests(self) -> tuple[PluginManifest, ...]:
-        if not self._config_path.exists():
-            return ()
-        payload = yaml.safe_load(self._config_path.read_text(encoding='utf-8')) or {}
-        if not isinstance(payload, dict):
-            raise ValueError(f'plugin manifest must be a mapping: {self._config_path}')
-        raw_plugins = payload.get('plugins', ())
-        if raw_plugins is None:
-            return ()
-        if not isinstance(raw_plugins, list):
-            raise ValueError(f'plugins section must be a list: {self._config_path}')
         manifests: list[PluginManifest] = []
         seen_ids: set[str] = set()
-        for entry in raw_plugins:
-            if not isinstance(entry, dict):
-                raise ValueError(f'plugin entry must be a mapping: {self._config_path}')
-            factory = str(entry.get('factory', '') or '')
-            entry_point_ref = str(entry.get('entry_point', '') or '')
-            if bool(factory) == bool(entry_point_ref):
-                raise ValueError(f'plugin entry must define exactly one of factory or entry_point: {self._config_path}')
-            plugin_id = str(entry['id'])
-            if plugin_id in seen_ids:
-                raise ValueError(f'duplicate plugin id in manifest: {plugin_id}')
-            seen_ids.add(plugin_id)
-            source = str(entry.get('source', 'entry_point' if entry_point_ref else 'external'))
-            manifest = PluginManifest(
-                plugin_id=plugin_id,
-                kind=str(entry['kind']),
-                factory=factory,
-                entry_point=entry_point_ref,
-                aliases=tuple(str(alias) for alias in entry.get('aliases', ()) or ()),
-                metadata=dict(entry.get('metadata', {}) or {}),
-                source=source,
-                replace=bool(entry.get('replace', False)),
-                enabled_profiles=tuple(str(profile) for profile in entry.get('enabled_profiles', ()) or ()),
-                status=str(entry.get('status', 'stable')),
-                api_version=str(entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION) or _SUPPORTED_PLUGIN_API_VERSION),
-                sdk_contract_version=str(entry.get('sdk_contract_version', entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION)) or entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION) or _SUPPORTED_PLUGIN_API_VERSION),
-                min_host_version=str(entry.get('min_host_version', '') or ''),
-                required_host_capabilities=tuple(str(item) for item in entry.get('required_host_capabilities', ()) or ()),
-                optional_host_capabilities=tuple(str(item) for item in entry.get('optional_host_capabilities', ()) or ()),
-            )
-            self._validate_manifest(manifest)
-            manifests.append(manifest)
+        for config_path in self._config_paths:
+            if not config_path.exists():
+                continue
+            payload = yaml.safe_load(config_path.read_text(encoding='utf-8')) or {}
+            if not isinstance(payload, dict):
+                raise ValueError(f'plugin manifest must be a mapping: {config_path}')
+            raw_plugins = payload.get('plugins', ())
+            if raw_plugins is None:
+                continue
+            if not isinstance(raw_plugins, list):
+                raise ValueError(f'plugins section must be a list: {config_path}')
+            for entry in raw_plugins:
+                if not isinstance(entry, dict):
+                    raise ValueError(f'plugin entry must be a mapping: {config_path}')
+                factory = str(entry.get('factory', '') or '')
+                entry_point_ref = str(entry.get('entry_point', '') or '')
+                if bool(factory) == bool(entry_point_ref):
+                    raise ValueError(f'plugin entry must define exactly one of factory or entry_point: {config_path}')
+                plugin_id = str(entry['id'])
+                if plugin_id in seen_ids:
+                    raise ValueError(f'duplicate plugin id in manifest chain: {plugin_id}')
+                seen_ids.add(plugin_id)
+                source = str(entry.get('source', 'entry_point' if entry_point_ref else 'external'))
+                manifest = PluginManifest(
+                    plugin_id=plugin_id,
+                    kind=str(entry['kind']),
+                    factory=factory,
+                    entry_point=entry_point_ref,
+                    aliases=tuple(str(alias) for alias in entry.get('aliases', ()) or ()),
+                    metadata=dict(entry.get('metadata', {}) or {}),
+                    source=source,
+                    replace=bool(entry.get('replace', False)),
+                    enabled_profiles=tuple(str(profile) for profile in entry.get('enabled_profiles', ()) or ()),
+                    status=str(entry.get('status', 'stable')),
+                    api_version=str(entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION) or _SUPPORTED_PLUGIN_API_VERSION),
+                    sdk_contract_version=str(entry.get('sdk_contract_version', entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION)) or entry.get('api_version', _SUPPORTED_PLUGIN_API_VERSION) or _SUPPORTED_PLUGIN_API_VERSION),
+                    min_host_version=str(entry.get('min_host_version', '') or ''),
+                    required_host_capabilities=tuple(str(item) for item in entry.get('required_host_capabilities', ()) or ()),
+                    optional_host_capabilities=tuple(str(item) for item in entry.get('optional_host_capabilities', ()) or ()),
+                )
+                self._validate_manifest(manifest)
+                manifests.append(manifest)
         return tuple(manifests)
 
     def _decision_for_manifest(self, manifest: PluginManifest, *, requested_kind: str | None) -> tuple[bool, str]:
@@ -218,7 +214,6 @@ class PluginLoader:
         if any(capability not in host_capabilities for capability in manifest.required_host_capabilities):
             return False, 'required_host_capability_missing'
         return True, 'enabled'
-
 
     def _negotiated_capabilities(self, manifest: PluginManifest) -> dict[str, tuple[str, ...]]:
         host_capabilities = tuple(getattr(self._policy, 'host_capabilities', ()) or ())
@@ -254,7 +249,7 @@ class PluginLoader:
         discovered = entry_points()
         if hasattr(discovered, 'select'):
             matches = tuple(discovered.select(group=group, name=name))
-        else:  # pragma: no cover - compatibility fallback
+        else:
             matches = tuple(ep for ep in discovered.get(group, ()) if ep.name == name)
         if not matches:
             raise ValueError(f'plugin entry point not found: {entry_point_ref}')
@@ -265,23 +260,6 @@ class PluginLoader:
 
     @staticmethod
     def _call_factory(factory: Callable[..., object], context: dict[str, object]) -> object:
-        """Call a plugin factory without conflating signature mismatch and factory failure.
-
-        Args:
-            factory: Resolved factory callable.
-            context: Keyword context assembled by the composition root.
-
-        Returns:
-            object: Factory return payload.
-
-        Raises:
-            TypeError: Propagates factory-internal ``TypeError`` failures unchanged.
-            ValueError: Raised when the factory signature cannot accept the supported calling modes.
-
-        Boundary behavior:
-            Signature compatibility is resolved before execution. The factory is invoked exactly once,
-            either with the supplied context or without arguments.
-        """
         signature = inspect.signature(factory)
         parameters = tuple(signature.parameters.values())
         accepts_var_kw = any(param.kind is inspect.Parameter.VAR_KEYWORD for param in parameters)
@@ -308,9 +286,7 @@ class PluginLoader:
             f'required_positional={required_without_defaults}; required_keyword_only={required_keyword_only}'
         )
 
-
     def _host_version_satisfies(self, min_host_version: str) -> bool:
-        """Return whether the current host version satisfies the plugin minimum."""
         host_tuple = self._parse_version(self._host_version)
         required_tuple = self._parse_version(min_host_version)
         if host_tuple is None or required_tuple is None:

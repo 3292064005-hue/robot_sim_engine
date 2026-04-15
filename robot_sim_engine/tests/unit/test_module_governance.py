@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.application.services.runtime_feature_service import RuntimeFeaturePolicy
 from robot_sim.domain.module_governance import verify_experimental_module_governance
@@ -70,3 +72,39 @@ def test_verify_module_governance_reports_failed_gate_results(project_root) -> N
         require_gate_results=True,
     )
     assert any('failed executed quality gates' in item for item in errors)
+
+
+def test_module_governance_evidence_contract_fields_are_present() -> None:
+    from robot_sim.infra.quality_evidence import QualityEvidenceRecord
+
+    record = QualityEvidenceRecord(
+        'module_governance',
+        'governance',
+        False,
+        details={
+            'execute_gates_requested': True,
+            'required_gates': ['gui_smoke'],
+            'executed_gate_results': {'gui_smoke': {'ok': False}},
+            'required_gate_result_count': 1,
+            'executed_gate_result_count': 1,
+        },
+    )
+    assert record.details['execute_gates_requested'] is True
+    assert record.details['required_gate_result_count'] == 1
+    assert record.details['executed_gate_result_count'] == 1
+
+
+def test_verify_module_governance_required_gates_include_structured_experimental_payloads() -> None:
+    import importlib.util
+    import sys
+
+    script_path = Path(__file__).resolve().parents[2] / 'scripts' / 'verify_module_governance.py'
+    spec = importlib.util.spec_from_file_location('verify_module_governance_test_mod', script_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules['verify_module_governance_test_mod'] = mod
+    spec.loader.exec_module(mod)
+
+    gates = mod._required_gates()
+    assert 'gui_smoke' in gates
+    assert 'docs_sync' in gates

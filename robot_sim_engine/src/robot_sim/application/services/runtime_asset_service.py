@@ -7,93 +7,15 @@ import numpy as np
 from robot_sim.core.collision.scene import PlanningScene
 from robot_sim.domain.collision_backends import default_collision_backend_registry
 from robot_sim.domain.enums import CollisionLevel
-from robot_sim.model.robot_geometry import GeometryPrimitive, LinkGeometry, RobotGeometry
+from robot_sim.model.robot_geometry import RobotGeometry
 from robot_sim.model.robot_geometry_model import RobotGeometryModel
+from robot_sim.model.robot_geometry_serialization import deserialize_robot_geometry, serialize_robot_geometry
 from robot_sim.model.scene_graph_authority import GeometryRegistry, QueryContext, SceneFrame, SceneGraphAuthority
 from robot_sim.model.scene_geometry_authority import SceneGeometryAuthority
 from robot_sim.model.robot_spec import RobotSpec
 
 
 
-
-def serialize_robot_geometry(geometry: RobotGeometry | None) -> dict[str, object] | None:
-    """Serialize a runtime robot-geometry bundle into YAML-safe primitives."""
-    if geometry is None:
-        return None
-    return {
-        'source': str(geometry.source),
-        'fidelity': str(geometry.fidelity),
-        'collision_backend_hint': str(geometry.collision_backend_hint),
-        'metadata': dict(geometry.metadata),
-        'links': [
-            {
-                'name': str(link.name),
-                'radius': float(link.radius),
-                'points_local': None if link.points_local is None else np.asarray(link.points_local, dtype=float).tolist(),
-                'visual_primitives': [
-                    {
-                        'kind': str(primitive.kind),
-                        'params': dict(primitive.params),
-                        'local_transform': None if primitive.local_transform is None else np.asarray(primitive.local_transform, dtype=float).tolist(),
-                    }
-                    for primitive in link.visual_primitives
-                ],
-                'collision_primitives': [
-                    {
-                        'kind': str(primitive.kind),
-                        'params': dict(primitive.params),
-                        'local_transform': None if primitive.local_transform is None else np.asarray(primitive.local_transform, dtype=float).tolist(),
-                    }
-                    for primitive in link.collision_primitives
-                ],
-                'metadata': dict(link.metadata),
-            }
-            for link in geometry.links
-        ],
-    }
-
-
-def deserialize_robot_geometry(payload: dict[str, object] | None) -> RobotGeometry | None:
-    """Deserialize YAML-safe geometry payloads back into ``RobotGeometry``."""
-    if not payload:
-        return None
-    links = []
-    for link in payload.get('links', ()) or ():
-        visual_primitives = []
-        for primitive in link.get('visual_primitives', ()) or ():
-            visual_primitives.append(
-                GeometryPrimitive(
-                    kind=str(primitive.get('kind', 'unknown')),
-                    params=dict(primitive.get('params') or {}),
-                    local_transform=None if primitive.get('local_transform') is None else np.asarray(primitive.get('local_transform'), dtype=float),
-                )
-            )
-        collision_primitives = []
-        for primitive in link.get('collision_primitives', ()) or ():
-            collision_primitives.append(
-                GeometryPrimitive(
-                    kind=str(primitive.get('kind', 'unknown')),
-                    params=dict(primitive.get('params') or {}),
-                    local_transform=None if primitive.get('local_transform') is None else np.asarray(primitive.get('local_transform'), dtype=float),
-                )
-            )
-        links.append(
-            LinkGeometry(
-                name=str(link.get('name', 'link')),
-                radius=float(link.get('radius', 0.03)),
-                points_local=None if link.get('points_local') is None else np.asarray(link.get('points_local'), dtype=float),
-                visual_primitives=tuple(visual_primitives),
-                collision_primitives=tuple(collision_primitives),
-                metadata=dict(link.get('metadata') or {}),
-            )
-        )
-    return RobotGeometry(
-        links=tuple(links),
-        source=str(payload.get('source', 'generated')),
-        fidelity=str(payload.get('fidelity', 'approximate')),
-        collision_backend_hint=str(payload.get('collision_backend_hint', 'aabb')),
-        metadata=dict(payload.get('metadata') or {}),
-    )
 
 @dataclass(frozen=True)
 class RobotRuntimeAssets:
@@ -108,6 +30,7 @@ class RobotRuntimeAssets:
 
     robot_geometry: RobotGeometry | None
     collision_geometry: RobotGeometry | None
+    geometry_model: RobotGeometryModel
     planning_scene: PlanningScene
     scene_summary: dict[str, object]
 
@@ -155,14 +78,25 @@ class RobotRuntimeAssetService:
             robot_geometry=visual_geometry,
             explicit_geometry=collision_geometry,
         )
+        geometry_model = RobotGeometryModel(
+            visual_geometry=visual_geometry,
+            collision_geometry=resolved_collision_geometry,
+            metadata={
+                'robot_name': spec.name,
+                'geometry_available_from_source': bool(spec.geometry_available),
+                'source_model': str(spec.model_source or spec.kinematic_source or ''),
+            },
+        )
         planning_scene = self._build_planning_scene(
             spec,
+            geometry_model=geometry_model,
             robot_geometry=visual_geometry,
             collision_geometry=resolved_collision_geometry,
         )
         return RobotRuntimeAssets(
             robot_geometry=visual_geometry,
             collision_geometry=resolved_collision_geometry,
+            geometry_model=geometry_model,
             planning_scene=planning_scene,
             scene_summary=planning_scene.summary(),
         )
@@ -224,13 +158,13 @@ class RobotRuntimeAssetService:
         self,
         spec: RobotSpec,
         *,
+        geometry_model: RobotGeometryModel,
         robot_geometry: RobotGeometry | None,
         collision_geometry: RobotGeometry | None,
     ) -> PlanningScene:
         requested_backend = self._requested_backend(robot_geometry=robot_geometry, collision_geometry=collision_geometry)
         runtime_model = spec.runtime_model
         articulated_model = spec.articulated_model
-        geometry_model = RobotGeometryModel(visual_geometry=robot_geometry, collision_geometry=collision_geometry)
         execution_summary = spec.execution_summary
         metadata = {
             'edit_surface': 'stable_scene_editor',
@@ -316,9 +250,10 @@ class RobotRuntimeAssetService:
         authority = SceneGeometryAuthority(
             authority='robot_runtime_asset_service',
             authority_kind='runtime_robot_scene',
-            scene_geometry_contract='declared_and_resolved',
-            declared_geometry_source=self._geometry_source(spec, robot_geometry=robot_geometry, collision_geometry=collision_geometry),
-            resolved_geometry_source='planning_scene_runtime_projection',
+            scene_geometry_contract='declaration_validation_render',
+            declaration_geometry_source=self._geometry_source(spec, robot_geometry=robot_geometry, collision_geometry=collision_geometry),
+            validation_geometry_source='planning_scene_runtime_projection',
+            render_geometry_source=self._geometry_source(spec, robot_geometry=robot_geometry, collision_geometry=collision_geometry),
             supported_scene_shapes=('box', 'cylinder', 'sphere'),
             records=refreshed.records,
             metadata=dict(refreshed.metadata),

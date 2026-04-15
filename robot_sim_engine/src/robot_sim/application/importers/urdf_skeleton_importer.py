@@ -110,6 +110,12 @@ class URDFSkeletonRobotImporter:
             'link_count': len(rows) + 1,
             'has_visual': False,
             'has_collision': False,
+            'fidelity_roadmap': {
+                'roadmap_level': ImporterFidelity.APPROXIMATE.value,
+                'source_model_state': 'structured_source',
+                'runtime_state': 'runtime_executable',
+                'geometry_state': 'proxy_only',
+            },
         }
         spec = RobotSpec(
             name=stem,

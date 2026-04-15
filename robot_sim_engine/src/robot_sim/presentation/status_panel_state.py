@@ -80,7 +80,13 @@ class RenderCapabilityAlertState:
 
 @dataclass(frozen=True)
 class RenderRuntimePanelState:
-    """Typed UI state used by the status panel to render render-runtime degradation."""
+    """Typed UI state used by the status panel to render render-runtime degradation.
+
+    Attributes:
+        alerts: Ordered per-capability alert projections.
+        overall_severity: Aggregate severity used by the status-strip headline.
+        summary_text: Human-readable aggregate summary shown in the render group header.
+    """
 
     alerts: tuple[RenderCapabilityAlertState, ...]
     overall_severity: str
@@ -88,10 +94,26 @@ class RenderRuntimePanelState:
 
     @property
     def metric_payload(self) -> dict[str, str]:
+        """Return compact metric text used by the status strip summary rows."""
         return {alert.capability: alert.metric_text for alert in self.alerts}
 
     @property
+    def detail_rows(self) -> dict[str, str]:
+        """Return per-capability detail text rendered inside the detailed render panel.
+
+        Returns:
+            dict[str, str]: Mapping keyed by capability id. The value is always non-empty and
+                safe for direct widget rendering.
+
+        Boundary behavior:
+            Detail rows stay separate from ``metric_payload`` so the compact status strip and the
+            multiline render diagnostics panel can evolve independently without contract drift.
+        """
+        return {alert.capability: alert.detail_text or alert.message or '运行正常' for alert in self.alerts}
+
+    @property
     def degraded_alerts(self) -> tuple[RenderCapabilityAlertState, ...]:
+        """Return only warning/critical alerts for downstream diagnostics consumers."""
         return tuple(alert for alert in self.alerts if alert.severity != 'nominal')
 
 

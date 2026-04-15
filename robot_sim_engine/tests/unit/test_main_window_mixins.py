@@ -68,12 +68,14 @@ class DummyStatusPanel:
         self.metrics = {}
         self.messages = []
         self.render_runtime = None
+        self.render_detail_rows = {}
 
     def set_metrics(self, **kwargs):
         self.metrics.update(kwargs)
 
     def set_render_runtime(self, panel_state):
         self.render_runtime = panel_state
+        self.render_detail_rows = dict(panel_state.detail_rows)
         self.metrics.update(panel_state.metric_payload)
 
     def append(self, message):
@@ -84,12 +86,14 @@ class DummyDiagnosticsPanel:
     def __init__(self):
         self.values = None
         self.render_telemetry = None
+        self.log_sections = ()
 
     def set_values(self, **kwargs):
         self.values = kwargs
 
     def set_render_telemetry(self, panel_state):
         self.render_telemetry = panel_state
+        self.log_sections = tuple(panel_state.log_sections)
 
 
 class DummyBenchmarkPanel:
@@ -435,16 +439,19 @@ class DummyController:
     def set_playback_frame(self, idx):
         return SimpleNamespace(frame_idx=idx, t=0.5, q=np.array([0.2, 0.1]), qd=np.array([0.0, 0.0]), qdd=np.array([0.0, 0.0]), joint_positions=np.zeros((2, 3)), ee_position=np.array([1, 0, 0]))
 
+    def export_trajectory_bundle(self):
+        return 'trajectory_bundle.npz'
+
     def export_trajectory(self):
-        return 'trajectory.csv'
+        return 'trajectory_bundle.npz'
 
     def export_trajectory_metrics(self, _name, _metrics):
         return 'trajectory_metrics.json'
 
-    def export_session(self):
+    def export_session(self, telemetry_detail='full'):
         return 'session.json'
 
-    def export_package(self):
+    def export_package(self, telemetry_detail='minimal'):
         return 'package.zip'
 
     def export_benchmark(self):
@@ -459,26 +466,46 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
         self.controller = DummyController()
         self.metrics_service = self.controller.metrics_service
         self.runtime_facade = self.controller
-        self.robot_facade = SimpleNamespace(
+        self.robot_workflow = SimpleNamespace(
             robot_entries=self.controller.robot_entries,
+            importer_entries=lambda: [],
             load_robot=self.controller.load_robot,
+            import_robot=lambda source, importer_id=None: None,
             save_current_robot=self.controller.save_current_robot,
+            run_fk=self.controller.run_fk,
         )
-        self.solver_facade = SimpleNamespace(
+        self.motion_workflow = SimpleNamespace(
             ik_use_case=self.controller.ik_uc,
+            trajectory_use_case=self.controller.traj_uc,
+            benchmark_use_case=self.controller.benchmark_uc,
+            playback_service=self.controller.playback_service,
             build_ik_request=self.controller.build_ik_request,
             apply_ik_result=self.controller.apply_ik_result,
             solver_defaults=self.controller.solver_defaults,
-        )
-        self.trajectory_facade = SimpleNamespace(
-            trajectory_use_case=self.controller.traj_uc,
             build_trajectory_request=self.controller.build_trajectory_request,
             apply_trajectory=self.controller.apply_trajectory,
             trajectory_defaults=self.controller.trajectory_defaults,
+            set_playback_options=self.controller.set_playback_options,
+            next_playback_frame=self.controller.next_playback_frame,
+            set_playback_frame=self.controller.set_playback_frame,
+            ensure_playback_ready=lambda strict=True: None,
+            build_benchmark_config=self.controller.build_benchmark_config,
         )
-        self.playback_facade = SimpleNamespace(state=self.controller.state, set_playback_options=self.controller.set_playback_options, next_playback_frame=self.controller.next_playback_frame, set_playback_frame=self.controller.set_playback_frame, ensure_playback_ready=lambda strict=True: None)
-        self.benchmark_facade = SimpleNamespace(benchmark_use_case=self.controller.benchmark_uc, build_benchmark_config=self.controller.build_benchmark_config)
-        self.export_facade = SimpleNamespace(export_trajectory=self.controller.export_trajectory, export_trajectory_metrics=self.controller.export_trajectory_metrics, export_session=self.controller.export_session, export_package=self.controller.export_package, export_benchmark=self.controller.export_benchmark, export_benchmark_cases_csv=self.controller.export_benchmark_cases_csv)
+        self.export_workflow = SimpleNamespace(
+            export_trajectory_bundle=self.controller.export_trajectory_bundle,
+            export_trajectory=self.controller.export_trajectory,
+            export_trajectory_metrics=self.controller.export_trajectory_metrics,
+            export_session=self.controller.export_session,
+            export_package=self.controller.export_package,
+            export_benchmark=self.controller.export_benchmark,
+            export_benchmark_cases_csv=self.controller.export_benchmark_cases_csv,
+        )
+        self.robot_facade = self.robot_workflow
+        self.solver_facade = self.motion_workflow
+        self.trajectory_facade = self.motion_workflow
+        self.playback_facade = self.motion_workflow
+        self.benchmark_facade = self.motion_workflow
+        self.export_facade = self.export_workflow
         self.threader = DummyThreader()
         self.playback_threader = DummyThreader()
         self.window_cfg = self.controller.app_config['window']
@@ -493,12 +520,12 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
         self.diagnostics_panel = DummyDiagnosticsPanel()
         self.benchmark_panel = DummyBenchmarkPanel()
         self.plots_manager = DummyPlotsManager()
-        self.robot_coordinator = RobotCoordinator(self, robot=self.robot_facade)
-        self.ik_task_coordinator = IKTaskCoordinator(self, solver=self.solver_facade, threader=self.threader)
-        self.trajectory_task_coordinator = TrajectoryTaskCoordinator(self, trajectory=self.trajectory_facade, threader=self.threader)
-        self.benchmark_task_coordinator = BenchmarkTaskCoordinator(self, runtime=self.runtime_facade, benchmark=self.benchmark_facade, threader=self.threader)
-        self.playback_task_coordinator = PlaybackTaskCoordinator(self, runtime=self.runtime_facade, playback=self.playback_facade, playback_threader=self.playback_threader)
-        self.export_task_coordinator = ExportTaskCoordinator(self, runtime=self.runtime_facade, export=self.export_facade, threader=self.threader, metrics_service=self.metrics_service)
+        self.robot_coordinator = RobotCoordinator(self, robot=self.robot_workflow)
+        self.ik_task_coordinator = IKTaskCoordinator(self, solver=self.motion_workflow, threader=self.threader)
+        self.trajectory_task_coordinator = TrajectoryTaskCoordinator(self, trajectory=self.motion_workflow, threader=self.threader)
+        self.benchmark_task_coordinator = BenchmarkTaskCoordinator(self, runtime=self.runtime_facade, benchmark=self.motion_workflow, threader=self.threader)
+        self.playback_task_coordinator = PlaybackTaskCoordinator(self, runtime=self.runtime_facade, playback=self.motion_workflow, playback_threader=self.playback_threader)
+        self.export_task_coordinator = ExportTaskCoordinator(self, runtime=self.runtime_facade, export=self.export_workflow, threader=self.threader, metrics_service=self.metrics_service)
         self.scene_coordinator = SceneCoordinator(self, runtime=self.runtime_facade, threader=self.threader)
         self.status_coordinator = StatusCoordinator(self, runtime=self.runtime_facade)
 
@@ -743,6 +770,8 @@ def test_render_runtime_panel_projection_reports_formal_alert_summary():
     assert panel_state.overall_severity == 'critical'
     assert '1 个不可用' in panel_state.summary_text
     assert '1 个降级' in panel_state.summary_text
+    assert panel_state.detail_rows['scene_3d'] == 'pyvistaqt / backend_dependency_missing'
+    assert panel_state.detail_rows['screenshot'] == 'snapshot_renderer'
 
 
 def test_status_panel_projection_subscription_tracks_shared_runtime_state():
@@ -752,6 +781,7 @@ def test_status_panel_projection_subscription_tracks_shared_runtime_state():
     assert window.status_panel.render_runtime is not None
     assert window.status_panel.render_runtime.overall_severity == 'critical'
     assert 'plots' in window.status_panel.metrics['plots'] or window.status_panel.metrics['plots'].startswith('不可用')
+    assert window.status_panel.render_detail_rows['plots'] == 'pyqtgraph / backend_dependency_missing'
 
 
 def test_render_runtime_projection_records_structured_telemetry_events():

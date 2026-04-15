@@ -9,7 +9,7 @@ from robot_sim.presentation.legacy_aliases import MainWindowLegacyAliasMixin
 from robot_sim.presentation.main_window_actions import MainWindowActionMixin
 from robot_sim.presentation.main_window_tasks import MainWindowTaskMixin
 from robot_sim.presentation.main_window_ui import MainWindowUIMixin
-from robot_sim.presentation.runtime_bundles import RuntimeServiceBundle, TaskOrchestrationBundle, WorkflowFacadeBundle
+from robot_sim.presentation.runtime_bundles import RuntimeServiceBundle, TaskOrchestrationBundle, WorkflowFacadeBundle, WorkflowServiceBundle
 
 try:
     from PySide6.QtWidgets import QApplication, QMainWindow
@@ -30,8 +30,12 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
         return self.window_runtime.runtime_services
 
     @property
-    def workflow_facades(self) -> WorkflowFacadeBundle:
-        return self.window_runtime.workflow_facades
+    def workflow_facades(self) -> WorkflowFacadeBundle | None:
+        return self.window_runtime._compatibility_facades()
+
+    @property
+    def workflow_services(self) -> WorkflowServiceBundle:
+        return self.window_runtime.workflow_services
 
     @property
     def task_orchestration(self) -> TaskOrchestrationBundle:
@@ -48,6 +52,18 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
     @property
     def window_cfg(self) -> dict[str, object]:
         return self.runtime_services.window_cfg
+
+    @property
+    def robot_workflow(self):
+        return self.workflow_services.robot_workflow
+
+    @property
+    def motion_workflow(self):
+        return self.workflow_services.motion_workflow
+
+    @property
+    def export_workflow(self):
+        return self.workflow_services.export_workflow
 
     @property
     def robot_facade(self):
@@ -166,5 +182,5 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
         self.playback_render_scheduler.flushed.connect(self.project_playback_frame)
 
         self.resize(int(self.window_cfg.get('width', 1680)), int(self.window_cfg.get('height', 980)))
-        if self.robot_facade.robot_entries() and self._should_auto_load_robot():
+        if self.robot_workflow.robot_entries() and self._should_auto_load_robot():
             self.on_load_robot()

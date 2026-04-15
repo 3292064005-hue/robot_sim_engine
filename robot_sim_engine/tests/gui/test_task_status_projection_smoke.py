@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip('PySide6')
+from robot_sim.testing.qt_shims import real_pyside6_available
+
+if not real_pyside6_available():
+    pytest.skip('real PySide6 runtime is unavailable', allow_module_level=True)
 
 from robot_sim.app.bootstrap import get_project_root
 from robot_sim.app.container import build_container

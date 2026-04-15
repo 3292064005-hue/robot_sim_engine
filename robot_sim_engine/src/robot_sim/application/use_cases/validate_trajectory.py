@@ -11,6 +11,7 @@ from robot_sim.core.kinematics.fk_solver import ForwardKinematicsSolver
 from robot_sim.model.diagnostics_report import TrajectoryDiagnosticsReport
 from robot_sim.model.pose import Pose
 from robot_sim.model.solver_config import SUPPORTED_TRAJECTORY_VALIDATION_LAYERS
+from robot_sim.model.scene_validation_surface import summarize_scene_validation_surface
 from robot_sim.model.trajectory import JointTrajectory
 
 
@@ -90,7 +91,8 @@ class ValidateTrajectoryUseCase:
 
         Args:
             trajectory: Planned joint trajectory.
-            collision_obstacles: Legacy collision obstacle collection.
+            collision_obstacles: Legacy collision obstacle collection accepted only as a
+                migration adapter. Validation always normalizes to one planning-scene authority.
             target_pose: Optional explicit target pose.
             spec: Optional robot specification used for FK fallback.
             q_goal: Optional goal joint vector used to recover target pose.
@@ -193,6 +195,26 @@ class ValidateTrajectoryUseCase:
             extra_reasons, limit_summary = evaluate_limit_summary(q, spec)
             reasons.extend(extra_reasons)
 
+        scene_validation_summary = summarize_scene_validation_surface(
+            collision_backend=str(collision_summary.get('resolved_backend', getattr(planning_scene, 'collision_backend', 'aabb') if planning_scene is not None else 'aabb')),
+            scene_fidelity=str(collision_summary.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'none') if planning_scene is not None else 'none')),
+            scene_authority=str(collision_summary.get('scene_authority', getattr(planning_scene, 'scene_authority', 'none') if planning_scene is not None else 'none')),
+            scene_geometry_contract=str(collision_summary.get('scene_geometry_contract', getattr(getattr(planning_scene, 'geometry_authority', None), 'scene_geometry_contract', 'none') if planning_scene is not None else 'none')),
+            attached_object_count=int(getattr(planning_scene, 'attached_object_ids', ()) and len(getattr(planning_scene, 'attached_object_ids', ())) or 0) if planning_scene is not None else 0,
+            adapter_applied=bool(collision_summary.get('adapter_applied', False)),
+            source=str(collision_summary.get('scene_source', 'planning_scene' if planning_scene is not None else 'none')),
+        ) if collision_summary else {
+            'scene_source': 'none',
+            'scene_validation_effective': False,
+            'scene_validation_mode': 'none',
+            'scene_validation_precision': 'none',
+            'scene_authority': 'none',
+            'scene_geometry_contract': 'none',
+            'scene_fidelity': 'none',
+            'attached_object_validation': 'none',
+            'adapter_applied': False,
+        }
+
         feasible = not reasons
         metadata = {
             'num_samples': int(t.shape[0]),
@@ -208,6 +230,7 @@ class ValidateTrajectoryUseCase:
             'cache_integrity_errors': list(cache_errors),
             'validation_layers': list(active_layers),
             'cache_reuse_policy': 'retime_preserves_geometry',
+            'scene_validation_summary': dict(scene_validation_summary),
         }
         if planning_scene is not None:
             metadata['scene_revision'] = int(getattr(planning_scene, 'revision', 0))

@@ -12,23 +12,13 @@ from robot_sim.presentation.controllers.ik_controller import IKController
 from robot_sim.presentation.controllers.playback_controller import PlaybackController
 from robot_sim.presentation.controllers.robot_controller import RobotController
 from robot_sim.presentation.controllers.trajectory_controller import TrajectoryController
-from robot_sim.presentation.facades import (
-    BenchmarkFacade,
-    ExportFacade,
-    PlaybackFacade,
-    RobotFacade,
-    RuntimeFacade,
-    SolverFacade,
-    TrajectoryFacade,
-)
+from robot_sim.presentation.facades import BenchmarkFacade, ExportFacade, PlaybackFacade, RobotFacade, RuntimeFacade, SolverFacade, TrajectoryFacade
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.presentation.workflow_services import ExportWorkflowService, MotionWorkflowService, RobotWorkflowService
 
 
 @dataclass(frozen=True)
 class PresentationControllerCollaborators:
-    """Typed presentation collaborator bundle assigned onto ``MainController``."""
-
     state_store: StateStore
     diagnostics_controller: DiagnosticsController
     robot_controller: RobotController
@@ -49,9 +39,19 @@ class PresentationControllerCollaborators:
     export_workflow: ExportWorkflowService
 
 
+
 def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> PresentationControllerCollaborators:
-    """Build the stable presentation collaborator graph for ``MainController``."""
     state_store = StateStore(SessionState())
+    capability_matrix = bundle.services.capability_service.build_matrix(
+        solver_registry=bundle.registries.solver_registry,
+        planner_registry=bundle.registries.planner_registry,
+        importer_registry=bundle.registries.importer_registry,
+    )
+    state_store.patch_capabilities(capability_matrix)
+    state_store.patch(
+        segment='session',
+        module_statuses=bundle.services.module_status_service.snapshot_details(),
+    )
     diagnostics_controller = DiagnosticsController(state_store, bundle.services.metrics_service)
     ik_controller = IKController(
         state_store,
@@ -60,9 +60,7 @@ def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> Pre
         bundle.use_cases.ik_uc,
     )
     runtime_asset_service = RobotRuntimeAssetService(
-        experimental_collision_backends_enabled=bool(
-            getattr(bundle.services.runtime_feature_policy, 'experimental_backends_enabled', False)
-        )
+        experimental_collision_backends_enabled=bool(getattr(bundle.services.runtime_feature_policy, 'experimental_backends_enabled', False))
     )
     robot_controller = RobotController(
         state_store,
@@ -81,13 +79,6 @@ def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> Pre
     )
     playback_controller = PlaybackController(state_store, bundle.services.playback_service, bundle.use_cases.playback_uc)
     benchmark_controller = BenchmarkController(state_store, bundle.use_cases.benchmark_uc, ik_controller.build_ik_request)
-    export_controller = ExportController(
-        state_store,
-        bundle.services.export_service,
-        bundle.use_cases.export_report_uc,
-        bundle.use_cases.save_session_uc,
-        bundle.use_cases.export_package_uc,
-    )
     app_settings = bundle.services.config_service.load_app_settings()
     app_config = app_settings.as_dict()
     runtime_paths = bundle.services.runtime_paths
@@ -101,32 +92,43 @@ def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> Pre
         export_root=export_root,
         app_config=app_config,
         app_settings=app_settings,
+        solver_config=solver_settings.as_dict(),
+        solver_settings=solver_settings,
+        runtime_context=dict(bundle.services.runtime_context or {}),
+        startup_summary=dict(bundle.services.startup_summary or {}),
+        effective_config_snapshot=bundle.services.config_service.describe_effective_snapshot(),
         state_store=state_store,
         metrics_service=bundle.services.metrics_service,
         task_error_mapper=bundle.services.task_error_mapper,
         capability_service=bundle.services.capability_service,
         module_status_service=bundle.services.module_status_service,
     )
-    solver_config = solver_settings.as_dict()
-    robot_facade = RobotFacade(
-        bundle.registries.robot_registry,
-        robot_controller,
+    export_controller = ExportController(
+        state_store,
+        bundle.services.export_service,
+        bundle.use_cases.export_report_uc,
+        bundle.use_cases.save_session_uc,
+        bundle.use_cases.export_package_uc,
+        runtime_facade=runtime_facade,
+    )
+    robot_workflow = RobotWorkflowService(
+        registry=bundle.registries.robot_registry,
+        controller=robot_controller,
         importer_registry=bundle.registries.importer_registry,
     )
-    solver_facade = SolverFacade(solver_config, solver_settings, ik_controller, bundle.use_cases.ik_uc)
-    trajectory_facade = TrajectoryFacade(solver_config, solver_settings, trajectory_controller, bundle.use_cases.traj_uc)
-    playback_facade = PlaybackFacade(playback_controller, bundle.services.playback_service)
-    benchmark_facade = BenchmarkFacade(benchmark_controller, bundle.use_cases.benchmark_uc)
-    export_facade = ExportFacade(export_controller)
-    robot_workflow = RobotWorkflowService(robot_facade)
     motion_workflow = MotionWorkflowService(
-        solver_facade=solver_facade,
-        trajectory_facade=trajectory_facade,
-        benchmark_facade=benchmark_facade,
-        playback_facade=playback_facade,
         solver_settings=solver_settings,
+        ik_controller=ik_controller,
+        trajectory_controller=trajectory_controller,
+        benchmark_controller=benchmark_controller,
+        playback_controller=playback_controller,
+        playback_service=bundle.services.playback_service,
+        ik_use_case=bundle.use_cases.ik_uc,
+        trajectory_use_case=bundle.use_cases.traj_uc,
+        benchmark_use_case=bundle.use_cases.benchmark_uc,
     )
-    export_workflow = ExportWorkflowService(export_facade)
+    export_workflow = ExportWorkflowService(export_controller=export_controller)
+
     return PresentationControllerCollaborators(
         state_store=state_store,
         diagnostics_controller=diagnostics_controller,
@@ -137,20 +139,20 @@ def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> Pre
         benchmark_controller=benchmark_controller,
         export_controller=export_controller,
         runtime_facade=runtime_facade,
-        robot_facade=robot_facade,
-        solver_facade=solver_facade,
-        trajectory_facade=trajectory_facade,
-        playback_facade=playback_facade,
-        benchmark_facade=benchmark_facade,
-        export_facade=export_facade,
+        robot_facade=RobotFacade(robot_workflow),
+        solver_facade=SolverFacade(motion_workflow),
+        trajectory_facade=TrajectoryFacade(motion_workflow),
+        playback_facade=PlaybackFacade(motion_workflow),
+        benchmark_facade=BenchmarkFacade(motion_workflow),
+        export_facade=ExportFacade(export_workflow),
         robot_workflow=robot_workflow,
         motion_workflow=motion_workflow,
         export_workflow=export_workflow,
     )
 
 
+
 def install_main_controller_collaborators(controller: object, collaborators: PresentationControllerCollaborators) -> None:
-    """Attach the grouped collaborator graph onto a ``MainController`` compatibility shell."""
     controller.state_store = collaborators.state_store
     controller.diagnostics_controller = collaborators.diagnostics_controller
     controller.robot_controller = collaborators.robot_controller

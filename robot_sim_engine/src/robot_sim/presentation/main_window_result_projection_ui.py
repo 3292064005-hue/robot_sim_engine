@@ -175,9 +175,11 @@ class MainWindowResultProjectionMixin:
         self.status_panel.append(f'导入源文件：{result.source_path}')
         scene_summary = dict(getattr(self._runtime_ops().state, 'scene_summary', {}) or {})
         if scene_summary:
+            collision_fidelity = dict(scene_summary.get('collision_fidelity', {}) or {})
             self.status_panel.append(
                 '运行时场景已重建：'
                 f"backend={scene_summary.get('collision_backend', 'aabb')} "
+                f"precision={collision_fidelity.get('precision', 'unknown')} "
                 f"geometry_source={scene_summary.get('geometry_source', 'unknown')} "
                 f"revision={scene_summary.get('revision', 0)}"
             )

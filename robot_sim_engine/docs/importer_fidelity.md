@@ -14,3 +14,5 @@
 - `urdf_model` 现在会显式生成 `runtime_fidelity_contract` 与 `downgrade_records`，把多 root、branch prune、fixed-joint collapse、visual/collision proxy 等降级点结构化写入 source summary / canonical metadata / imported package metadata。
 
 - importer 主链现在会生成 `ImportedRobotPackage`，其中显式拆分 `source model / runtime model / articulated model / geometry model`。`RobotRegistry`、`RuntimeAssetService` 与 `ExportService` 优先消费这份 package typed object，再向 session/export/runtime scene 投影摘要。
+
+- `ImportedRobotPackage.summary()` 现在还会输出 `fidelity_breakdown`，把 `source_recovered / runtime_executable / geometry_recoverable / roadmap_level / downgrade_records` 显式结构化。`downgrade_records` 会保持结构化 dict 记录，`degradation_reasons` 只作为简化索引，不再把降级记录整体字符串化。session/export 主链会直接投影这份 breakdown，而不是再退回 metadata 中心化语义。

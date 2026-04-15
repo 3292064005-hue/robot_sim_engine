@@ -32,7 +32,15 @@ class RuntimeFeaturePolicy:
     @property
     def host_capabilities(self) -> tuple[str, ...]:
         """Return host capability badges exposed to plugin negotiation."""
-        capabilities = [f'profile:{self.active_profile}']
+        capabilities = [
+            f'profile:{self.active_profile}',
+            'scene_geometry_contract:v1',
+            'scene_validation_capability_matrix:v1',
+            'collision_backend_contract:v1',
+            'capability_matrix:v1',
+            'plugin_kind:scene_backend',
+            'plugin_kind:collision_backend',
+        ]
         if self.experimental_modules_enabled:
             capabilities.append('experimental_modules')
         if self.experimental_backends_enabled:

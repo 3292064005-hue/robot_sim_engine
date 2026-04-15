@@ -56,13 +56,13 @@ BENCHMARK_TARGET_CONTRACTS: dict[str, BenchmarkTargetContract] = {
         runtime_surface='headless_runtime', importer_variant='urdf_model', scene_variant='obstacle_dense',
         solver_suite='trajectory_plan_smoke', capture_mode='snapshot_capture', execution_environment='headless',
     ),
-    'tests/gui/test_scene_capture_offscreen.py::test_scene_widget_snapshot_available_without_plotter': BenchmarkTargetContract(
-        selector='tests/gui/test_scene_capture_offscreen.py::test_scene_widget_snapshot_available_without_plotter',
+    'tests/unit/test_scene_render_contracts.py::test_scene_widget_snapshot_tracks_scene_fields': BenchmarkTargetContract(
+        selector='tests/unit/test_scene_render_contracts.py::test_scene_widget_snapshot_tracks_scene_fields',
         runtime_surface='gui_offscreen', importer_variant='urdf_model', scene_variant='clean_scene',
         solver_suite='ik_planar_smoke', capture_mode='live_capture_capability_probe', execution_environment='gui',
     ),
-    'tests/gui/test_scene_render_runtime_offscreen.py::test_scene_widget_exposes_render_runtime_snapshot_offscreen': BenchmarkTargetContract(
-        selector='tests/gui/test_scene_render_runtime_offscreen.py::test_scene_widget_exposes_render_runtime_snapshot_offscreen',
+    'tests/unit/test_scene_render_contracts.py::test_scene_widget_exposes_render_runtime_snapshot': BenchmarkTargetContract(
+        selector='tests/unit/test_scene_render_contracts.py::test_scene_widget_exposes_render_runtime_snapshot',
         runtime_surface='gui_offscreen', importer_variant='urdf_model', scene_variant='clean_scene',
         solver_suite='ik_planar_smoke', capture_mode='live_capture_capability_probe', execution_environment='gui',
     ),

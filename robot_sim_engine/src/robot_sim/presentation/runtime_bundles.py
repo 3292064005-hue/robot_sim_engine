@@ -3,17 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from robot_sim.presentation.facades import BenchmarkFacade, ExportFacade, PlaybackFacade, RobotFacade, SolverFacade, TrajectoryFacade
+
 
 @dataclass(frozen=True)
 class RuntimeServiceBundle:
-    """Canonical runtime-service bundle exposed to the main window shell.
-
-    This bundle groups the runtime façade, metrics service, and immutable window
-    configuration so the window shell no longer owns dozens of peer attributes.
-    Compatibility properties on :class:`WindowRuntime` preserve the legacy surface
-    for existing mixins, tests, and limited out-of-repo automation.
-    """
-
     runtime_facade: Any
     metrics_service: Any
     window_cfg: dict[str, object]
@@ -21,20 +15,36 @@ class RuntimeServiceBundle:
 
 @dataclass(frozen=True)
 class WorkflowFacadeBundle:
-    """Canonical workflow façade bundle for robot / motion / export actions."""
+    """Compatibility facade adapters derived from canonical workflows."""
 
-    robot_facade: Any
-    solver_facade: Any
-    trajectory_facade: Any
-    playback_facade: Any
-    benchmark_facade: Any
-    export_facade: Any
+    robot_facade: RobotFacade
+    solver_facade: SolverFacade
+    trajectory_facade: TrajectoryFacade
+    playback_facade: PlaybackFacade
+    benchmark_facade: BenchmarkFacade
+    export_facade: ExportFacade
+
+    @classmethod
+    def from_workflows(cls, workflows: 'WorkflowServiceBundle') -> 'WorkflowFacadeBundle':
+        return cls(
+            robot_facade=RobotFacade(workflows.robot_workflow),
+            solver_facade=SolverFacade(workflows.motion_workflow),
+            trajectory_facade=TrajectoryFacade(workflows.motion_workflow),
+            playback_facade=PlaybackFacade(workflows.motion_workflow),
+            benchmark_facade=BenchmarkFacade(workflows.motion_workflow),
+            export_facade=ExportFacade(workflows.export_workflow),
+        )
+
+
+@dataclass(frozen=True)
+class WorkflowServiceBundle:
+    robot_workflow: Any
+    motion_workflow: Any
+    export_workflow: Any
 
 
 @dataclass(frozen=True)
 class TaskOrchestrationBundle:
-    """Canonical orchestration bundle for threads, schedulers, and coordinators."""
-
     threader: Any
     playback_threader: Any
     playback_render_scheduler: Any
@@ -50,17 +60,10 @@ class TaskOrchestrationBundle:
 
 @dataclass(frozen=True)
 class WindowRuntime:
-    """Grouped main-window runtime dependencies.
-
-    The canonical ownership model is now three stable dependency bundles:
-    runtime services, workflow façades, and task orchestration. Read-only
-    compatibility properties preserve the historical attribute surface while the
-    rest of the presentation layer migrates toward grouped bundle access.
-    """
-
     runtime_services: RuntimeServiceBundle
-    workflow_facades: WorkflowFacadeBundle
+    workflow_services: WorkflowServiceBundle
     task_orchestration: TaskOrchestrationBundle
+    workflow_facades: WorkflowFacadeBundle | None = None
 
     @property
     def runtime_facade(self):
@@ -75,28 +78,57 @@ class WindowRuntime:
         return self.runtime_services.window_cfg
 
     @property
+    def robot_workflow(self):
+        return self.workflow_services.robot_workflow
+
+    @property
+    def motion_workflow(self):
+        return self.workflow_services.motion_workflow
+
+    @property
+    def export_workflow(self):
+        return self.workflow_services.export_workflow
+
+    def _compatibility_facades(self) -> WorkflowFacadeBundle:
+        """Return lazily materialized compatibility facades.
+
+        Returns:
+            WorkflowFacadeBundle: Compatibility adapters derived from the canonical
+                workflow services only when a legacy surface actually requests them.
+
+        Boundary behavior:
+            The canonical presentation surface is the workflow bundle itself. Compatibility
+            facades remain available for migration, but they are instantiated lazily so the
+            clean mainline no longer pays their construction cost by default.
+        """
+        if self.workflow_facades is None:
+            object.__setattr__(self, 'workflow_facades', WorkflowFacadeBundle.from_workflows(self.workflow_services))
+        assert self.workflow_facades is not None
+        return self.workflow_facades
+
+    @property
     def robot_facade(self):
-        return self.workflow_facades.robot_facade
+        return self._compatibility_facades().robot_facade
 
     @property
     def solver_facade(self):
-        return self.workflow_facades.solver_facade
+        return self._compatibility_facades().solver_facade
 
     @property
     def trajectory_facade(self):
-        return self.workflow_facades.trajectory_facade
+        return self._compatibility_facades().trajectory_facade
 
     @property
     def playback_facade(self):
-        return self.workflow_facades.playback_facade
+        return self._compatibility_facades().playback_facade
 
     @property
     def benchmark_facade(self):
-        return self.workflow_facades.benchmark_facade
+        return self._compatibility_facades().benchmark_facade
 
     @property
     def export_facade(self):
-        return self.workflow_facades.export_facade
+        return self._compatibility_facades().export_facade
 
     @property
     def threader(self):

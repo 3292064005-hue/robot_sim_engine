@@ -8,6 +8,7 @@ import numpy as np
 
 from robot_sim.application.services.manifest_builder import ManifestBuilder, export_manifest_as_dict
 from robot_sim.application.trajectory_metadata import resolve_planner_metadata
+from robot_sim.domain.collision_fidelity import summarize_collision_fidelity
 from robot_sim.model.benchmark_report import BenchmarkReport
 from robot_sim.model.session_state import SessionState
 from robot_sim.model.trajectory import JointTrajectory
@@ -69,6 +70,14 @@ class ExportService:
         schema_version: str | None = None,
         export_version: str | None = None,
         correlation_id: str | None = None,
+        bundle_kind: str = 'artifact_bundle',
+        bundle_contract: str = 'artifact_audit_bundle',
+        replayable: bool = False,
+        environment: dict[str, object] | None = None,
+        config_snapshot: dict[str, object] | None = None,
+        scene_snapshot: dict[str, object] | None = None,
+        plugin_snapshot: dict[str, object] | None = None,
+        capability_snapshot: dict[str, object] | None = None,
     ) -> dict[str, object]:
         """Build a structured export manifest for downstream consumers."""
         manifest = self._manifest_builder.build_manifest(
@@ -81,6 +90,14 @@ class ExportService:
             schema_version=schema_version,
             export_version=export_version,
             correlation_id=correlation_id,
+            bundle_kind=bundle_kind,
+            bundle_contract=bundle_contract,
+            replayable=replayable,
+            environment=environment,
+            config_snapshot=config_snapshot,
+            scene_snapshot=scene_snapshot,
+            plugin_snapshot=plugin_snapshot,
+            capability_snapshot=capability_snapshot,
         )
         return export_manifest_as_dict(manifest)
 
@@ -102,7 +119,12 @@ class ExportService:
             solver_id=solver_id,
             planner_id=resolved_planner_id,
             files=[path.name],
-            metadata={'kind': 'trajectory_bundle', 'cache_status': trajectory.cache_status, 'scene_revision': trajectory.scene_revision},
+            metadata={
+                'kind': 'trajectory_bundle',
+                'cache_status': trajectory.cache_status,
+                'scene_revision': trajectory.scene_revision,
+                'planner_summary': canonical,
+            },
             correlation_id=str(trajectory.metadata.get('correlation_id', '') or ''),
         )
         payload: dict[str, object] = {
@@ -136,12 +158,100 @@ class ExportService:
     def save_benchmark_cases_csv(self, name: str, report: BenchmarkReport) -> Path:
         return self.save_dict_csv(name, [dict(case) for case in report.cases])
 
-    def save_session(self, name: str, state: SessionState) -> Path:
+    def save_session(
+        self,
+        name: str,
+        state: SessionState,
+        *,
+        environment: dict[str, object] | None = None,
+        config_snapshot: dict[str, object] | None = None,
+        scene_snapshot: dict[str, object] | None = None,
+        plugin_snapshot: dict[str, object] | None = None,
+        capability_snapshot: dict[str, object] | None = None,
+        telemetry_detail: str = 'full',
+    ) -> Path:
         task_snapshot = state.active_task_snapshot
         correlation_id = '' if task_snapshot is None else str(task_snapshot.correlation_id)
         planner_id = None
+        planner_summary = None
         if state.trajectory is not None:
-            planner_id = resolve_planner_metadata(state.trajectory.metadata)['planner_id'] or None
+            planner_summary = resolve_planner_metadata(state.trajectory.metadata)
+            planner_id = planner_summary['planner_id'] or None
+        normalized_telemetry_detail = str(telemetry_detail or 'full').strip().lower() or 'full'
+        if normalized_telemetry_detail not in {'full', 'minimal'}:
+            raise ValueError(f'unsupported telemetry detail: {telemetry_detail}')
+        telemetry_events = tuple(getattr(state, 'render_telemetry', ()) or ())
+        operation_spans = tuple(getattr(state, 'render_operation_spans', ()) or ())
+        sampling_counters = tuple(getattr(state, 'render_sampling_counters', ()) or ())
+        backend_performance = tuple(getattr(state, 'render_backend_performance', ()) or ())
+        if normalized_telemetry_detail == 'full':
+            render_telemetry_payload = {
+                'detail': 'full',
+                'event_count': len(telemetry_events),
+                'sequence': int(getattr(state, 'render_telemetry_sequence', 0) or 0),
+                'events': [event.as_dict() if hasattr(event, 'as_dict') else dict(event) for event in telemetry_events],
+                'operation_span_count': len(operation_spans),
+                'operation_sequence': int(getattr(state, 'render_operation_sequence', 0) or 0),
+                'operation_spans': [span.as_dict() if hasattr(span, 'as_dict') else dict(span) for span in operation_spans],
+                'sampling_counter_count': len(sampling_counters),
+                'sampling_sequence': int(getattr(state, 'render_sampling_sequence', 0) or 0),
+                'sampling_counters': [counter.as_dict() if hasattr(counter, 'as_dict') else dict(counter) for counter in sampling_counters],
+                'backend_count': len(backend_performance),
+                'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in backend_performance],
+            }
+        else:
+            render_telemetry_payload = {
+                'detail': 'minimal',
+                'event_count': len(telemetry_events),
+                'sequence': int(getattr(state, 'render_telemetry_sequence', 0) or 0),
+                'operation_span_count': len(operation_spans),
+                'operation_sequence': int(getattr(state, 'render_operation_sequence', 0) or 0),
+                'sampling_counter_count': len(sampling_counters),
+                'sampling_sequence': int(getattr(state, 'render_sampling_sequence', 0) or 0),
+                'backend_count': len(backend_performance),
+            }
+        planning_scene_summary = None if state.planning_scene is None else (
+            state.planning_scene.summary()
+            if hasattr(state.planning_scene, 'summary')
+            else {
+                'revision': int(getattr(state.planning_scene, 'revision', 0)),
+                'collision_level': getattr(getattr(state.planning_scene, 'collision_level', None), 'value', str(getattr(state.planning_scene, 'collision_level', 'aabb'))),
+                'collision_backend': str(getattr(state.planning_scene, 'collision_backend', 'aabb')),
+                'obstacle_ids': list(getattr(state.planning_scene, 'obstacle_ids', ())),
+                'attached_object_ids': [obj.object_id for obj in getattr(state.planning_scene, 'attached_objects', ())],
+            }
+        )
+        scene_runtime_summary = dict(getattr(state, 'scene_summary', {}) or {})
+        imported_package_summary = (
+            dict(scene_runtime_summary.get('imported_package_summary', {}) or {})
+            or (None if state.robot_spec is None or state.robot_spec.imported_package is None else state.robot_spec.imported_package.summary())
+        )
+        planning_collision_summary = {} if planning_scene_summary is None else dict(planning_scene_summary.get('collision_fidelity', {}) or {})
+        if not planning_collision_summary and planning_scene_summary is not None:
+            planning_collision_summary = summarize_collision_fidelity(
+                collision_level=planning_scene_summary.get('collision_level', getattr(getattr(state.planning_scene, 'collision_level', None), 'value', None)),
+                collision_backend=planning_scene_summary.get('collision_backend', getattr(state.planning_scene, 'collision_backend', 'aabb')),
+                scene_fidelity=planning_scene_summary.get('scene_fidelity', getattr(state.planning_scene, 'geometry_source', 'generated')),
+            )
+        validation_surface_summary = {} if planning_scene_summary is None else dict(planning_scene_summary.get('validation_surface', {}) or {})
+        scene_fidelity_summary = {
+            'collision_backend': None if planning_scene_summary is None else str(planning_collision_summary.get('collision_backend', planning_scene_summary.get('collision_backend', 'aabb'))),
+            'collision_level': None if planning_scene_summary is None else str(planning_collision_summary.get('collision_level', planning_scene_summary.get('collision_level', 'aabb'))),
+            'scene_fidelity': None if planning_scene_summary is None else str(planning_collision_summary.get('scene_fidelity', planning_scene_summary.get('scene_fidelity', 'generated'))),
+            'precision': None if planning_scene_summary is None else str(planning_collision_summary.get('precision', '')),
+            'stable_surface': False if planning_scene_summary is None else bool(planning_collision_summary.get('stable_surface', False)),
+            'promotion_state': None if planning_scene_summary is None else str(planning_collision_summary.get('promotion_state', '')),
+            'summary': None if planning_scene_summary is None else str(planning_collision_summary.get('summary', '')),
+            'backend_status': None if planning_scene_summary is None else str(planning_collision_summary.get('backend_status', '')),
+            'backend_availability': None if planning_scene_summary is None else str(planning_collision_summary.get('backend_availability', '')),
+            'backend_family': None if planning_scene_summary is None else str(planning_collision_summary.get('backend_family', '')),
+            'supported_collision_levels': [] if planning_scene_summary is None else [str(item) for item in planning_collision_summary.get('supported_collision_levels', ()) or ()],
+            'validation_surface': 'planning_scene.summary',
+            'scene_validation_mode': None if planning_scene_summary is None else str(validation_surface_summary.get('scene_validation_mode', '')),
+            'scene_validation_precision': None if planning_scene_summary is None else str(validation_surface_summary.get('scene_validation_precision', '')),
+            'scene_geometry_contract': None if planning_scene_summary is None else str(planning_scene_summary.get('scene_geometry_contract') or dict(imported_package_summary.get('geometry_model', {}) if imported_package_summary else {}).get('geometry_contract', '')),
+            'stable_surface_version': None if planning_scene_summary is None else str(planning_scene_summary.get('stable_surface_version', '')),
+        }
         payload = {
             'manifest': self.build_manifest(
                 robot_id=state.robot_spec.name if state.robot_spec is not None else None,
@@ -152,18 +262,33 @@ class ExportService:
                 schema_version=self._versions.session_schema_version,
                 export_version=self._versions.session_schema_version,
                 correlation_id=correlation_id,
+                bundle_kind='session_snapshot',
+                bundle_contract='session_audit_bundle',
+                replayable=False,
+                environment=environment,
+                config_snapshot=config_snapshot,
+                scene_snapshot=scene_snapshot,
+                plugin_snapshot=plugin_snapshot,
+                capability_snapshot=capability_snapshot,
             ),
             'robot_name': state.robot_spec.name if state.robot_spec is not None else None,
+            'planner_summary': planner_summary,
             'robot_label': state.robot_spec.label if state.robot_spec is not None else None,
             'robot_model_source': state.robot_spec.model_source if state.robot_spec is not None else None,
+            'source_model_summary': None if state.robot_spec is None else dict(state.robot_spec.source_model_summary or {}),
+            'execution_summary': None if state.robot_spec is None else dict(state.robot_spec.execution_summary or {}),
             'runtime_model_summary': None if state.robot_spec is None else state.robot_spec.runtime_model.summary(),
             'articulated_model_summary': None if state.robot_spec is None else state.robot_spec.articulated_model.summary(),
             'geometry_model_summary': (
-                None
-                if state.robot_spec is None or state.robot_spec.imported_package is None or state.robot_spec.imported_package.geometry_model is None
-                else state.robot_spec.imported_package.geometry_model.summary()
+                dict(getattr(state, 'scene_summary', {}).get('geometry_model_summary', {}) or {})
+                or (
+                    None
+                    if state.robot_spec is None or state.robot_spec.imported_package is None or state.robot_spec.imported_package.geometry_model is None
+                    else state.robot_spec.imported_package.geometry_model.summary()
+                )
             ),
-            'imported_package_summary': None if state.robot_spec is None or state.robot_spec.imported_package is None else state.robot_spec.imported_package.summary(),
+            'imported_package_summary': imported_package_summary,
+            'import_fidelity_breakdown': None if imported_package_summary is None else dict(imported_package_summary.get('fidelity_breakdown', {}) or {}),
             'q_current': None if state.q_current is None else np.asarray(state.q_current, dtype=float).tolist(),
             'target_pose': None if state.target_pose is None else {'p': np.asarray(state.target_pose.p, dtype=float).tolist(), 'R': np.asarray(state.target_pose.R, dtype=float).tolist(), 'frame': getattr(state.target_pose.frame, 'value', str(state.target_pose.frame))},
             'ik': None if state.ik_result is None else {
@@ -199,18 +324,9 @@ class ExportService:
                 'speed_multiplier': float(state.playback.speed_multiplier),
                 'loop_enabled': bool(state.playback.loop_enabled),
             },
-            'planning_scene': None if state.planning_scene is None else (
-                state.planning_scene.summary()
-                if hasattr(state.planning_scene, 'summary')
-                else {
-                    'revision': int(getattr(state.planning_scene, 'revision', 0)),
-                    'collision_level': getattr(getattr(state.planning_scene, 'collision_level', None), 'value', str(getattr(state.planning_scene, 'collision_level', 'aabb'))),
-                    'collision_backend': str(getattr(state.planning_scene, 'collision_backend', 'aabb')),
-                    'obstacle_ids': list(getattr(state.planning_scene, 'obstacle_ids', ())),
-                    'attached_object_ids': [obj.object_id for obj in getattr(state.planning_scene, 'attached_objects', ())],
-                }
-            ),
-            'scene_runtime_summary': dict(getattr(state, 'scene_summary', {}) or {}),
+            'planning_scene': planning_scene_summary,
+            'scene_runtime_summary': scene_runtime_summary,
+            'scene_fidelity_summary': scene_fidelity_summary,
             'app_state': getattr(state.app_state, 'value', str(state.app_state)),
             'active_task_id': state.active_task_id,
             'active_task_kind': state.active_task_kind,
@@ -235,18 +351,8 @@ class ExportService:
             },
             'scene_revision': int(state.scene_revision),
             'render_runtime': state.render_runtime.as_dict() if hasattr(state.render_runtime, 'as_dict') else dict(state.render_runtime),
-            'render_telemetry': {
-                'event_count': len(tuple(getattr(state, 'render_telemetry', ()) or ())),
-                'sequence': int(getattr(state, 'render_telemetry_sequence', 0) or 0),
-                'events': [event.as_dict() if hasattr(event, 'as_dict') else dict(event) for event in tuple(getattr(state, 'render_telemetry', ()) or ())],
-                'operation_span_count': len(tuple(getattr(state, 'render_operation_spans', ()) or ())),
-                'operation_sequence': int(getattr(state, 'render_operation_sequence', 0) or 0),
-                'operation_spans': [span.as_dict() if hasattr(span, 'as_dict') else dict(span) for span in tuple(getattr(state, 'render_operation_spans', ()) or ())],
-                'sampling_counter_count': len(tuple(getattr(state, 'render_sampling_counters', ()) or ())),
-                'sampling_sequence': int(getattr(state, 'render_sampling_sequence', 0) or 0),
-                'sampling_counters': [counter.as_dict() if hasattr(counter, 'as_dict') else dict(counter) for counter in tuple(getattr(state, 'render_sampling_counters', ()) or ())],
-                'backend_count': len(tuple(getattr(state, 'render_backend_performance', ()) or ())),
-                'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in tuple(getattr(state, 'render_backend_performance', ()) or ())],
-            },
+            'capability_matrix': dict(getattr(state, 'capability_matrix', {}) or {}),
+            'module_statuses': dict(getattr(state, 'module_statuses', {}) or {}),
+            'render_telemetry': render_telemetry_payload,
         }
         return self.save_json(name, payload)

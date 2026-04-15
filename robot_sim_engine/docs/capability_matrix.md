@@ -1,17 +1,283 @@
 # Capability Matrix
 
+## solvers
+- `analytic_6r` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - algorithm: `closed_form_spherical_wrist`
+  - aliases: `['spherical_wrist_6r']`
+  - family: `analytic`
+  - requires_spherical_wrist: `True`
+  - source: `builtin`
+  - supported_dof: `6`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `False`
+  - supports_position_only_via_fallback: `True`
+  - supports_weighted_least_squares: `False`
+- `dls` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+- `lm` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - algorithm: `levenberg_marquardt`
+  - aliases: `['levenberg_marquardt']`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+- `pinv` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping_fallback: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+- `stable_demo_lm` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - aliases: `['stable_lm']`
+  - api_version: `v1`
+  - display_name: `Stable shipped LM solver`
+  - family: `iterative`
+  - kind: `solver`
+  - min_host_version: `0.7.0`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - notes: `Repository-shipped stable plugin fixture used to exercise mainline plugin loading.`
+  - optional_host_capabilities: `[]`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - sdk_contract_version: `v1`
+  - source: `shipped_plugin`
+  - status: `stable`
+  - verification_scope: `registry_smoke`
+
+## planners
+- `cartesian_sampled` [stable]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `True`
+  - family: `cartesian`
+  - goal_source: `cartesian_pose`
+  - goal_space: `cartesian`
+  - planner_id: `cartesian_sampled`
+  - planner_label: `Cartesian sampled planner`
+  - requires_ik: `True`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `True`
+  - status: `stable`
+  - timing_strategy: `quintic_samples`
+  - trajectory_mode: `cartesian_pose`
+  - ui_label: `cartesian_pose`
+  - ui_visible: `True`
+- `joint_quintic` [stable]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `True`
+  - family: `joint`
+  - goal_source: `joint_space`
+  - goal_space: `joint`
+  - planner_id: `joint_quintic`
+  - planner_label: `Joint quintic planner`
+  - requires_ik: `False`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `True`
+  - status: `stable`
+  - timing_strategy: `quintic`
+  - trajectory_mode: `joint_space`
+  - ui_label: `joint_space`
+  - ui_visible: `True`
+- `joint_trapezoidal` [beta]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `False`
+  - exposure_reason: `hidden_until_promoted`
+  - family: `joint`
+  - goal_source: `joint_space`
+  - goal_space: `joint`
+  - planner_id: `joint_trapezoidal`
+  - planner_label: `Joint trapezoidal planner`
+  - requires_ik: `False`
+  - retiming: `planner_native`
+  - source: `builtin`
+  - stable_surface: `False`
+  - status: `beta`
+  - timing_strategy: `trapezoidal`
+  - trajectory_mode: `joint_space`
+  - ui_label: `joint_space`
+  - ui_visible: `False`
+- `stable_demo_joint_planner` [stable]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `['stable_joint_space']`
+  - api_version: `v1`
+  - display_name: `Stable shipped joint planner`
+  - family: `joint_space`
+  - goal_space: `joint`
+  - kind: `planner`
+  - min_host_version: `0.7.0`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - notes: `Repository-shipped stable planner plugin fixture used to exercise mainline plugin loading.`
+  - optional_host_capabilities: `[]`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - requires_ik: `False`
+  - sdk_contract_version: `v1`
+  - source: `shipped_plugin`
+  - status: `stable`
+  - timing_strategy: `trapezoidal`
+  - verification_scope: `registry_smoke`
+- `waypoint_graph` [experimental]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `False`
+  - exposure_reason: `profile_gated`
+  - family: `waypoint_graph`
+  - goal_source: `waypoint_graph`
+  - goal_space: `waypoint_graph`
+  - planner_id: `waypoint_graph`
+  - planner_label: `Waypoint graph planner`
+  - requires_ik: `True`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `False`
+  - status: `experimental`
+  - timing_strategy: `segmentwise`
+  - trajectory_mode: `waypoint_graph`
+  - ui_label: `waypoint_graph`
+  - ui_visible: `False`
+
+## importers
+- `stable_demo_yaml_importer` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['stable_yaml']`
+  - api_version: `v1`
+  - canonical_id: `stable_demo_yaml_importer`
+  - display_name: `Stable shipped YAML importer`
+  - extensions: `('yaml', 'yml')`
+  - family: `config`
+  - fidelity: `native`
+  - kind: `importer`
+  - min_host_version: `0.7.0`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - notes: `Repository-shipped stable importer plugin fixture used to exercise mainline plugin loading.`
+  - optional_host_capabilities: `[]`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - sdk_contract_version: `v1`
+  - source: `shipped_plugin`
+  - source_format: `yaml`
+  - status: `stable`
+  - verification_scope: `registry_smoke`
+- `urdf_model` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['urdf']`
+  - canonical_id: `urdf_model`
+  - display_name: `URDF serial model importer`
+  - extensions: `('urdf',)`
+  - family: `serial_model_import`
+  - fidelity: `serial_kinematics`
+  - notes: `Preserves serial link/joint structure and visual/collision availability while adapting the runtime to the V7 DH pipeline.`
+  - source: `builtin`
+  - source_format: `urdf`
+- `urdf_skeleton` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['urdf_approx']`
+  - canonical_id: `urdf_skeleton`
+  - display_name: `URDF skeleton importer`
+  - extensions: `('urdf',)`
+  - family: `approximate_tree_import`
+  - fidelity: `approximate`
+  - notes: `Approximates a serial DH-like chain from URDF joint origins. Not a full URDF tree importer.`
+  - source: `builtin`
+  - source_format: `urdf`
+- `yaml` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['yml']`
+  - canonical_id: `yaml`
+  - display_name: `YAML robot config`
+  - extensions: `('yaml', 'yml')`
+  - family: `config`
+  - fidelity: `native`
+  - source: `builtin`
+  - source_format: `yaml`
+
+## render_features
+- `scene_toolbar` [stable]
+  - owner: `render`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['ui', 'diagnostics', 'export']`
+- `render_diagnostics` [stable]
+  - owner: `presentation.diagnostics`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['diagnostics']`
+
+## export_features
+- `package_export` [stable]
+  - owner: `export`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['export_manifest', 'session_manifest']`
+- `capability_manifest_projection` [stable]
+  - owner: `export`
+  - enabled: `True`
+  - capability_matrix_version: `v1`
+  - consumed_by: `['export_manifest', 'diagnostics', 'ui_state']`
+
 ## scene_features
 - `planning_scene` [stable]
   - owner: `collision.scene`
+  - enabled: `True`
   - active_backends: `['aabb']`
   - declared_backends: `['aabb', 'capsule']`
   - edit_surface: `stable_scene_editor`
   - experimental_backends: `['capsule']`
   - fallback_backend: `aabb`
   - integration_scope: `validation_export_session_scene_toolbar`
+  - scene_backend_plugin_ids: `['stable_demo_scene_backend_contract']`
+  - scene_backend_plugin_kinds: `['scene_backend']`
+  - scene_geometry_contract: `declaration_validation_render`
+  - scene_geometry_contract_version: `v1`
+  - scene_validation_capability_matrix_version: `v1`
+  - stable_surface_version: `v3`
   - ui_surface: `stable_scene_toolbar`
+  - validation_backend_capabilities: `[{'backend_id': 'aabb', 'family': 'broad_phase', 'status': 'internal', 'availability': 'enabled', 'is_default': True, 'is_experimental': False, 'supported_collision_levels': ['aabb'], 'fidelity_rows': [{'collision_level': 'aabb', 'collision_backend': 'aabb', 'precision': 'broad_phase', 'stable_surface': True, 'promotion_state': 'stable', 'summary': 'AABB broad-phase validation', 'backend_status': 'internal', 'backend_availability': 'enabled', 'backend_family': 'broad_phase', 'supported_collision_levels': ['aabb'], 'scene_fidelity': 'planning_scene'}]}, {'backend_id': 'capsule', 'family': 'narrow_phase', 'status': 'experimental', 'availability': 'disabled_by_profile', 'is_default': False, 'is_experimental': True, 'supported_collision_levels': ['capsule'], 'fidelity_rows': [{'collision_level': 'capsule', 'collision_backend': 'capsule', 'precision': 'capsule_narrow_phase', 'stable_surface': False, 'promotion_state': 'profile_gated', 'summary': 'capsule narrow-phase validation', 'backend_status': 'experimental', 'backend_availability': 'disabled_by_profile', 'backend_family': 'narrow_phase', 'supported_collision_levels': ['capsule'], 'scene_fidelity': 'planning_scene'}]}]`
+- `scene_backend_plugin_surface` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - declared_plugin_ids: `['stable_demo_scene_backend_contract']`
+  - enabled_plugin_ids: `['stable_demo_scene_backend_contract']`
+  - plugin_kind: `scene_backend`
+  - plugin_surface_version: `v1`
+  - scene_geometry_contract_version: `v1`
+  - scene_validation_capability_matrix_version: `v1`
 - `collision_backend_aabb` [internal]
   - owner: `collision.scene`
+  - enabled: `True`
   - availability: `enabled`
   - backend_id: `aabb`
   - fallback_backend: `aabb`
@@ -20,9 +286,136 @@
   - supported_collision_levels: `['aabb']`
 - `collision_backend_capsule` [experimental]
   - owner: `collision.scene`
+  - enabled: `True`
   - availability: `disabled_by_profile`
   - backend_id: `capsule`
   - fallback_backend: `aabb`
   - family: `narrow_phase`
   - required_dependencies: `[]`
   - supported_collision_levels: `['capsule']`
+
+## collision_features
+- `collision_backend_plugin_surface` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - backend_contract_version: `v1`
+  - declared_plugin_ids: `['stable_demo_collision_backend_contract']`
+  - enabled_plugin_ids: `['stable_demo_collision_backend_contract']`
+  - plugin_kind: `collision_backend`
+  - plugin_surface_version: `v1`
+- `collision_backend_aabb` [internal]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `enabled`
+  - backend_id: `aabb`
+  - fallback_backend: `aabb`
+  - family: `broad_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['aabb']`
+- `collision_backend_capsule` [experimental]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `disabled_by_profile`
+  - backend_id: `capsule`
+  - fallback_backend: `aabb`
+  - family: `narrow_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['capsule']`
+
+## plugin_features
+- `plugin_host` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - active_profile: `default`
+  - declared_plugin_count: `5`
+  - enabled_plugin_count: `5`
+  - plugin_discovery_enabled: `False`
+  - plugin_status_allowlist: `['stable', 'deprecated']`
+  - plugin_surface_version: `v1`
+- `plugin_stable_demo_lm` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `['stable_lm']`
+  - display_name: `Stable shipped LM solver`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `iterative`
+  - kind: `solver`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - optional_host_capabilities: `[]`
+  - plugin_id: `stable_demo_lm`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - source: `shipped_plugin`
+  - verification_scope: `registry_smoke`
+- `plugin_stable_demo_joint_planner` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `['stable_joint_space']`
+  - display_name: `Stable shipped joint planner`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `joint_space`
+  - kind: `planner`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - optional_host_capabilities: `[]`
+  - plugin_id: `stable_demo_joint_planner`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - source: `shipped_plugin`
+  - verification_scope: `registry_smoke`
+- `plugin_stable_demo_yaml_importer` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `['stable_yaml']`
+  - display_name: `Stable shipped YAML importer`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `config`
+  - fidelity: `native`
+  - kind: `importer`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable']`
+  - optional_host_capabilities: `[]`
+  - plugin_id: `stable_demo_yaml_importer`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable']`
+  - source: `shipped_plugin`
+  - source_format: `yaml`
+  - verification_scope: `registry_smoke`
+- `plugin_stable_demo_scene_backend_contract` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `['stable_scene_backend_contract']`
+  - display_name: `Stable shipped scene backend contract`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `scene_contract`
+  - kind: `scene_backend`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable', 'plugin_kind:scene_backend', 'scene_geometry_contract:v1', 'scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - optional_host_capabilities: `['scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - plugin_id: `stable_demo_scene_backend_contract`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable', 'plugin_kind:scene_backend', 'scene_geometry_contract:v1']`
+  - source: `shipped_plugin`
+  - verification_scope: `capability_surface`
+- `plugin_stable_demo_collision_backend_contract` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `['stable_collision_backend_contract']`
+  - display_name: `Stable shipped collision backend contract`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `collision_contract`
+  - kind: `collision_backend`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable', 'plugin_kind:collision_backend', 'collision_backend_contract:v1', 'scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - optional_host_capabilities: `['scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - plugin_id: `stable_demo_collision_backend_contract`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable', 'plugin_kind:collision_backend', 'collision_backend_contract:v1']`
+  - source: `shipped_plugin`
+  - verification_scope: `capability_surface`

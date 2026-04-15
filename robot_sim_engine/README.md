@@ -23,10 +23,10 @@
 - 请求约束适配器：初值限位修复、目标旋转矩阵正交化、姿态失败时的 position-only 定向降级重试
 - 四元数、SO(3) 对数映射、Slerp、五次多项式轨迹规划
 - Joint-space、Cartesian-pose、Trapezoidal 插件轨迹与 Waypoint Graph 规划骨架
-- `JointTrajectory` 预缓存 FK，并记录 feasibility / quality / collision summary / metadata
+- `JointTrajectory` 预缓存 FK，并记录 feasibility / quality / collision summary / metadata；legacy `collision_obstacles` 已仅保留为迁移适配入口，进入校验前会被统一收口为 canonical planning scene
 - 轻量 collision / planning scene 主链：AABB broad-phase、自碰撞风险、环境碰撞风险、clearance metric 已接入 stable scene surface；当前 stable UI 暴露为结构化 scene editor（box / sphere / cylinder primitive、attached object、allowed collision pairs），但校验真源仍统一收口为 AABB authority；更高保真 scene/backend 能力仍保留到后续版本
 - Benchmark：默认 case pack、baseline compare、solver matrix（含解析 6R solver）
-- Export：trajectory bundle、metrics、benchmark、session、完整 ZIP package
+- Export：trajectory bundle、metrics、benchmark、session、完整 ZIP package；session/package manifest 现同时记录 runtime/config/scene/plugin snapshots，package 语义明确为 artifact/audit bundle
 - Registry / plugin contracts：solver、planner、robot importer
 - 导入适配：YAML robot config、结构化 `urdf_model` serial importer 与兼容 `urdf_skeleton` 近似 importer
 - PySide6 GUI、Qt worker、Benchmark 面板、Diagnostics 面板、Scene Toolbar、Package Export 入口；稳定 GUI 面在无 Qt 运行时时不再走 production fallback；非 GUI 单元测试只会在测试进程内注入 `robot_sim.testing.qt_shims` 伪 `PySide6` 包
@@ -38,11 +38,12 @@
 
 ## V7 质量门禁
 
-- quick quality：`ruff check src tests`、targeted `mypy`（以 `pyproject.toml` 的 `tool.mypy.files` 为准）、`python scripts/verify_quality_contracts.py`、`python scripts/verify_runtime_baseline.py --mode headless`、`python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline`、`python scripts/verify_perf_budget_config.py`、`pytest tests/unit tests/regression -q`
-- shipped behavior contracts：仓库 profile 必须保持可区分，coordinator 主链必须继续走显式依赖注入，`export` / `screenshot` 主链必须继续走 worker 生命周期，`scene_3d / plots / screenshot` 降级状态必须沉入 `SessionState.render_runtime`，且状态变化、operation spans、sampling counters、backend-specific performance telemetry、latency buckets 与 live counters 必须继续写入共享 render telemetry 真源；clean bootstrap / clean headless mainline 不能越过 compatibility budget，public plugin SDK 示例必须保持可装配，snapshot renderer 与 importer fidelity 两套基线都必须能通过已提交 fixture 复现
+- runtime contracts：`python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs`、`python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline`、`python scripts/verify_perf_budget_config.py`、`pytest tests/performance/test_ik_smoke.py -q`、`python scripts/verify_quality_contracts.py`
+- governance evidence：`python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json`、`python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json`、`python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json runtime_contracts performance_smoke`
+- unit/regression：`ruff check src tests`、targeted `mypy`（以 `pyproject.toml` 的 `tool.mypy.files` 为准，仅在 Python 3.10 质量门禁执行）、`pytest tests/unit tests/regression -q`
+- shipped behavior contracts：仓库 profile 必须保持可区分，coordinator 主链必须继续走显式依赖注入，`export` / `screenshot` 主链必须继续走 worker 生命周期，`scene_3d / plots / screenshot` 降级状态必须沉入 `SessionState.render_runtime`，且状态变化、operation spans、sampling counters、backend-specific performance telemetry、latency buckets 与 live counters 必须继续写入共享 render telemetry 真源；diagnostics widget 主链必须消费结构化 telemetry log sections；scene authority summary 必须同时暴露 declaration / validation / render 三层 geometry contract；clean bootstrap / clean headless mainline 不能越过 compatibility budget，public plugin SDK 示例必须保持可装配，snapshot renderer 与 importer fidelity 两套基线都必须能通过已提交 fixture 复现
 - full validation：`pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q`、`python scripts/verify_partition_coverage.py --coverage-json coverage.json`，coverage `fail_under = 80`
-- gui smoke：在 **Ubuntu 22.04 + Python 3.10 + PySide6>=6.5** 环境执行 `python scripts/verify_runtime_baseline.py --mode gui`、`pytest tests/gui -q`；pytest 默认注入 `QT_QPA_PLATFORM=offscreen` 以保证无桌面会话时的稳定复现，若需改走真实桌面显示则显式设置 `ROBOT_SIM_PYTEST_FORCE_GUI_DISPLAY=1`，并保留 `tests/regression/test_scene_capture_snapshot_baseline.py` 的 snapshot baseline 回归
-- quality contracts：`docs/quality_gates.md`、`docs/module_status.md`、`docs/capability_matrix.md`、`docs/exception_catch_matrix.md` 必须与运行时服务真源一致
+- gui smoke：执行 `python scripts/verify_gui_smoke.py`；该 gate 优先使用真实 `PySide6`，若当前环境未提供 Qt，则仅在验证进程内启用仓库自带的受控 Qt test shim 做 offscreen smoke。CI 仍额外执行 `pytest tests/gui -q` 以覆盖真实 PySide6 GUI 面。
 - contract regeneration：执行 `python scripts/regenerate_quality_contracts.py` 后，`docs/` 目录不得产生未提交 diff
 
 ## Experimental 模块
@@ -101,7 +102,7 @@
   - `experimental_modules_enabled`
   - `experimental_backends_enabled`
   - `plugin_discovery_enabled`
-- 外部插件必须先在 `configs/plugins.yaml` 中白名单声明，且满足 `api_version: v1` 才允许被受控装配层接入；shipped plugin 允许在关闭外部 discovery 的 profile 下继续通过 allowlist 装配。仓库现内置三个仅在 `research` profile 启用的 shipped demo plugins（solver / planner / importer），用于持续验证三条插件主链
+- 外部插件必须先在共享清单 `configs/plugins.yaml` 中白名单声明，且满足 `api_version: v1` 才允许被受控装配层接入；profile 专属 shipped plugin 则放入 `configs/profiles/<profile>.plugins.yaml`。仓库当前在 `configs/plugins.yaml` 中保留 stable 主线 shipped plugin 清单（solver / planner / importer / scene_backend / collision_backend），research demo plugins 仍只保留在 `configs/profiles/research.plugins.yaml`。
 - repo 级广义异常捕获边界由 `docs/exception_catch_matrix.md` 与 `python scripts/verify_quality_contracts.py` 共同约束
 - perf 预算除配置校验外，CI 还会显式执行 `tests/performance/test_ik_smoke.py` 进行 smoke 门禁
 
@@ -115,7 +116,9 @@ python scripts/verify_runtime_baseline.py --mode headless
 python -m build
 ```
 
-源码态现在统一要求通过 **editable install** 或显式 `PYTHONPATH=src` 运行；仓库根目录不再保留隐式 `robot_sim` 包 shim。
+源码态既支持 **editable install**，也支持在仓库根目录直接执行 `python -m robot_sim.app.cli ...`；根目录 `robot_sim/__init__.py` 仅作为 source-tree import shim，安装态仍优先使用 `src/robot_sim`。
+
+CLI 入口现已显式暴露：`robot-sim gui`、`robot-sim runtime-summary`、`robot-sim source-layout-smoke`、`robot-sim config-snapshot`（或继续使用 `python -m robot_sim.app.main` 启动 GUI）。`source-layout-smoke` 现在使用无副作用的路径探测，不再伪造 cwd-based runtime root。`config-snapshot --output <path>` 会自动创建父目录。
 
 安装 GUI 依赖后可运行图形界面：
 
@@ -161,7 +164,7 @@ src/robot_sim/
 ## Runtime resource and export resolution
 
 - 启动装配链现在通过 `robot_sim.app.runtime_paths.resolve_runtime_paths()` 统一解析运行时路径，而不是要求所有调用方自行拼接 repo 根目录。
-- `bootstrap()` 现在返回 `BootstrapContext`，主链通过 `context.project_root / context.container` 访问；旧式解包与索引仍保留为显式兼容面。`build_container()` 与运行时容器内部仍显式区分：`project_root`、`resource_root`、`config_root`、`robot_root`、`plugin_manifest_path`、`export_root`，并输出 `layout_mode` 与 `config_resolution` 诊断摘要。
+- `bootstrap()` 现在返回 `BootstrapContext`，主链通过 `context.project_root / context.container` 访问；旧式解包与索引仍保留为显式兼容面。`build_container()` 与运行时容器内部仍显式区分：`project_root`、`resource_root`、`config_root`、`robot_root`、`plugin_manifest_path`、`plugin_manifest_paths`、`export_root`，并输出 `layout_mode` 与 `config_resolution` 诊断摘要。
 - GUI 截图、导出服务、package export 统一写入 `export_root`。导出与截图主链现在都通过 `ThreadOrchestrator` 进入统一任务生命周期；可通过环境变量 `ROBOT_SIM_EXPORT_DIR` 覆盖默认导出目录。安装态默认写入用户数据目录（优先 `XDG_DATA_HOME/robot-sim-engine/exports`，否则回退 `~/.local/share/robot-sim-engine/exports`），仅在显式设置 `ROBOT_SIM_EXPORT_POLICY=legacy_cwd` 时才回退到当前工作目录。
 - wheel / 安装态运行优先使用包内 `robot_sim.resources.configs` 资源；源码态运行继续优先使用仓库 `configs/`。安装态下 `bundled_robot_root` 保持只读，stable 机器人导入/保存统一写入用户目录 `robot_root`（优先 `XDG_DATA_HOME/robot-sim-engine/robots`，否则回退 `~/.local/share/robot-sim-engine/robots`），并通过 registry overlay 同时暴露内置机器人与用户导入机器人。
 - MainWindow 已移除重复的私有 `*_impl` 实现路径；主窗口对象图现在通过 `presentation.assembly.build_presentation_assembly()` 统一构建。主窗口依赖现已先收敛到 `RuntimeServiceBundle` / `WorkflowFacadeBundle` / `TaskOrchestrationBundle` 三个稳定 bundle，并通过 `WindowRuntime` 的只读兼容属性暴露给现有 mixin / 测试 / 少量仓库外自动化脚本。`MainController` 则进一步退化为对 `PresentationBootstrapBundle` 的兼容壳：对象图装配被归并到 typed bootstrap bundle + grouped collaborator 构建函数中，而不是继续在控制器内部直接拉取整个容器表面。
@@ -188,3 +191,12 @@ src/robot_sim/
 - `nox -s gui_smoke`：安装 GUI 依赖后的轻量界面冒烟
 
 - importer fidelity baseline：`tests/regression/baselines/importer_fidelity_baseline.json` 由 `python scripts/regenerate_importer_fidelity_baseline.py` 维护，用于锁定 native YAML 与 structured URDF 导入摘要。
+
+## Development entrypoints
+
+- Source-tree CLI smoke: `python -m robot_sim.app.cli source-layout-smoke`
+- Runtime summary: `python -m robot_sim.app.cli runtime-summary`
+
+The repository root now exposes a lightweight `robot_sim` shim package so source-tree
+execution no longer requires a manual `PYTHONPATH=src` export.
+

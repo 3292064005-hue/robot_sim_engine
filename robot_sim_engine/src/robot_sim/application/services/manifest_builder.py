@@ -26,6 +26,14 @@ class ManifestBuilder:
         export_version: str | None = None,
         correlation_id: str | None = None,
         timestamp_utc: str | None = None,
+        bundle_kind: str = 'artifact_bundle',
+        bundle_contract: str = 'artifact_audit_bundle',
+        replayable: bool = False,
+        environment: dict[str, object] | None = None,
+        config_snapshot: dict[str, object] | None = None,
+        scene_snapshot: dict[str, object] | None = None,
+        plugin_snapshot: dict[str, object] | None = None,
+        capability_snapshot: dict[str, object] | None = None,
     ) -> ExportManifest:
         """Build the canonical export/package manifest.
 
@@ -40,6 +48,14 @@ class ManifestBuilder:
             export_version: Optional export-version override.
             correlation_id: Optional correlation identifier propagated from task lifecycle.
             timestamp_utc: Optional explicit timestamp override used by tests.
+            bundle_kind: Stable export/package bundle category.
+            bundle_contract: Stable bundle semantic contract label.
+            replayable: Whether the bundle is intended to be replayable in another runtime.
+            environment: Optional runtime environment snapshot.
+            config_snapshot: Optional resolved configuration snapshot.
+            scene_snapshot: Optional scene contract snapshot.
+            plugin_snapshot: Optional plugin/runtime feature snapshot.
+            capability_snapshot: Optional complete capability-matrix snapshot.
 
         Returns:
             ExportManifest: Immutable manifest payload.
@@ -67,7 +83,15 @@ class ManifestBuilder:
             planner_id=planner_id,
             timestamp_utc=str(timestamp_utc or datetime.now(timezone.utc).isoformat()),
             reproducibility_seed=reproducibility_seed,
+            bundle_kind=str(bundle_kind or 'artifact_bundle'),
+            bundle_contract=str(bundle_contract or 'artifact_audit_bundle'),
+            replayable=bool(replayable),
             files=tuple(files or ()),
+            environment=dict(environment or {}),
+            config_snapshot=dict(config_snapshot or {}),
+            scene_snapshot=dict(scene_snapshot or {}),
+            plugin_snapshot=dict(plugin_snapshot or {}),
+            capability_snapshot=dict(capability_snapshot or {}),
             metadata=dict(metadata or {}),
         )
 

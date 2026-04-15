@@ -74,10 +74,29 @@ class StatusPanel(QWidget):  # pragma: no cover - GUI shell
                 label.setText(str(value))
 
     def set_render_runtime(self, panel_state: RenderRuntimePanelState) -> None:
+        """Render the structured render-runtime projection into the status widget.
+
+        Args:
+            panel_state: Typed render-runtime projection built from shared session state.
+
+        Raises:
+            AttributeError: Propagates programmer errors when the caller passes an incompatible
+                projection object.
+
+        Boundary behavior:
+            Every known capability row is refreshed on each call so stale text/tooltips do not
+            survive capability recovery or downgrade transitions.
+        """
         self.render_summary.setText(panel_state.summary_text)
         if hasattr(self.render_summary, 'setStyleSheet'):
             self.render_summary.setStyleSheet(_STYLE_BY_SEVERITY.get(panel_state.overall_severity, ''))
-        for key, detail in panel_state.detail_rows.items():
-            label = self.render_detail_labels.get(key)
-            if label is not None:
-                label.setText(detail)
+        detail_rows = panel_state.detail_rows
+        alerts_by_capability = {alert.capability: alert for alert in panel_state.alerts}
+        for key, label in self.render_detail_labels.items():
+            detail = detail_rows.get(key, '-')
+            label.setText(detail)
+            alert = alerts_by_capability.get(key)
+            if alert is not None and hasattr(label, 'setStyleSheet'):
+                label.setStyleSheet(_STYLE_BY_SEVERITY.get(alert.severity, ''))
+            if alert is not None and hasattr(label, 'setToolTip'):
+                label.setToolTip(alert.tooltip_text)

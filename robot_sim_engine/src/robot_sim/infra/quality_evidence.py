@@ -1,22 +1,55 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
+import hashlib
 import json
 import platform
 import sys
 from typing import Iterable
 
+from robot_sim.infra.release_package import iter_release_files
 
-def runtime_environment_fingerprint() -> dict[str, str]:
-    """Return a compact runtime fingerprint used by quality evidence and perf budgets."""
+
+def source_tree_fingerprint(repo_root: str | Path) -> dict[str, str]:
+    """Return a deterministic fingerprint for the checked-in source tree.
+
+    The fingerprint intentionally excludes ``artifacts/`` so freshly generated evidence can
+    still be validated against the same source tree that produced it.
+    """
+    root = Path(repo_root).resolve()
+    hasher = hashlib.sha256()
+    file_count = 0
+    for rel in iter_release_files(root):
+        if rel.parts and rel.parts[0] == 'artifacts':
+            continue
+        src = root / rel
+        hasher.update(rel.as_posix().encode('utf-8'))
+        hasher.update(b'\0')
+        hasher.update(src.read_bytes())
+        hasher.update(b'\0')
+        file_count += 1
     return {
+        'repo_root': str(root),
+        'source_tree_fingerprint': hasher.hexdigest(),
+        'source_tree_file_count': str(file_count),
+    }
+
+
+def runtime_environment_fingerprint(repo_root: str | Path | None = None) -> dict[str, str]:
+    """Return a compact runtime fingerprint used by quality evidence and perf budgets."""
+    payload = {
         'python_version': platform.python_version(),
         'python_major_minor': '.'.join(platform.python_version().split('.')[:2]),
         'platform_system': platform.system().lower(),
         'platform_machine': platform.machine().lower(),
         'executable': sys.executable,
+        'generated_at_utc': datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z'),
     }
+    if repo_root is not None:
+        payload.update(source_tree_fingerprint(repo_root))
+    return payload
 
 
 @dataclass(frozen=True)

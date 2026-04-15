@@ -12,12 +12,71 @@ from robot_sim.application.services.runtime_feature_service import RuntimeFeatur
 from robot_sim.infra.exception_policy import render_exception_catch_matrix_markdown, verify_exception_catch_matrix
 
 
+def _build_runtime_truth_quality_service(project_root: Path) -> "QualityContractService":
+    """Build the quality-contract renderer from the active runtime truth sources.
+
+    Args:
+        project_root: Repository root containing the checked-in source layout.
+
+    Returns:
+        QualityContractService: Contract renderer wired to the default-profile runtime
+            registries, plugin loader, and capability service.
+
+    Raises:
+        FileNotFoundError: If runtime resources cannot be resolved from the repository root.
+        Exception: Propagates registry/config construction failures so verification fails loud.
+    """
+    from robot_sim.app.plugin_loader import PluginLoader
+    from robot_sim.app.registry_factory import build_importer_registry, build_planner_registry, build_solver_registry
+    from robot_sim.app.runtime_paths import resolve_runtime_paths
+    from robot_sim.application.services.config_service import ConfigService
+    from robot_sim.application.services.module_status_service import ModuleStatusService
+    from robot_sim.application.services.robot_registry import RobotRegistry
+    from robot_sim.application.services.runtime_feature_service import RuntimeFeatureService
+    from robot_sim.application.use_cases.run_ik import RunIKUseCase
+
+    runtime_paths = resolve_runtime_paths(project_root, create_dirs=False)
+    config_service = ConfigService(
+        runtime_paths.config_root,
+        profile=ConfigService.DEFAULT_PROFILE,
+        allow_legacy_local_override=False,
+    )
+    runtime_feature_policy = RuntimeFeatureService(config_service).load_policy()
+    plugin_loader = PluginLoader(config_service.plugin_manifest_paths(), policy=runtime_feature_policy)
+    capability_service = CapabilityService(
+        runtime_feature_policy=runtime_feature_policy,
+        plugin_loader=plugin_loader,
+    )
+    solver_registry = build_solver_registry(plugin_loader=plugin_loader)
+    shared_ik_uc = RunIKUseCase(solver_registry)
+    planner_registry = build_planner_registry(shared_ik_uc, plugin_loader=plugin_loader)
+    robot_registry = RobotRegistry(
+        runtime_paths.robot_root,
+        readonly_roots=(runtime_paths.bundled_robot_root,),
+    )
+    importer_registry = build_importer_registry(robot_registry, plugin_loader=plugin_loader)
+    module_status_service = ModuleStatusService(runtime_feature_policy=runtime_feature_policy)
+
+    return QualityContractService(
+        runtime_feature_policy=runtime_feature_policy,
+        capability_matrix_renderer=lambda: capability_service.render_markdown(
+            solver_registry=solver_registry,
+            planner_registry=planner_registry,
+            importer_registry=importer_registry,
+        ),
+        module_status_renderer=module_status_service.render_markdown,
+    )
+
+
 QUALITY_GATE_LINES: tuple[str, ...] = (
-    '- quick quality: `ruff check src tests` + targeted `mypy` (`tool.mypy.files`) + `python scripts/verify_quality_contracts.py` + `python scripts/verify_module_governance.py` + `python scripts/verify_benchmark_matrix.py` + `python scripts/verify_runtime_baseline.py --mode headless` + `python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline` + `python scripts/verify_perf_budget_config.py` + `pytest tests/unit tests/regression -q`',
-    '- shipped behavior contracts: repo profiles must remain differentiable, coordinators must stay on explicit dependency injection paths, export/screenshot coordinators must stay on worker lifecycle routes, render degradation state must stay projected in SessionState.render_runtime through a typed status-panel subscription flow, clean bootstrap/headless mainline paths must stay within the configured compatibility budget, public plugin SDK examples must remain loader-compatible, render telemetry must remain recorded as bounded structured state transitions + operation spans + sampling counters + backend-specific performance telemetry, and screenshot/importer fidelity baselines must stay reproducible from checked-in fixtures',
+    '- runtime contracts: `python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs` + `python scripts/verify_compatibility_retirement.py` + `python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline` + `python scripts/verify_perf_budget_config.py` + `pytest tests/performance/test_ik_smoke.py -q`',
+    '- governance evidence: `python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json` + `python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json` + `python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --release-manifest-out artifacts/release_manifest.json --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json runtime_contracts compatibility_budget performance_smoke`; the aggregated manifest now derives `artifact_ready`, `environment_ready`, and `release_ready` separately and always evaluates the checked-in release/gui environment contracts',
+    '- aggregated quality evidence rejects governance/benchmark artifacts that were not generated with their required `--execute-gates` execution contract.',
+    '- aggregated quality evidence rejects artifacts whose source-tree fingerprint or tracked release-file count does not match the current repository checkout; the original repo_root is retained as provenance metadata but is not treated as a transport-stability requirement.',
+    '- unit/regression: `pytest tests/unit tests/regression -q`',
+    '- shipped behavior contracts: repo profiles must remain differentiable, coordinators must stay on explicit dependency injection paths, export/screenshot coordinators must stay on worker lifecycle routes, render degradation state must stay projected in SessionState.render_runtime through a typed status-panel subscription flow, clean bootstrap/headless mainline paths must stay within the configured compatibility budget, public plugin SDK examples must remain loader-compatible, render telemetry must remain recorded as bounded structured state transitions + operation spans + sampling counters + backend-specific performance telemetry, diagnostics widgets must consume structured telemetry log sections, scene authority summaries must expose declaration/validation/render geometry layers, and screenshot/importer fidelity baselines must stay reproducible from checked-in fixtures',
     '- full validation: `pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q` with `fail_under = 80` + `python scripts/verify_partition_coverage.py --coverage-json coverage.json`',
-    '- gui smoke: `python scripts/verify_runtime_baseline.py --mode gui` + `python scripts/verify_release_environment.py --mode gui` + `pytest tests/gui -q` on Ubuntu 22.04 with `PySide6>=6.5` installed; pytest defaults `QT_QPA_PLATFORM=offscreen` unless `ROBOT_SIM_PYTEST_FORCE_GUI_DISPLAY=1` is set',
-    '- quality contracts: `python scripts/verify_quality_contracts.py` + `python scripts/verify_module_governance.py` + `python scripts/verify_benchmark_matrix.py`',
+    '- gui smoke: `python scripts/verify_gui_smoke.py`; the gate prefers real `PySide6` and falls back to the repository-local Qt test shim only inside the verification process so deterministic offscreen smoke remains executable in constrained environments. Evidence must retain `runtime_kind`, `gui_real_runtime_ok`, and `gui_shim_runtime_ok` so release review can distinguish shim smoke from a real GUI baseline',
     '- contract regeneration: `python scripts/regenerate_quality_contracts.py` + `git diff --exit-code -- docs`',
 )
 
@@ -47,7 +106,7 @@ class QualityContractService:
         self._runtime_feature_policy = runtime_feature_policy or RuntimeFeaturePolicy()
         self._capability_matrix_renderer = capability_matrix_renderer or CapabilityService(
             runtime_feature_policy=self._runtime_feature_policy,
-        ).render_scene_markdown
+        ).render_markdown
         self._module_status_renderer = module_status_renderer or ModuleStatusService(
             runtime_feature_policy=self._runtime_feature_policy,
         ).render_markdown
@@ -76,7 +135,10 @@ class QualityContractService:
             '',
             '- contract docs (`docs/*.md`) remain deterministic checked-in specifications.',
             '- executed quality evidence is written as JSON artifacts through `scripts/collect_quality_evidence.py`, `scripts/verify_module_governance.py --evidence-out`, and `scripts/verify_benchmark_matrix.py --evidence-out`.',
+            '- `artifacts/release_manifest.json` is the canonical aggregated release-readiness summary; release review must evaluate `artifact_ready`, `environment_ready`, and `release_ready` together rather than treating executed artifacts alone as a sufficient release signal.',
             '- evidence artifacts must include a runtime fingerprint (python / platform / machine) so perf and governance results stay attributable to the environment that produced them.',
+            '- evidence artifacts must also include a transportable source-tree fingerprint (`repo_root`, `source_tree_fingerprint`, `source_tree_file_count`, `generated_at_utc`); aggregation rejects mixed-source evidence by comparing the source-tree fingerprint + file count, while tolerating repository relocation after packaging.',
+            '- GUI smoke evidence must preserve whether the verified runtime was real `PySide6` or the repository-local test shim; shim success is acceptable for constrained smoke coverage but does not satisfy the checked-in GUI release environment contract.',
             '- promotion and benchmark decisions should prefer executed evidence artifacts over static governance summaries whenever both are available.',
             '',
         ]
@@ -162,6 +224,22 @@ def verify_behavior_contracts(project_root: str | Path) -> list[str]:
     compatibility_budget_path = root / 'configs' / 'compatibility_budget.yaml'
     if not compatibility_budget_path.exists():
         errors.append('missing compatibility budget config')
+
+    compatibility_retirement_path = root / 'configs' / 'compatibility_retirement.yaml'
+    if not compatibility_retirement_path.exists():
+        errors.append('missing compatibility retirement config')
+
+    compatibility_downstream_inventory_path = root / 'configs' / 'compatibility_downstream_inventory.yaml'
+    if not compatibility_downstream_inventory_path.exists():
+        errors.append('missing compatibility downstream inventory config')
+
+    compatibility_support_boundary_path = root / 'docs' / 'compatibility_support_boundary.md'
+    if not compatibility_support_boundary_path.exists():
+        errors.append('missing compatibility support boundary doc')
+
+    compatibility_downstream_inventory_doc_path = root / 'docs' / 'compatibility_downstream_inventory.md'
+    if not compatibility_downstream_inventory_doc_path.exists():
+        errors.append('missing compatibility downstream inventory doc')
 
     plugin_example_solver = root / 'examples' / 'plugins' / 'minimal_solver_plugin.py'
     plugin_example_importer = root / 'examples' / 'plugins' / 'minimal_importer_plugin.py'
@@ -295,7 +373,7 @@ def verify_behavior_contracts(project_root: str | Path) -> list[str]:
 def write_quality_contract_files(project_root: str | Path) -> None:
     """Regenerate checked-in contract docs from runtime truth sources."""
     root = Path(project_root)
-    snapshot = QualityContractService().snapshot()
+    snapshot = _build_runtime_truth_quality_service(root).snapshot()
     for path, content in _expected_docs(root, snapshot).items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding='utf-8')
@@ -304,7 +382,7 @@ def write_quality_contract_files(project_root: str | Path) -> None:
 def verify_quality_contract_files(project_root: str | Path) -> list[str]:
     """Verify generated contract documents against checked-in copies."""
     root = Path(project_root)
-    snapshot = QualityContractService().snapshot()
+    snapshot = _build_runtime_truth_quality_service(root).snapshot()
     errors: list[str] = []
 
     for path, expected in _expected_docs(root, snapshot).items():
@@ -323,19 +401,21 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
     if workflow_path.exists():
         workflow = workflow_path.read_text(encoding='utf-8')
         required_markers = (
-            'quick_quality:',
+            'runtime_contracts:',
+            'governance_evidence:',
+            'unit_regression:',
             'full_validation:',
             'gui_smoke:',
-            'python scripts/verify_quality_contracts.py',
-            'python scripts/verify_runtime_baseline.py --mode headless',
+            'python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs',
             'python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline',
             'python scripts/verify_perf_budget_config.py',
-            'python scripts/verify_runtime_baseline.py --mode gui',
+            'python scripts/verify_gui_smoke.py',
             'python scripts/verify_runtime_baseline.py --mode release',
             'python scripts/regenerate_quality_contracts.py',
             'git diff --exit-code -- docs',
             'pytest tests/unit tests/regression -q',
-            'shipped behavior contracts',
+            'python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json',
+            'python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json',
             'python scripts/regenerate_importer_fidelity_baseline.py',
             'pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q',
             'python scripts/verify_partition_coverage.py --coverage-json coverage.json',
@@ -353,15 +433,16 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
         readme = readme_path.read_text(encoding='utf-8')
         readme_markers = (
             '当前测试基线：**以 CI / pytest 实际收集结果为准**',
-            'quick quality',
+            'runtime contracts',
+            'governance evidence',
+            'unit/regression',
             'full validation',
             'gui smoke',
-            'quality contracts',
             'shipped behavior contracts',
             'python scripts/regenerate_importer_fidelity_baseline.py',
-            'verify_runtime_baseline.py --mode headless',
+            'verify_runtime_contracts.py --mode headless --check-packaged-configs',
             'verify_compatibility_budget.py --scenario clean_headless_mainline',
-            'verify_runtime_baseline.py --mode gui',
+            'verify_gui_smoke.py',
             'regenerate_quality_contracts.py',
             'research.yaml',
         )

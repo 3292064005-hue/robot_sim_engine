@@ -94,6 +94,16 @@ class RenderTimelineEntryView:
 
 
 @dataclass(frozen=True)
+class RenderTelemetryLogSection:
+    """Structured diagnostics log section consumed by the diagnostics panel."""
+
+    section_id: str
+    title: str
+    body_text: str
+    entry_count: int
+
+
+@dataclass(frozen=True)
 class RenderTelemetryPanelState:
     """Typed diagnostics-panel state for render telemetry streams and aggregates."""
 
@@ -121,24 +131,79 @@ class RenderTelemetryPanelState:
     timeline_entries: tuple[RenderTimelineEntryView, ...]
 
     @property
+    def metric_payload(self) -> dict[str, str]:
+        """Return the compact diagnostics key/value projection consumed by the widget shell."""
+        return {
+            'render_event_count': str(self.event_count),
+            'render_latest_event': self.latest_summary,
+            'render_latest_severity': self.latest_severity,
+            'render_span_count': str(self.span_count),
+            'render_latest_span': self.latest_span_summary,
+            'render_counter_count': str(self.counter_count),
+            'render_latest_counter': self.latest_counter_summary,
+            'render_backend_perf': self.backend_summary,
+            'render_latency_buckets': self.backend_latency_summary,
+            'render_percentiles': self.backend_percentile_summary,
+            'render_rolling_window': self.backend_rolling_summary,
+            'render_live_counters': self.backend_live_counter_summary,
+            'render_timeline_summary': self.timeline_summary,
+        }
+
+    @property
     def recent_log_text(self) -> str:
         return '\n'.join(entry.detail_text for entry in self.recent_entries)
+
+    @property
+    def log_sections(self) -> tuple[RenderTelemetryLogSection, ...]:
+        """Return structured diagnostics sections for the widget surface."""
+        return (
+            RenderTelemetryLogSection('events', 'Render Telemetry', self.recent_log_text, len(self.recent_entries)),
+            RenderTelemetryLogSection('spans', 'Render Operation Spans', self.recent_span_log_text, len(self.recent_spans)),
+            RenderTelemetryLogSection('counters', 'Render Sampling Counters', self.recent_counter_log_text, len(self.recent_counters)),
+            RenderTelemetryLogSection('backend_performance', 'Backend Performance Telemetry', self.backend_performance_log_text, len(self.backend_entries)),
+            RenderTelemetryLogSection('timeline', 'Diagnostics Timeline', self.timeline_log_text, len(self.timeline_entries)),
+        )
+
+    @property
+    def events_text(self) -> str:
+        """Compatibility alias for the telemetry event log text."""
+        return self.recent_log_text
 
     @property
     def recent_span_log_text(self) -> str:
         return '\n'.join(entry.detail_text for entry in self.recent_spans)
 
     @property
+    def spans_text(self) -> str:
+        """Compatibility alias for the render-operation span log text."""
+        return self.recent_span_log_text
+
+    @property
     def recent_counter_log_text(self) -> str:
         return '\n'.join(entry.detail_text for entry in self.recent_counters)
+
+    @property
+    def counters_text(self) -> str:
+        """Compatibility alias for the sampling-counter log text."""
+        return self.recent_counter_log_text
 
     @property
     def backend_performance_log_text(self) -> str:
         return '\n'.join(entry.detail_text for entry in self.backend_entries)
 
     @property
+    def backend_perf_text(self) -> str:
+        """Compatibility alias for backend-performance log text."""
+        return self.backend_performance_log_text
+
+    @property
     def timeline_log_text(self) -> str:
         return '\n'.join(entry.detail_text for entry in self.timeline_entries)
+
+    @property
+    def timeline_text(self) -> str:
+        """Compatibility alias for diagnostics timeline log text."""
+        return self.timeline_log_text
 
 
 
