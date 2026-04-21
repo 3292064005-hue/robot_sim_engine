@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Iterable, Mapping
 
-from robot_sim.model.scene_validation_surface import summarize_record_validation_surface
+from robot_sim.model.scene_validation_surface import summarize_record_validation_surface, summarize_scene_validation_projection, summarize_validation_projection
 
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.core.collision.scene import PlanningScene, SceneObject
@@ -20,7 +20,7 @@ def _mapping_payload(summary: Mapping[str, object] | None, *keys: str) -> dict[s
 
 
 def _resolved_geometry_from_object(obj: 'SceneObject', summary: Mapping[str, object] | None = None) -> dict[str, object]:
-    payload = _mapping_payload(summary, 'validation_geometry', 'resolved_geometry')
+    payload = _mapping_payload(summary, 'validation_geometry')
     if payload is not None:
         return payload
     geometry = getattr(obj, 'geometry', None)
@@ -35,7 +35,7 @@ def _resolved_geometry_from_object(obj: 'SceneObject', summary: Mapping[str, obj
 
 
 def _declared_geometry_from_object(summary: Mapping[str, object] | None, fallback: dict[str, object]) -> dict[str, object]:
-    payload = _mapping_payload(summary, 'declaration_geometry', 'declared_geometry')
+    payload = _mapping_payload(summary, 'declaration_geometry')
     if payload is not None:
         return payload
     return dict(fallback)
@@ -43,7 +43,7 @@ def _declared_geometry_from_object(summary: Mapping[str, object] | None, fallbac
 
 
 def _render_geometry_from_object(summary: Mapping[str, object] | None, fallback: dict[str, object]) -> dict[str, object]:
-    payload = _mapping_payload(summary, 'render_geometry', 'declaration_geometry', 'declared_geometry')
+    payload = _mapping_payload(summary, 'render_geometry', 'declaration_geometry')
     if payload is not None:
         return payload
     return dict(fallback)
@@ -58,10 +58,6 @@ class GeometryAuthorityRecord:
     - validation_geometry: the backend/query geometry used by collision validation
     - render_geometry: the geometry intent consumed by render/export/session projections
 
-    Backward compatibility:
-        ``declared_geometry`` and ``resolved_geometry`` remain available as aliases for
-        legacy call sites while the new three-layer contract propagates through the scene
-        summary and export surfaces.
     """
 
     object_id: str
@@ -76,14 +72,6 @@ class GeometryAuthorityRecord:
     metadata: dict[str, object] = field(default_factory=dict)
 
     @property
-    def declared_geometry(self) -> dict[str, object]:
-        return dict(self.declaration_geometry or {})
-
-    @property
-    def resolved_geometry(self) -> dict[str, object]:
-        return dict(self.validation_geometry or {})
-
-    @property
     def geometry_source(self) -> str:
         return str(self.declaration_geometry_source or self.render_geometry_source or self.validation_geometry_source or '')
 
@@ -94,6 +82,12 @@ class GeometryAuthorityRecord:
         validation_surface = summarize_record_validation_surface(
             validation_geometry_source=str(self.validation_geometry_source or ''),
             validation_geometry=validation_geometry,
+            attached=bool(self.attached),
+        )
+        validation_projection = summarize_validation_projection(
+            declaration_geometry=declaration_geometry,
+            validation_geometry=validation_geometry,
+            validation_geometry_source=str(self.validation_geometry_source or ''),
             attached=bool(self.attached),
         )
         return {
@@ -108,9 +102,7 @@ class GeometryAuthorityRecord:
             'validation_geometry': validation_geometry,
             'render_geometry': render_geometry,
             'validation_surface': validation_surface,
-            # legacy aliases
-            'declared_geometry': declaration_geometry,
-            'resolved_geometry': validation_geometry,
+            'validation_projection': validation_projection,
             'metadata': dict(self.metadata or {}),
             **validation_surface,
         }
@@ -141,15 +133,6 @@ class SceneGeometryAuthority:
         object.__setattr__(self, 'records', tuple(self.records))
         object.__setattr__(self, 'metadata', dict(self.metadata or {}))
 
-    # legacy source aliases -------------------------------------------------
-    @property
-    def declared_geometry_source(self) -> str:
-        return str(self.declaration_geometry_source or '')
-
-    @property
-    def resolved_geometry_source(self) -> str:
-        return str(self.validation_geometry_source or '')
-
     @property
     def capability_badges(self) -> list[str]:
         badges = [
@@ -160,14 +143,6 @@ class SceneGeometryAuthority:
             f'validation_source:{self.validation_geometry_source or "unknown"}',
             f'render_source:{self.render_geometry_source or "unknown"}',
         ]
-        # keep legacy badges so existing diagnostics and tests do not silently drift
-        badges.extend(
-            [
-                f'declared_source:{self.declaration_geometry_source or "unknown"}',
-                f'resolved_source:{self.validation_geometry_source or "unknown"}',
-                'geometry_contract:declared_and_resolved' if self.scene_geometry_contract == 'declaration_validation_render' else '',
-            ]
-        )
         badges.extend(f'shape:{shape}' for shape in self.supported_scene_shapes if shape)
         return [badge for badge in badges if badge]
 
@@ -200,6 +175,8 @@ class SceneGeometryAuthority:
             )
 
     def summary(self) -> dict[str, object]:
+        records = [record.summary() for record in self.records]
+        validation_projection = summarize_scene_validation_projection(records)
         return {
             'authority': str(self.authority or 'planning_scene'),
             'authority_kind': str(self.authority_kind or 'planning_scene'),
@@ -208,15 +185,13 @@ class SceneGeometryAuthority:
             'declaration_geometry_source': str(self.declaration_geometry_source or ''),
             'validation_geometry_source': str(self.validation_geometry_source or ''),
             'render_geometry_source': str(self.render_geometry_source or ''),
-            # legacy aliases
-            'declared_geometry_source': str(self.declaration_geometry_source or ''),
-            'resolved_geometry_source': str(self.validation_geometry_source or ''),
             'supported_scene_shapes': list(self.supported_scene_shapes),
             'record_count': int(len(self.records)),
             'obstacle_count': int(sum(1 for record in self.records if not record.attached)),
             'attached_object_count': int(sum(1 for record in self.records if record.attached)),
             'capability_badges': self.capability_badges,
-            'records': [record.summary() for record in self.records],
+            'records': records,
+            'validation_projection': validation_projection,
             'metadata': dict(self.metadata or {}),
         }
 
@@ -235,11 +210,11 @@ class SceneGeometryAuthority:
             raise ValueError('scene geometry authority requires a planning scene instance')
         metadata = dict(getattr(scene, 'metadata', {}) or {})
         declaration_geometry_source = str(
-            metadata.get('declaration_geometry_source', metadata.get('declared_geometry_source', metadata.get('geometry_source', getattr(scene, 'geometry_source', 'generated'))))
+            metadata.get('declaration_geometry_source', metadata.get('geometry_source', getattr(scene, 'geometry_source', 'generated')))
             or metadata.get('geometry_source', getattr(scene, 'geometry_source', 'generated'))
         )
         validation_geometry_source = str(
-            metadata.get('validation_geometry_source', metadata.get('resolved_geometry_source', f"{getattr(scene, 'collision_backend', 'aabb')}_planning_scene"))
+            metadata.get('validation_geometry_source', f"{getattr(scene, 'collision_backend', 'aabb')}_planning_scene")
             or f"{getattr(scene, 'collision_backend', 'aabb')}_planning_scene"
         )
         render_geometry_source = str(
@@ -253,7 +228,7 @@ class SceneGeometryAuthority:
             (True, tuple(getattr(scene, 'attached_objects', ()) or ())),
         ):
             for obj in objects:
-                object_summary = obj.summary() if hasattr(obj, 'summary') else {}
+                object_summary = obj.summary(validation_backend=getattr(scene, 'collision_backend', 'aabb')) if hasattr(obj, 'summary') else {}
                 validation_geometry = _resolved_geometry_from_object(obj, object_summary)
                 declaration_geometry = _declared_geometry_from_object(object_summary, validation_geometry)
                 render_geometry = _render_geometry_from_object(object_summary, declaration_geometry)
@@ -261,8 +236,8 @@ class SceneGeometryAuthority:
                     GeometryAuthorityRecord(
                         object_id=str(getattr(obj, 'object_id', object_summary.get('object_id', 'object'))),
                         authority=authority,
-                        declaration_geometry_source=str(object_summary.get('declaration_geometry_source', object_summary.get('declared_geometry_source', declaration_geometry_source)) or declaration_geometry_source),
-                        validation_geometry_source=str(object_summary.get('validation_geometry_source', object_summary.get('resolved_geometry_source', validation_geometry_source)) or validation_geometry_source),
+                        declaration_geometry_source=str(object_summary.get('declaration_geometry_source', declaration_geometry_source) or declaration_geometry_source),
+                        validation_geometry_source=str(object_summary.get('validation_geometry_source', validation_geometry_source) or validation_geometry_source),
                         render_geometry_source=str(object_summary.get('render_geometry_source', render_geometry_source) or render_geometry_source),
                         attached=attached,
                         declaration_geometry=declaration_geometry,
@@ -284,6 +259,8 @@ class SceneGeometryAuthority:
                 'scene_authority': str(metadata.get('scene_authority', 'planning_scene') or 'planning_scene'),
                 'collision_backend': str(getattr(scene, 'collision_backend', metadata.get('resolved_collision_backend', 'aabb'))),
                 'scene_fidelity': str(metadata.get('scene_fidelity', getattr(scene, 'geometry_source', 'generated')) or getattr(scene, 'geometry_source', 'generated')),
+                'validation_adapter_model': 'explicit_backend_projection',
+                'validation_projection_summary': summarize_scene_validation_projection(record.summary() for record in records),
             },
         )
 
@@ -308,19 +285,19 @@ class SceneGeometryAuthority:
                 authority=str(geometry_summary.get('authority', authority) or authority),
                 authority_kind=str(geometry_summary.get('authority_kind', authority_kind) or authority_kind),
                 scene_geometry_contract=str(geometry_summary.get('scene_geometry_contract', 'declaration_validation_render') or 'declaration_validation_render'),
-                declaration_geometry_source=str(geometry_summary.get('declaration_geometry_source', geometry_summary.get('declared_geometry_source', declaration_geometry_source)) or declaration_geometry_source),
-                validation_geometry_source=str(geometry_summary.get('validation_geometry_source', geometry_summary.get('resolved_geometry_source', validation_geometry_source)) or validation_geometry_source),
+                declaration_geometry_source=str(geometry_summary.get('declaration_geometry_source', declaration_geometry_source) or declaration_geometry_source),
+                validation_geometry_source=str(geometry_summary.get('validation_geometry_source', validation_geometry_source) or validation_geometry_source),
                 render_geometry_source=str(geometry_summary.get('render_geometry_source', render_geometry_source) or render_geometry_source),
                 supported_scene_shapes=tuple(str(item) for item in geometry_summary.get('supported_scene_shapes', supported_scene_shapes) or supported_scene_shapes),
                 records=tuple(
                     GeometryAuthorityRecord(
                         object_id=str(item.get('object_id', 'object') or 'object'),
-                        declaration_geometry=dict(item.get('declaration_geometry', item.get('declared_geometry', {})) or {}),
-                        validation_geometry=dict(item.get('validation_geometry', item.get('resolved_geometry', {})) or {}),
-                        render_geometry=dict(item.get('render_geometry', item.get('declaration_geometry', item.get('declared_geometry', {}))) or {}),
+                        declaration_geometry=dict(item.get('declaration_geometry', {}) or {}),
+                        validation_geometry=dict(item.get('validation_geometry', {}) or {}),
+                        render_geometry=dict(item.get('render_geometry', item.get('declaration_geometry', {})) or {}),
                         authority=str(item.get('authority', geometry_summary.get('authority', authority)) or authority),
-                        declaration_geometry_source=str(item.get('declaration_geometry_source', item.get('declared_geometry_source', geometry_summary.get('declaration_geometry_source', geometry_summary.get('declared_geometry_source', declaration_geometry_source)))) or declaration_geometry_source),
-                        validation_geometry_source=str(item.get('validation_geometry_source', item.get('resolved_geometry_source', geometry_summary.get('validation_geometry_source', geometry_summary.get('resolved_geometry_source', validation_geometry_source)))) or validation_geometry_source),
+                        declaration_geometry_source=str(item.get('declaration_geometry_source', geometry_summary.get('declaration_geometry_source', declaration_geometry_source)) or declaration_geometry_source),
+                        validation_geometry_source=str(item.get('validation_geometry_source', geometry_summary.get('validation_geometry_source', validation_geometry_source)) or validation_geometry_source),
                         render_geometry_source=str(item.get('render_geometry_source', geometry_summary.get('render_geometry_source', render_geometry_source)) or render_geometry_source),
                         attached=bool(item.get('attached', False)),
                         metadata=dict(item.get('metadata', {}) or {}),
@@ -332,14 +309,16 @@ class SceneGeometryAuthority:
                     'scene_authority': str(summary.get('scene_authority', authority) or authority),
                     'collision_backend': str(collision_backend or summary.get('collision_backend', 'aabb') or 'aabb'),
                     'scene_fidelity': str(scene_fidelity or summary.get('scene_fidelity', 'generated') or 'generated'),
+                    'validation_adapter_model': str(dict(geometry_summary.get('metadata', {}) or {}).get('validation_adapter_model', 'explicit_backend_projection')),
+                    'validation_projection_summary': dict(dict(geometry_summary.get('metadata', {}) or {}).get('validation_projection_summary', {}) or {}),
                 },
             )
         return cls(
             authority=str(authority or summary.get('scene_authority', 'planning_scene') or 'planning_scene'),
             authority_kind=str(authority_kind or 'planning_scene'),
             scene_geometry_contract=str(summary.get('scene_geometry_contract', 'declaration_validation_render') or 'declaration_validation_render'),
-            declaration_geometry_source=str(summary.get('declaration_geometry_source', summary.get('declared_geometry_source', declaration_geometry_source)) or declaration_geometry_source),
-            validation_geometry_source=str(summary.get('validation_geometry_source', summary.get('resolved_geometry_source', validation_geometry_source)) or validation_geometry_source),
+            declaration_geometry_source=str(summary.get('declaration_geometry_source', declaration_geometry_source) or declaration_geometry_source),
+            validation_geometry_source=str(summary.get('validation_geometry_source', validation_geometry_source) or validation_geometry_source),
             render_geometry_source=str(summary.get('render_geometry_source', render_geometry_source) or render_geometry_source),
             supported_scene_shapes=tuple(str(item) for item in summary.get('supported_scene_shapes', supported_scene_shapes) or supported_scene_shapes),
             records=(),
@@ -347,6 +326,8 @@ class SceneGeometryAuthority:
                 'scene_authority': str(summary.get('scene_authority', authority) or authority),
                 'collision_backend': str(collision_backend or summary.get('collision_backend', 'aabb') or 'aabb'),
                 'scene_fidelity': str(scene_fidelity or summary.get('scene_fidelity', 'generated') or 'generated'),
+                'validation_adapter_model': 'explicit_backend_projection',
+                'validation_projection_summary': {'record_count': 0, 'degraded_record_count': 0, 'degraded_record_ids': [], 'adapter_kinds': [], 'validation_backends': []},
             },
         )
 

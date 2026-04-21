@@ -14,6 +14,7 @@ from robot_sim.application.services.metrics_service import MetricsService
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.application.services.playback_service import PlaybackService
 from robot_sim.application.services.robot_registry import RobotRegistry
+from robot_sim.application.services.runtime_asset_service import RobotRuntimeAssetService
 from robot_sim.application.services.runtime_feature_service import RuntimeFeaturePolicy
 from robot_sim.application.services.task_error_mapper import TaskErrorMapper
 from robot_sim.application.use_cases.export_package import ExportPackageUseCase
@@ -26,6 +27,8 @@ from robot_sim.application.use_cases.run_ik import RunIKUseCase
 from robot_sim.application.use_cases.save_session import SaveSessionUseCase
 from robot_sim.application.use_cases.step_playback import StepPlaybackUseCase
 from robot_sim.app.runtime_paths import RuntimePaths
+from robot_sim.app.workflow_facade import ApplicationWorkflowFacade
+from robot_sim.model.runtime_snapshots import RuntimeContextSnapshot, StartupSummarySnapshot
 
 
 class MainControllerContainerProtocol(Protocol):
@@ -33,32 +36,11 @@ class MainControllerContainerProtocol(Protocol):
 
     ``MainController`` no longer reaches into the concrete container field-by-field during
     object-graph assembly. Instead the startup path materializes a typed
-    :class:`PresentationBootstrapBundle`, and the controller becomes a compatibility shell
-    over that bundle. The protocol remains explicit so startup still fails fast when the
+    :class:`PresentationBootstrapBundle`, and the controller consumes that bundle directly. The protocol remains explicit so startup still fails fast when the
     application container is incomplete.
     """
 
-    config_service: ConfigService
-    robot_registry: RobotRegistry
-    metrics_service: MetricsService
-    export_service: ExportService
-    solver_registry: SolverRegistry
-    planner_registry: PlannerRegistry
-    importer_registry: ImporterRegistry
-    capability_matrix_service: CapabilityService
-    module_status_service: ModuleStatusService
-    task_error_mapper: TaskErrorMapper
-    fk_uc: RunFKUseCase
-    ik_uc: RunIKUseCase
-    traj_uc: PlanTrajectoryUseCase
-    benchmark_uc: RunBenchmarkUseCase
-    save_session_uc: SaveSessionUseCase
-    playback_service: PlaybackService
-    playback_uc: StepPlaybackUseCase
-    export_report_uc: ExportReportUseCase
-    export_package_uc: ExportPackageUseCase
-    import_robot_uc: ImportRobotUseCase
-    runtime_paths: RuntimePaths
+    bootstrap_bundle: object
 
 
 @dataclass(frozen=True)
@@ -84,8 +66,10 @@ class PresentationServiceBundle:
     playback_service: PlaybackService
     runtime_paths: RuntimePaths | None
     runtime_feature_policy: RuntimeFeaturePolicy | None = None
-    runtime_context: dict[str, object] | None = None
-    startup_summary: dict[str, object] | None = None
+    runtime_context: RuntimeContextSnapshot | None = None
+    startup_summary: StartupSummarySnapshot | None = None
+    runtime_asset_service: RobotRuntimeAssetService | None = None
+    workflow_facade: ApplicationWorkflowFacade | None = None
 
 
 @dataclass(frozen=True)
@@ -108,9 +92,9 @@ class PresentationBootstrapBundle:
     """Typed presentation bootstrap dependency bundle.
 
     This bundle narrows the application-container surface consumed by presentation startup.
-    Startup code may still source these dependencies from ``AppContainer`` or a compatible
-    stand-in, but the rest of the presentation layer no longer needs to know the concrete
-    container attribute layout.
+    Startup code sources these dependencies from ``AppContainer`` or another object that
+    satisfies the same typed protocol, so the rest of the presentation layer no longer
+    depends on the concrete container attribute layout.
     """
 
     project_root: Path
@@ -127,7 +111,7 @@ def build_presentation_bootstrap_bundle(
     """Materialize the typed presentation bootstrap bundle from the application container.
 
     Args:
-        project_root: Runtime project root retained for compatibility with startup callers.
+        project_root: Runtime project root resolved for presentation startup.
         container: Application container or compatible protocol implementation.
 
     Returns:
@@ -138,36 +122,45 @@ def build_presentation_bootstrap_bundle(
     """
     if container is None:
         raise ValueError('build_presentation_bootstrap_bundle requires an explicit application container')
+    bootstrap_bundle = getattr(container, 'bootstrap_bundle', None)
+    if bootstrap_bundle is None:
+        raise ValueError('build_presentation_bootstrap_bundle requires container.bootstrap_bundle')
+    registry_bundle = bootstrap_bundle.registries
+    service_bundle = bootstrap_bundle.services
+    workflow_bundle = bootstrap_bundle.workflows
+    workflow_facade = bootstrap_bundle.workflow_facade
     return PresentationBootstrapBundle(
         project_root=Path(project_root),
         registries=PresentationRegistryBundle(
-            robot_registry=container.robot_registry,
-            solver_registry=container.solver_registry,
-            planner_registry=container.planner_registry,
-            importer_registry=container.importer_registry,
+            robot_registry=registry_bundle.robot_registry,
+            solver_registry=registry_bundle.solver_registry,
+            planner_registry=registry_bundle.planner_registry,
+            importer_registry=registry_bundle.importer_registry,
         ),
         services=PresentationServiceBundle(
-            config_service=container.config_service,
-            metrics_service=container.metrics_service,
-            export_service=container.export_service,
-            capability_service=container.capability_matrix_service,
-            module_status_service=container.module_status_service,
-            task_error_mapper=container.task_error_mapper,
-            playback_service=container.playback_service,
-            runtime_paths=getattr(container, 'runtime_paths', None),
-            runtime_feature_policy=getattr(container, 'runtime_feature_policy', None),
-            runtime_context=getattr(container, 'runtime_context', None),
-            startup_summary=getattr(container, 'startup_summary', None),
+            config_service=service_bundle.config_service,
+            metrics_service=service_bundle.metrics_service,
+            export_service=service_bundle.export_service,
+            capability_service=service_bundle.capability_matrix_service,
+            module_status_service=service_bundle.module_status_service,
+            task_error_mapper=service_bundle.task_error_mapper,
+            playback_service=service_bundle.playback_service,
+            runtime_paths=service_bundle.runtime_paths,
+            runtime_feature_policy=service_bundle.runtime_feature_policy,
+            runtime_context=service_bundle.runtime_context,
+            startup_summary=service_bundle.startup_summary,
+            runtime_asset_service=service_bundle.runtime_asset_service,
+            workflow_facade=workflow_facade,
         ),
         use_cases=PresentationUseCaseBundle(
-            fk_uc=container.fk_uc,
-            ik_uc=container.ik_uc,
-            traj_uc=container.traj_uc,
-            benchmark_uc=container.benchmark_uc,
-            save_session_uc=container.save_session_uc,
-            playback_uc=container.playback_uc,
-            export_report_uc=container.export_report_uc,
-            export_package_uc=container.export_package_uc,
-            import_robot_uc=container.import_robot_uc,
+            fk_uc=workflow_bundle.fk_uc,
+            ik_uc=workflow_bundle.ik_uc,
+            traj_uc=workflow_bundle.traj_uc,
+            benchmark_uc=workflow_bundle.benchmark_uc,
+            save_session_uc=workflow_bundle.save_session_uc,
+            playback_uc=workflow_bundle.playback_uc,
+            export_report_uc=workflow_bundle.export_report_uc,
+            export_package_uc=workflow_bundle.export_package_uc,
+            import_robot_uc=workflow_bundle.import_robot_uc,
         ),
     )

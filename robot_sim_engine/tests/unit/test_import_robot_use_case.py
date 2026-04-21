@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from robot_sim.application.registries.importer_registry import ImporterRegistry, URDFRobotImporter, YAMLRobotImporter
+from robot_sim.application.registries.importer_registry import ImporterRegistry, URDFSkeletonRobotImporter, YAMLRobotImporter
 from robot_sim.application.services.robot_registry import RobotRegistry
 from robot_sim.application.use_cases.import_robot import ImportRobotUseCase
 
@@ -23,7 +23,7 @@ def test_import_robot_use_case_loads_simple_urdf(tmp_path):
     <joint name="j1" type="revolute"><origin xyz="1 0 0" rpy="0 0 0"/><limit lower="-1.57" upper="1.57"/></joint>
     <joint name="j2" type="revolute"><origin xyz="1 0 0" rpy="0 0 0"/><limit lower="-1.0" upper="1.0"/></joint></robot>''', encoding='utf-8')
     importer_registry = ImporterRegistry()
-    importer_registry.register('urdf', URDFRobotImporter())
+    importer_registry.register('urdf', URDFSkeletonRobotImporter())
     uc = ImportRobotUseCase(importer_registry)
     spec = uc.execute(urdf, importer_id='urdf')
     assert spec.dof == 2

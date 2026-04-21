@@ -1,43 +1,20 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/reference/schema-and-contracts.md
+last_reviewed: 2026-04-18
+---
 # Schema Versions
 
-Current version catalog:
+> Legacy entry page. Canonical architecture doc now lives in `docs/reference/schema-and-contracts.md`.
 
-- `app_version`: 0.7.0
-- `schema_version`: v7
-- `session_schema_version`: session-v7
-- `benchmark_pack_version`: v7
+本入口页只保留 schema/version 摘要与跳转，不再重复维护完整字段表。
+- 当前导出 schema 主版本为 `v7`，session schema 为 `session-v7`；字段级 contract 以 canonical schema 文档为准。
+- 任何需要版本迁移、兼容面或 payload 说明的场景，都应直接阅读 canonical 文档。
 
-## Manifest / export versions
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
 
-- `schema_version`: payload schema version for the exported artifact.
-- `export_version`: version of the export layout used by the writer.
-- `producer_version`: application version that generated the payload.
-
-## Migration aliases
-
-Current manifests expose `migration_aliases` so older field names can be mapped to the canonical P0 names.
-
-Current aliases:
-
-- `endpoint_position_error` -> `goal_position_error`
-- `endpoint_orientation_error` -> `goal_orientation_error`
-
-## Session payloads
-
-Session exports must include:
-
-- `app_state`
-- `active_task_id`
-- `active_task_kind`
-- `scene_revision`
-- `warnings`
-
-These fields are part of the P0 task/state contract and should not be dropped without a schema version bump.
-
-
-## P1 additions
-
-- Session payload may now include `planning_scene` summary fields: `revision`, `collision_level`, `collision_backend`, `obstacle_ids`, `attached_object_ids`, `allowed_collision_pairs`, and `geometry_source`.
-- Session payload may include `scene_runtime_summary` for non-canonical runtime annotations such as cache/projection state; these fields are intentionally kept outside `planning_scene`.
-- Trajectory collision summaries may now include `scene_revision`, `ignored_pairs`, `self_pairs`, and `environment_pairs`.
-- Solver schema now accepts `ik.mode = "lm"`.
+请跳转阅读：[`docs/reference/schema-and-contracts.md`](reference/schema-and-contracts.md)

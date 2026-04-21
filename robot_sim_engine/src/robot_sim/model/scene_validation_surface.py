@@ -74,7 +74,6 @@ def summarize_scene_validation_surface(
     scene_authority: str,
     scene_geometry_contract: str,
     attached_object_count: int = 0,
-    adapter_applied: bool = False,
     source: str = 'planning_scene',
 ) -> dict[str, object]:
     """Return the stable validation-surface summary for a planning scene.
@@ -85,7 +84,6 @@ def summarize_scene_validation_surface(
         scene_authority: Stable scene authority label.
         scene_geometry_contract: Geometry authority contract label.
         attached_object_count: Number of attached objects in the scene.
-        adapter_applied: Whether the scene originated from the legacy obstacle adapter.
         source: Canonical scene-source label.
 
     Returns:
@@ -116,5 +114,82 @@ def summarize_scene_validation_surface(
         'scene_geometry_contract': normalized_geometry_contract if validation_effective else 'none',
         'scene_fidelity': normalized_fidelity,
         'attached_object_validation': attached_validation,
-        'adapter_applied': bool(adapter_applied),
+    }
+
+
+
+def summarize_validation_projection(*, declaration_geometry: Mapping[str, object] | None, validation_geometry: Mapping[str, object] | None, validation_geometry_source: str, attached: bool) -> dict[str, object]:
+    """Describe declaration-to-validation projection for one scene record.
+
+    Args:
+        declaration_geometry: Canonical declared geometry payload.
+        validation_geometry: Backend/query geometry payload used by collision checks.
+        validation_geometry_source: Validation source label.
+        attached: Whether the record is attached to a robot link.
+
+    Returns:
+        dict[str, object]: Explicit projection/degradation summary.
+    """
+    declaration_kind = str(dict(declaration_geometry or {}).get('kind', '') or '').strip().lower()
+    validation_kind = str(dict(validation_geometry or {}).get('kind', '') or '').strip().lower()
+    source = str(validation_geometry_source or '').strip().lower()
+    backend = source.split('_', 1)[0] if source else ''
+    adapter_kind = 'identity'
+    projection_degraded = False
+    if declaration_kind and validation_kind and declaration_kind != validation_kind:
+        projection_degraded = True
+        adapter_kind = f'{validation_kind}_projection'
+    elif validation_kind and validation_kind == 'aabb':
+        adapter_kind = 'aabb_projection'
+        projection_degraded = declaration_kind not in {'', 'aabb', 'box'}
+    elif validation_kind:
+        adapter_kind = f'{validation_kind}_identity'
+    return {
+        'declaration_kind': declaration_kind or 'unknown',
+        'validation_kind': validation_kind or 'unknown',
+        'validation_backend': backend or 'unknown',
+        'adapter_kind': adapter_kind,
+        'projection_degraded': bool(projection_degraded),
+        'attached': bool(attached),
+    }
+
+
+def summarize_scene_validation_projection(records: Mapping[str, object] | Iterable[Mapping[str, object]] | None) -> dict[str, object]:
+    """Aggregate validation-projection drift across scene records.
+
+    Args:
+        records: Record summaries or mappings containing validation projection payloads.
+
+    Returns:
+        dict[str, object]: Aggregate projection summary for diagnostics/export.
+    """
+    if records is None:
+        entries = ()
+    elif isinstance(records, Mapping):
+        entries = tuple(records.values())
+    else:
+        entries = tuple(records)
+    degraded = []
+    adapter_kinds = []
+    backends = []
+    for item in entries:
+        if not isinstance(item, Mapping):
+            continue
+        projection = dict(item.get('validation_projection', {}) or {})
+        if not projection:
+            continue
+        if bool(projection.get('projection_degraded', False)):
+            degraded.append(str(item.get('object_id', 'object') or 'object'))
+        adapter_kind = str(projection.get('adapter_kind', '') or '')
+        backend = str(projection.get('validation_backend', '') or '')
+        if adapter_kind and adapter_kind not in adapter_kinds:
+            adapter_kinds.append(adapter_kind)
+        if backend and backend not in backends:
+            backends.append(backend)
+    return {
+        'record_count': len(entries),
+        'degraded_record_count': len(degraded),
+        'degraded_record_ids': degraded,
+        'adapter_kinds': adapter_kinds,
+        'validation_backends': backends,
     }

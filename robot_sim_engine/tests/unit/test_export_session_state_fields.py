@@ -59,6 +59,11 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
             ),
         ),
         render_sampling_sequence=1,
+        render_runtime_advice={
+            'severity': 'warning',
+            'recommendation_count': 1,
+            'recommendations': [{'capability': 'scene_3d', 'action': 'switch_to_fallback_backend'}],
+        },
         render_backend_performance=(
             RenderBackendPerformanceTelemetry(
                 key='screenshot:snapshot_renderer',
@@ -111,4 +116,6 @@ def test_export_service_persists_task_and_state_fields(tmp_path):
     assert payload['render_telemetry']['backend_performance'][0]['duration_percentiles_ms']['p50'] == 10.5
     assert payload['render_telemetry']['backend_performance'][0]['rolling_counter_throughput']['drawable_samples'] == 9.0
     assert payload['render_telemetry']['backend_performance'][0]['live_counters']['drawable_samples'] == 9.0
+    assert payload['render_runtime_advice']['recommendation_count'] == 1
+    assert payload['render_telemetry']['runtime_advice']['recommendations'][0]['action'] == 'switch_to_fallback_backend'
     assert payload['manifest']['producer_version']

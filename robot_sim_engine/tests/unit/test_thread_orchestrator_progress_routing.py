@@ -48,13 +48,13 @@ class _EventWorker(BaseWorker):
         self.emit_finished('done')
 
 
-class _LegacyProgressWorker(BaseWorker):
+class _RichProgressWorker(BaseWorker):
     def __init__(self) -> None:
-        super().__init__(task_kind='legacy')
+        super().__init__(task_kind='rich')
 
     def run(self) -> None:
         self.emit_started()
-        self.progress.emit('frame-7')
+        self.emit_progress(stage='frame', percent=10.0, message='frame', payload={'frame': 'frame-7'})
         self.emit_finished('done')
 
 
@@ -66,13 +66,12 @@ def test_thread_orchestrator_routes_baseworker_emit_progress_to_callback(monkeyp
     assert seen == [123]
 
 
-def test_thread_orchestrator_routes_legacy_progress_signal_to_callback(monkeypatch):
+def test_thread_orchestrator_routes_structured_progress_payload_to_callback(monkeypatch):
     monkeypatch.setattr(mod, 'QThread', _InlineThread)
     orch = ThreadOrchestrator()
     seen: list[object] = []
-    orch.start(_LegacyProgressWorker(), on_progress=seen.append, task_kind='legacy')
-    assert seen == ['frame-7']
-
+    orch.start(_RichProgressWorker(), on_progress=seen.append, task_kind='rich')
+    assert seen == [{'frame': 'frame-7'}]
 
 
 def test_thread_orchestrator_routes_structured_terminal_events_to_external_event_callbacks(monkeypatch):

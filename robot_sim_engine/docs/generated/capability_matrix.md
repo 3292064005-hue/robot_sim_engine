@@ -1,0 +1,337 @@
+---
+owner: quality
+audience: maintainer
+status: generated
+source_of_truth: regenerated
+generated_by: scripts/regenerate_quality_contracts.py
+last_reviewed: 2026-04-18
+---
+# Capability Matrix
+
+## solvers
+- `analytic_6r` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - algorithm: `closed_form_spherical_wrist`
+  - aliases: `['spherical_wrist_6r']`
+  - family: `analytic`
+  - requires_spherical_wrist: `True`
+  - source: `builtin`
+  - supported_dof: `6`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `False`
+  - supports_position_only_via_fallback: `True`
+  - supports_weighted_least_squares: `False`
+- `dls` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+- `lm` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - algorithm: `levenberg_marquardt`
+  - aliases: `['levenberg_marquardt', 'shipped_lm_solver']`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+- `pinv` [stable]
+  - owner: `solver_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - family: `iterative`
+  - source: `builtin`
+  - supports_adaptive_damping_fallback: `True`
+  - supports_joint_limits: `True`
+  - supports_nullspace: `True`
+  - supports_weighted_least_squares: `True`
+
+## planners
+- `cartesian_sampled` [stable]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `True`
+  - family: `cartesian`
+  - goal_source: `cartesian_pose`
+  - goal_space: `cartesian`
+  - planner_id: `cartesian_sampled`
+  - planner_label: `Cartesian sampled planner`
+  - requires_ik: `True`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `True`
+  - status: `stable`
+  - timing_strategy: `quintic_samples`
+  - trajectory_mode: `cartesian_pose`
+  - ui_label: `cartesian_pose`
+  - ui_visible: `True`
+- `joint_quintic` [stable]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `True`
+  - family: `joint`
+  - goal_source: `joint_space`
+  - goal_space: `joint`
+  - planner_id: `joint_quintic`
+  - planner_label: `Joint quintic planner`
+  - requires_ik: `False`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `True`
+  - status: `stable`
+  - timing_strategy: `quintic`
+  - trajectory_mode: `joint_space`
+  - ui_label: `joint_space`
+  - ui_visible: `True`
+- `joint_trapezoidal` [beta]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `['shipped_joint_space_planner']`
+  - default_enabled: `False`
+  - exposure_reason: `hidden_until_promoted`
+  - family: `joint`
+  - goal_source: `joint_space`
+  - goal_space: `joint`
+  - planner_id: `joint_trapezoidal`
+  - planner_label: `Joint trapezoidal planner`
+  - requires_ik: `False`
+  - retiming: `planner_native`
+  - source: `builtin`
+  - stable_surface: `False`
+  - status: `beta`
+  - timing_strategy: `trapezoidal`
+  - trajectory_mode: `joint_space`
+  - ui_label: `joint_space`
+  - ui_visible: `False`
+- `waypoint_graph` [experimental]
+  - owner: `planner_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - default_enabled: `False`
+  - exposure_reason: `profile_gated`
+  - family: `waypoint_graph`
+  - goal_source: `waypoint_graph`
+  - goal_space: `waypoint_graph`
+  - planner_id: `waypoint_graph`
+  - planner_label: `Waypoint graph planner`
+  - requires_ik: `True`
+  - retiming: `builtin_scaling`
+  - source: `builtin`
+  - stable_surface: `False`
+  - status: `experimental`
+  - timing_strategy: `segmentwise`
+  - trajectory_mode: `waypoint_graph`
+  - ui_label: `waypoint_graph`
+  - ui_visible: `False`
+
+## importers
+- `urdf_model` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['urdf']`
+  - canonical_id: `urdf_model`
+  - display_name: `URDF serial model importer`
+  - extensions: `('urdf',)`
+  - family: `serial_model_import`
+  - fidelity: `serial_kinematics`
+  - notes: `Preserves serial link/joint structure and visual/collision availability while adapting the runtime to the V7 DH pipeline.`
+  - source: `builtin`
+  - source_format: `urdf`
+- `urdf_skeleton` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `[]`
+  - canonical_id: `urdf_skeleton`
+  - display_name: `URDF skeleton importer`
+  - extensions: `('urdf',)`
+  - family: `approximate_tree_import`
+  - fidelity: `approximate`
+  - notes: `Approximates a serial DH-like chain from URDF joint origins. Not a full URDF tree importer.`
+  - source: `builtin`
+  - source_format: `urdf`
+- `yaml` [stable]
+  - owner: `importer_registry`
+  - enabled: `True`
+  - aliases: `['yml', 'shipped_yaml_importer']`
+  - canonical_id: `yaml`
+  - display_name: `YAML robot config`
+  - extensions: `('yaml', 'yml')`
+  - family: `config`
+  - fidelity: `native`
+  - source: `builtin`
+  - source_format: `yaml`
+
+## render_features
+- `scene_toolbar` [stable]
+  - owner: `render`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['ui', 'diagnostics', 'export']`
+- `render_diagnostics` [stable]
+  - owner: `presentation.diagnostics`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['diagnostics']`
+
+## export_features
+- `package_export` [stable]
+  - owner: `export`
+  - enabled: `True`
+  - capability_surface_version: `v1`
+  - consumed_by: `['export_manifest', 'session_manifest']`
+- `capability_manifest_projection` [stable]
+  - owner: `export`
+  - enabled: `True`
+  - capability_matrix_version: `v1`
+  - consumed_by: `['export_manifest', 'diagnostics', 'ui_state']`
+
+## scene_features
+- `planning_scene` [stable]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - active_backends: `['aabb', 'capsule']`
+  - collision_backend_runtimes: `{'aabb': {'display_name': 'AABB collision backend', 'plugin_surface': 'collision_backend', 'backend_contract_version': 'v1', 'validation_fidelity': 'approximate_aabb', 'supported_operations': ['project_geometry', 'project_query_aabb', 'project_scene_object'], 'plugin_backend_id': 'aabb_collision_backend', 'notes': 'Repository-shipped production collision backend used by runtime declaration->query projection.'}, 'capsule': {'display_name': 'Capsule collision backend', 'plugin_surface': 'collision_backend', 'backend_contract_version': 'v1', 'validation_fidelity': 'primitive_passthrough_with_aabb_queries', 'supported_operations': ['project_geometry', 'project_query_aabb', 'project_scene_object']}}`
+  - declared_backends: `['aabb', 'capsule']`
+  - edit_surface: `stable_scene_editor`
+  - experimental_backends: `[]`
+  - fallback_backend: `aabb`
+  - integration_scope: `validation_export_session_scene_toolbar`
+  - scene_authority_model: `canonical_declaration_authority`
+  - scene_backend_plugin_ids: `['planning_scene_backend']`
+  - scene_backend_plugin_kinds: `['scene_backend']`
+  - scene_backend_runtime: `{'display_name': 'Planning-scene backend', 'plugin_surface': 'scene_backend', 'scene_geometry_contract_version': 'v1', 'scene_validation_capability_matrix_version': 'v1', 'supported_operations': ['bootstrap_scene', 'build_scene_object', 'refresh_scene_authority'], 'notes': 'Repository-shipped production scene backend used by the stable scene authority runtime.', 'validation_adapter_model': 'explicit_backend_projection'}`
+  - scene_geometry_contract: `declaration_validation_render`
+  - scene_geometry_contract_version: `v1`
+  - scene_validation_capability_matrix_version: `v1`
+  - stable_surface_version: `v3`
+  - ui_surface: `stable_scene_toolbar`
+  - validation_adapter_model: `explicit_backend_projection`
+  - validation_backend_capabilities: `[{'backend_id': 'aabb', 'family': 'broad_phase', 'status': 'internal', 'availability': 'enabled', 'is_default': True, 'is_experimental': False, 'supported_collision_levels': ['aabb'], 'fidelity_rows': [{'collision_level': 'aabb', 'collision_backend': 'aabb', 'precision': 'broad_phase', 'stable_surface': True, 'promotion_state': 'stable', 'summary': 'AABB broad-phase validation', 'backend_status': 'internal', 'backend_availability': 'enabled', 'backend_family': 'broad_phase', 'supported_collision_levels': ['aabb'], 'scene_fidelity': 'planning_scene', 'roadmap_stage': 'stable', 'stable_surface_target': 'stable', 'geometry_requirements': ['declaration_projection', 'query_aabb'], 'degradation_policy': 'native_broad_phase', 'capability_contract_version': 'v2', 'roadmap_owner': 'architecture', 'policy_source': 'repo_config', 'policy_load_errors': []}], 'roadmap_stage': 'stable'}, {'backend_id': 'capsule', 'family': 'narrow_phase', 'status': 'stable', 'availability': 'enabled', 'is_default': False, 'is_experimental': False, 'supported_collision_levels': ['capsule'], 'fidelity_rows': [{'collision_level': 'capsule', 'collision_backend': 'capsule', 'precision': 'capsule_narrow_phase', 'stable_surface': True, 'promotion_state': 'stable', 'summary': 'Capsule narrow-phase validation', 'backend_status': 'stable', 'backend_availability': 'enabled', 'backend_family': 'narrow_phase', 'supported_collision_levels': ['capsule'], 'scene_fidelity': 'planning_scene', 'roadmap_stage': 'stable', 'stable_surface_target': 'stable', 'geometry_requirements': ['capsule_primitives', 'link_radii'], 'degradation_policy': 'fallback_to_aabb_when_capsule_contract_missing', 'capability_contract_version': 'v2', 'roadmap_owner': 'architecture', 'policy_source': 'repo_config', 'policy_load_errors': []}], 'roadmap_stage': 'stable'}]`
+- `scene_backend_plugin_surface` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - declared_plugin_ids: `['planning_scene_backend']`
+  - enabled_plugin_ids: `['planning_scene_backend']`
+  - plugin_kind: `scene_backend`
+  - plugin_surface_version: `v1`
+  - production_plugin_ids: `['planning_scene_backend']`
+  - scene_geometry_contract_version: `v1`
+  - scene_validation_capability_matrix_version: `v1`
+- `collision_backend_aabb` [internal]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `enabled`
+  - backend_id: `aabb`
+  - fallback_backend: `aabb`
+  - family: `broad_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['aabb']`
+- `collision_backend_capsule` [stable]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `enabled`
+  - backend_id: `capsule`
+  - deployment_tier: `production`
+  - fallback_backend: `aabb`
+  - family: `narrow_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['capsule']`
+
+## collision_features
+- `collision_backend_plugin_surface` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - backend_contract_version: `v1`
+  - declared_plugin_ids: `['aabb_collision_backend']`
+  - enabled_plugin_ids: `['aabb_collision_backend']`
+  - plugin_kind: `collision_backend`
+  - plugin_surface_version: `v1`
+- `collision_backend_aabb` [internal]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `enabled`
+  - backend_id: `aabb`
+  - fallback_backend: `aabb`
+  - family: `broad_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['aabb']`
+- `collision_backend_capsule` [stable]
+  - owner: `collision.scene`
+  - enabled: `True`
+  - availability: `enabled`
+  - backend_id: `capsule`
+  - deployment_tier: `production`
+  - fallback_backend: `aabb`
+  - family: `narrow_phase`
+  - required_dependencies: `[]`
+  - supported_collision_levels: `['capsule']`
+
+## plugin_features
+- `plugin_host` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - active_profile: `default`
+  - counts_by_tier: `{'production': 5, 'experimental': 0, 'fixture': 0, 'compatibility': 0}`
+  - declared_plugin_count: `5`
+  - enabled_plugin_count: `5`
+  - plugin_discovery_enabled: `False`
+  - plugin_marketplace: `{'plugin_surface_version': 'v1', 'kinds': {'collision_backend': {'kind': 'collision_backend', 'declared_plugin_ids': ['aabb_collision_backend'], 'enabled_plugin_ids': ['aabb_collision_backend'], 'production_plugin_ids': ['aabb_collision_backend'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'importer': {'kind': 'importer', 'declared_plugin_ids': ['shipped_yaml_importer'], 'enabled_plugin_ids': ['shipped_yaml_importer'], 'production_plugin_ids': ['shipped_yaml_importer'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'planner': {'kind': 'planner', 'declared_plugin_ids': ['shipped_joint_space_planner'], 'enabled_plugin_ids': ['shipped_joint_space_planner'], 'production_plugin_ids': ['shipped_joint_space_planner'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'scene_backend': {'kind': 'scene_backend', 'declared_plugin_ids': ['planning_scene_backend'], 'enabled_plugin_ids': ['planning_scene_backend'], 'production_plugin_ids': ['planning_scene_backend'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'solver': {'kind': 'solver', 'declared_plugin_ids': ['shipped_lm_solver'], 'enabled_plugin_ids': ['shipped_lm_solver'], 'production_plugin_ids': ['shipped_lm_solver'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}}, 'total_declared_plugins': 5, 'total_enabled_plugins': 5}`
+  - plugin_status_allowlist: `['stable', 'deprecated']`
+  - plugin_surface_version: `v1`
+  - runtime_provider_count: `2`
+  - runtime_provider_enabled_count: `2`
+- `plugin_planning_scene_backend` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `[]`
+  - deployment_tier: `production`
+  - display_name: `Planning-scene backend`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `scene_contract`
+  - kind: `scene_backend`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable', 'plugin_kind:scene_backend', 'scene_geometry_contract:v1', 'scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - optional_host_capabilities: `['scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - plugin_id: `planning_scene_backend`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable', 'plugin_kind:scene_backend', 'scene_geometry_contract:v1']`
+  - source: `shipped_plugin`
+  - verification_scope: `capability_surface`
+- `plugin_aabb_collision_backend` [stable]
+  - owner: `plugin_loader`
+  - enabled: `True`
+  - aliases: `[]`
+  - deployment_tier: `production`
+  - display_name: `AABB collision backend`
+  - enabled_profiles: `['default', 'dev', 'gui', 'ci', 'release']`
+  - family: `collision_contract`
+  - kind: `collision_backend`
+  - missing_optional_host_capabilities: `[]`
+  - negotiated_host_capabilities: `['plugin_status:stable', 'plugin_kind:collision_backend', 'collision_backend_contract:v1', 'scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - optional_host_capabilities: `['scene_validation_capability_matrix:v1', 'capability_matrix:v1']`
+  - plugin_id: `aabb_collision_backend`
+  - plugin_surface_version: `v1`
+  - reason: `enabled`
+  - required_host_capabilities: `['plugin_status:stable', 'plugin_kind:collision_backend', 'collision_backend_contract:v1']`
+  - source: `shipped_plugin`
+  - verification_scope: `capability_surface`
+- `runtime_domain_map` [stable]
+  - owner: `capability_service`
+  - enabled: `True`
+  - import: `{'canonical_core': 'robot_importer_registry', 'alternatives': ['urdf_model', 'urdf_skeleton', 'yaml']}`
+  - kinematics: `{'canonical_core': 'ik_solver_registry', 'alternatives': ['analytic_6r', 'dls', 'lm', 'pinv']}`
+  - planning: `{'canonical_core': 'trajectory_planner_registry', 'alternatives': ['cartesian_sampled', 'joint_quintic', 'joint_trapezoidal', 'waypoint_graph']}`
+  - plugin_marketplace: `{'plugin_surface_version': 'v1', 'kinds': {'collision_backend': {'kind': 'collision_backend', 'declared_plugin_ids': ['aabb_collision_backend'], 'enabled_plugin_ids': ['aabb_collision_backend'], 'production_plugin_ids': ['aabb_collision_backend'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'importer': {'kind': 'importer', 'declared_plugin_ids': ['shipped_yaml_importer'], 'enabled_plugin_ids': ['shipped_yaml_importer'], 'production_plugin_ids': ['shipped_yaml_importer'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'planner': {'kind': 'planner', 'declared_plugin_ids': ['shipped_joint_space_planner'], 'enabled_plugin_ids': ['shipped_joint_space_planner'], 'production_plugin_ids': ['shipped_joint_space_planner'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'scene_backend': {'kind': 'scene_backend', 'declared_plugin_ids': ['planning_scene_backend'], 'enabled_plugin_ids': ['planning_scene_backend'], 'production_plugin_ids': ['planning_scene_backend'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}, 'solver': {'kind': 'solver', 'declared_plugin_ids': ['shipped_lm_solver'], 'enabled_plugin_ids': ['shipped_lm_solver'], 'production_plugin_ids': ['shipped_lm_solver'], 'experimental_plugin_ids': [], 'status_counts': {'stable': 1}, 'deployment_tier_counts': {'production': 1}}}, 'total_declared_plugins': 5, 'total_enabled_plugins': 5}`
+  - render: `{'canonical_core': 'render_runtime_state', 'adapter_surfaces': ['render_runtime_advice']}`
+  - scene: `{'canonical_core': 'planning_scene', 'canonical_runtime': {'display_name': 'Planning-scene backend', 'plugin_surface': 'scene_backend', 'scene_geometry_contract_version': 'v1', 'scene_validation_capability_matrix_version': 'v1', 'supported_operations': ['bootstrap_scene', 'build_scene_object', 'refresh_scene_authority'], 'notes': 'Repository-shipped production scene backend used by the stable scene authority runtime.', 'validation_adapter_model': 'explicit_backend_projection'}, 'adapter_surfaces': ['scene_backend', 'collision_backend'], 'plugin_surfaces': {'scene_backend': ['planning_scene_backend'], 'collision_backend': ['aabb_collision_backend']}, 'active_collision_backend_runtimes': {'aabb': {'display_name': 'AABB collision backend', 'plugin_surface': 'collision_backend', 'backend_contract_version': 'v1', 'validation_fidelity': 'approximate_aabb', 'supported_operations': ['project_geometry', 'project_query_aabb', 'project_scene_object'], 'plugin_backend_id': 'aabb_collision_backend', 'notes': 'Repository-shipped production collision backend used by runtime declaration->query projection.'}, 'capsule': {'display_name': 'Capsule collision backend', 'plugin_surface': 'collision_backend', 'backend_contract_version': 'v1', 'validation_fidelity': 'primitive_passthrough_with_aabb_queries', 'supported_operations': ['project_geometry', 'project_query_aabb', 'project_scene_object']}}}`

@@ -1,3 +1,21 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/governance/roadmap.md
+last_reviewed: 2026-04-18
+---
 # V7 Blueprint
 
-V7 聚焦工程硬化：统一版本真源、正式任务生命周期、importer fidelity、trajectory validator 拆分、MainWindow 协调层下沉。
+> Legacy entry page. Canonical governance policy now lives in `docs/governance/roadmap.md`.
+
+本入口页只保留摘要与跳转，不再重复维护完整字段、规则副本或实现细节。
+
+- canonical doc 是当前唯一 source of truth。
+- 需要字段级 contract、边界说明或演进策略时，请直接阅读 canonical 文档。
+
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
+
+请跳转阅读：[`docs/governance/roadmap.md`](governance/roadmap.md)

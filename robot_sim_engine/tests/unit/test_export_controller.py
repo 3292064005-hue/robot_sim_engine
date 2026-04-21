@@ -13,10 +13,38 @@ from robot_sim.presentation.controllers.export_controller import ExportControlle
 from robot_sim.presentation.state_store import StateStore
 
 
+class _WorkflowFacadeStub:
+    def __init__(self, exporter: ExportService, save_session_uc: SaveSessionUseCase, export_package_uc: ExportPackageUseCase | None):
+        self._exporter = exporter
+        self._save_session_uc = save_session_uc
+        self._export_package_uc = export_package_uc
+
+    def export_trajectory_bundle(self, name, trajectory, *, robot_id=None, solver_id=None, planner_id=None):
+        return self._exporter.save_trajectory_bundle(name, trajectory, robot_id=robot_id, solver_id=solver_id, planner_id=planner_id)
+
+    def export_benchmark_report(self, name: str, payload: dict[str, object]):
+        return self._exporter.save_benchmark_report(name, payload)
+
+    def export_session(self, name: str, state: SessionState, **kwargs):
+        return self._save_session_uc.execute(name, state, **kwargs)
+
+    def export_package(self, name: str, files, **manifest_kwargs):
+        if self._export_package_uc is None:
+            raise RuntimeError('package export not configured')
+        return self._export_package_uc.execute(name, files, **manifest_kwargs)
+
+
 def test_export_controller_exports_benchmark_json(tmp_path):
     state = StateStore(SessionState(benchmark_report=BenchmarkReport(robot='Planar', num_cases=1, success_rate=1.0)))
     exporter = ExportService(tmp_path)
-    controller = ExportController(state, exporter, ExportReportUseCase(exporter), SaveSessionUseCase(exporter))
+    save_session_uc = SaveSessionUseCase(exporter)
+    controller = ExportController(
+        state,
+        exporter,
+        ExportReportUseCase(exporter),
+        save_session_uc,
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, None),
+    )
     path = controller.export_benchmark('bench.json')
     assert path.exists()
 
@@ -39,12 +67,14 @@ class _DummyRuntimeFacade:
 def test_export_controller_session_manifest_uses_effective_config_snapshot(tmp_path):
     state = StateStore(SessionState())
     exporter = ExportService(tmp_path)
+    save_session_uc = SaveSessionUseCase(exporter)
     controller = ExportController(
         state,
         exporter,
         ExportReportUseCase(exporter),
-        SaveSessionUseCase(exporter),
+        save_session_uc,
         runtime_facade=_DummyRuntimeFacade(),
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, None),
     )
     path = controller.export_session('session.json')
     payload = json.loads(path.read_text(encoding='utf-8'))
@@ -58,12 +88,14 @@ def test_export_controller_session_manifest_uses_effective_config_snapshot(tmp_p
 def test_export_controller_session_manifest_supports_minimal_telemetry(tmp_path):
     state = StateStore(SessionState())
     exporter = ExportService(tmp_path)
+    save_session_uc = SaveSessionUseCase(exporter)
     controller = ExportController(
         state,
         exporter,
         ExportReportUseCase(exporter),
-        SaveSessionUseCase(exporter),
+        save_session_uc,
         runtime_facade=_DummyRuntimeFacade(),
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, None),
     )
     path = controller.export_session('session.json', telemetry_detail='minimal')
     payload = json.loads(path.read_text(encoding='utf-8'))
@@ -75,13 +107,16 @@ def test_export_controller_package_defaults_to_minimal_session_telemetry(tmp_pat
     state = StateStore(SessionState())
     exporter = ExportService(tmp_path)
     package_service = PackageService(tmp_path)
+    export_package_uc = ExportPackageUseCase(package_service)
+    save_session_uc = SaveSessionUseCase(exporter)
     controller = ExportController(
         state,
         exporter,
         ExportReportUseCase(exporter),
-        SaveSessionUseCase(exporter),
-        export_package_uc=ExportPackageUseCase(package_service),
+        save_session_uc,
+        export_package_uc=export_package_uc,
         runtime_facade=_DummyRuntimeFacade(),
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, export_package_uc),
     )
     bundle_path = controller.export_package('bundle.zip')
     assert bundle_path.exists()
@@ -95,12 +130,14 @@ def test_export_controller_package_defaults_to_minimal_session_telemetry(tmp_pat
 def test_export_controller_session_manifest_preserves_capability_snapshot_without_runtime_facade(tmp_path):
     state = StateStore(SessionState(capability_matrix={'scene_features': {'validation_fidelity': 'aabb_v1'}}))
     exporter = ExportService(tmp_path)
+    save_session_uc = SaveSessionUseCase(exporter)
     controller = ExportController(
         state,
         exporter,
         ExportReportUseCase(exporter),
-        SaveSessionUseCase(exporter),
+        save_session_uc,
         runtime_facade=None,
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, None),
     )
     path = controller.export_session('session.json')
     payload = json.loads(path.read_text(encoding='utf-8'))
@@ -112,13 +149,16 @@ def test_export_controller_package_manifest_preserves_capability_snapshot_withou
     state = StateStore(SessionState(capability_matrix={'scene_features': {'validation_fidelity': 'aabb_v1'}}))
     exporter = ExportService(tmp_path)
     package_service = PackageService(tmp_path)
+    export_package_uc = ExportPackageUseCase(package_service)
+    save_session_uc = SaveSessionUseCase(exporter)
     controller = ExportController(
         state,
         exporter,
         ExportReportUseCase(exporter),
-        SaveSessionUseCase(exporter),
-        export_package_uc=ExportPackageUseCase(package_service),
+        save_session_uc,
+        export_package_uc=export_package_uc,
         runtime_facade=None,
+        application_workflow=_WorkflowFacadeStub(exporter, save_session_uc, export_package_uc),
     )
     bundle_path = controller.export_package('bundle.zip')
     assert bundle_path.exists()

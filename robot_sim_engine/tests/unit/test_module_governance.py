@@ -14,7 +14,7 @@ def test_experimental_modules_all_have_promotion_policies(project_root) -> None:
 
 def test_module_status_service_projects_governance_details() -> None:
     details = ModuleStatusService(runtime_feature_policy=RuntimeFeaturePolicy(active_profile='research', experimental_modules_enabled=True)).snapshot_details()
-    collision_panel = details['presentation.widgets.collision_panel']
+    collision_panel = details['presentation.experimental.widgets.collision_panel']
     assert collision_panel['enabled'] is True
     assert collision_panel['governance']['owner'] == 'presentation-runtime'
     assert 'gui_smoke' in collision_panel['governance']['required_quality_gates']
@@ -60,7 +60,7 @@ def test_verify_module_governance_requires_executed_gate_results_when_requested(
 
 def test_verify_module_governance_reports_failed_gate_results(project_root) -> None:
     errors = verify_experimental_module_governance(
-        {'presentation.widgets.collision_panel': 'experimental'},
+        {'presentation.experimental.widgets.collision_panel': 'experimental'},
         repo_root=str(project_root),
         gate_results={
             'headless_runtime_baseline': True,

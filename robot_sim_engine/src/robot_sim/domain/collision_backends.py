@@ -182,12 +182,16 @@ _DEFAULT_REGISTRY = CollisionBackendRegistry(
         CollisionBackendDescriptor(
             backend_id='capsule',
             display_name='Capsule collision backend',
-            status=ModuleStatus.EXPERIMENTAL,
+            status=ModuleStatus.STABLE,
             is_available=True,
-            is_experimental=True,
+            is_experimental=False,
             fallback_backend='aabb',
             required_dependencies=(),
-            metadata={'family': 'narrow_phase', 'supported_collision_levels': ['capsule']},
+            metadata={
+                'family': 'narrow_phase',
+                'supported_collision_levels': ['capsule'],
+                'deployment_tier': 'production',
+            },
         ),
     )
 )

@@ -5,8 +5,28 @@ import json
 from pathlib import Path
 
 from robot_sim.app.bootstrap import bootstrap
+from robot_sim.app.headless_api import HeadlessError, HeadlessExecutionError, HeadlessRequestError, HeadlessWorkflowService, load_request_payload
 from robot_sim.app.main import main as gui_main
 from robot_sim.app.runtime_paths import resolve_runtime_paths
+
+
+def _add_output_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--output', type=Path, default=None, help='optional JSON output path')
+
+
+def _add_request_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument('--request-file', type=Path, default=None, help='JSON/YAML request payload path')
+    parser.add_argument('--request-json', default=None, help='inline JSON request payload')
+    _add_output_argument(parser)
+
+
+def _emit_payload(payload: dict[str, object], *, output: Path | None) -> None:
+    body = json.dumps(payload, ensure_ascii=False, indent=2)
+    if output is None:
+        print(body)
+        return
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(body + '\n', encoding='utf-8')
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -18,7 +38,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sub.add_parser('source-layout-smoke', help='print source-layout discovery/runtime-path diagnostics as JSON')
 
     config = sub.add_parser('config-snapshot', help='print the resolved app/solver config snapshot as JSON')
-    config.add_argument('--output', type=Path, default=None, help='optional JSON output path')
+    _add_output_argument(config)
+
+    batch = sub.add_parser('batch', help='run one headless workflow command using a machine-readable contract')
+    batch_sub = batch.add_subparsers(dest='batch_command', required=True)
+    for name in ('import', 'fk', 'ik', 'plan', 'validate', 'benchmark', 'export-session', 'export-package'):
+        cmd = batch_sub.add_parser(name, help=f'run the {name} headless workflow contract')
+        _add_request_arguments(cmd)
     return parser
 
 
@@ -52,25 +78,38 @@ def main(argv: list[str] | None = None) -> int:
             'export_root': str(runtime_paths.export_root),
             'layout_mode': runtime_paths.layout_mode,
             'source_layout_available': bool(runtime_paths.source_layout_available),
-            'entrypoint_mode': 'python -m robot_sim.app.cli',
+            'entrypoint_mode': 'python robot_sim_cli.py',
             'cwd': str(Path.cwd()),
             'side_effect_free_probe': True,
         }
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        _emit_payload(payload, output=None)
         return 0
+    if command == 'batch':
+        try:
+            request = load_request_payload(request_file=args.request_file, request_json=args.request_json)
+            context = bootstrap(startup_mode='headless')
+            result = HeadlessWorkflowService(context.container).execute(str(args.batch_command), request)
+            _emit_payload({'ok': True, 'command': str(args.batch_command), 'result': result}, output=args.output)
+            return 0
+        except (HeadlessError, OSError, ValueError) as exc:
+            error = exc if isinstance(exc, HeadlessError) else HeadlessExecutionError(f'failed to write output payload: {exc}')
+            _emit_payload(
+                {
+                    'ok': False,
+                    'command': str(args.batch_command),
+                    'error_type': error.__class__.__name__,
+                    'message': str(error),
+                },
+                output=None,
+            )
+            return 1
     context = bootstrap(startup_mode='headless')
     if command == 'runtime-summary':
-        print(json.dumps(dict(context.container.startup_summary or {}), ensure_ascii=False, indent=2))
+        _emit_payload(dict(context.container.startup_summary or {}), output=None)
         return 0
     if command == 'config-snapshot':
-        snapshot = context.container.config_service.describe_effective_snapshot()
-        payload = json.dumps(snapshot, ensure_ascii=False, indent=2)
-        if args.output is not None:
-            output_path = Path(args.output)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(payload + '\n', encoding='utf-8')
-        else:
-            print(payload)
+        snapshot = context.container.bootstrap_bundle.services.config_service.describe_effective_snapshot()
+        _emit_payload(snapshot, output=args.output)
         return 0
     parser.error(f'unsupported command: {command}')
     return 2

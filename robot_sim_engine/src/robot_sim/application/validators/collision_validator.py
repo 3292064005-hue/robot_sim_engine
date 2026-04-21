@@ -10,6 +10,7 @@ from robot_sim.core.collision.capsule_backend import CapsuleCollisionBackend
 from robot_sim.core.collision.collision_result import CollisionResult
 from robot_sim.core.collision.environment_collision import environment_collision_flags, evaluate_environment_collision_pairs
 from robot_sim.core.collision.geometry import AABB, aabb_from_points
+from robot_sim.application.services.collision_backend_runtime import resolve_collision_backend_runtime
 from robot_sim.core.collision.scene import PlanningScene, SceneObject
 from robot_sim.core.collision.self_collision import evaluate_self_collision_pairs, self_collision_pair_hits, self_collision_pair_specs
 from robot_sim.domain.collision_backends import default_collision_backend_registry
@@ -50,27 +51,17 @@ class _SceneFrameGeometry:
     self_hits: tuple[frozenset[tuple[str, str]], ...]
 
 
-@dataclass(frozen=True)
-class _LegacyFrameGeometry:
-    """Precomputed per-frame robot AABBs for legacy obstacle checks."""
-
-    robot_boxes: tuple[AABB, ...]
-
-
 _COLLISION_CACHE = _BoundedLruCache(max_entries=16)
 _GEOMETRY_CACHE = _BoundedLruCache(max_entries=24)
 _COLLISION_BACKEND_REGISTRY = default_collision_backend_registry()
 
 
-def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obstacles=()) -> tuple[list[str], dict[str, object]]:
+def evaluate_collision_summary(trajectory, *, planning_scene=None) -> tuple[list[str], dict[str, object]]:
     """Evaluate collision status and return normalized summary metadata.
 
     Args:
         trajectory: Trajectory-like object exposing joint positions.
         planning_scene: Optional canonical planning-scene object with revision and ACM metadata.
-        collision_obstacles: Legacy obstacle collection. Legacy inputs are adapted into a
-            canonical planning-scene snapshot before evaluation so validation now flows
-            through one scene authority path only.
 
     Returns:
         tuple[list[str], dict[str, object]]: Validation reasons and structured collision summary.
@@ -79,7 +70,7 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
         None: Invalid or missing data is normalized into an empty collision result.
     """
     reasons: list[str] = []
-    scene, adapter_metadata = _coerce_planning_scene(planning_scene=planning_scene, collision_obstacles=collision_obstacles)
+    scene, adapter_metadata = _coerce_planning_scene(planning_scene=planning_scene)
     result = _collision_result(trajectory, planning_scene=scene)
     summary = {
         'self_collision': result.self_collision,
@@ -93,6 +84,8 @@ def evaluate_collision_summary(trajectory, *, planning_scene=None, collision_obs
         'clearance_metric': result.clearance_metric,
         'scene_available': bool(scene is not None),
         'collision_input': adapter_metadata['collision_input'],
+        'scene_authority_model': 'canonical_declaration_authority',
+        'validation_adapter_model': 'explicit_backend_projection',
         **dict(result.metadata),
         **adapter_metadata,
     }
@@ -165,7 +158,6 @@ def _collision_result(trajectory, *, planning_scene=None) -> CollisionResult:
                     scene_authority='none',
                     scene_geometry_contract='none',
                     attached_object_count=0,
-                    adapter_applied=False,
                     source='none',
                 ),
             },
@@ -195,7 +187,18 @@ def _evaluate_scene_collision(
     acm = getattr(planning_scene, 'allowed_collision_matrix', None)
     obstacles = list(getattr(planning_scene, 'obstacles', ()))
     backend = _resolve_backend_id(planning_scene)
-    obstacle_pairs = [(str(obj.object_id), obj.geometry) for obj in obstacles]
+    backend_runtime = resolve_collision_backend_runtime(backend)
+    obstacle_pairs = [
+        (
+            str(obj.object_id),
+            backend_runtime.project_query_aabb(
+                getattr(obj, 'metadata', {}).get('declaration_geometry') if isinstance(getattr(obj, 'metadata', None), dict) else None,
+                attached=False,
+                fallback_geometry=getattr(obj, 'geometry', None),
+            ),
+        )
+        for obj in obstacles
+    ]
 
     geometry, geometry_cache_hit = _scene_geometry(
         joint_positions,
@@ -349,41 +352,14 @@ def _build_scene_frame_geometry(
 
 
 
-def _evaluate_legacy_collision(*_args, **_kwargs) -> CollisionResult:
-    """Compatibility stub retained only to keep old imports explicit during migration.
-
-    The legacy obstacle path is no longer a first-class validation branch. Callers must
-    adapt obstacle collections into a planning scene through ``_coerce_planning_scene`` so
-    collision evaluation flows through one canonical scene authority.
-    """
-    raise RuntimeError('legacy obstacle collision validation has been removed; adapt legacy obstacles into a planning scene first')
-
-
-
-def _legacy_geometry(joint_positions: np.ndarray, *, padding: float, trajectory_digest: str) -> tuple[_LegacyFrameGeometry, bool]:
-    """Return cached legacy robot AABBs for one trajectory digest."""
-    key = ('legacy_geometry', trajectory_digest, round(float(padding), 8))
-    cached = _GEOMETRY_CACHE.get(key)
-    if cached is not None:
-        assert isinstance(cached, _LegacyFrameGeometry)
-        return cached, True
-    built = _LegacyFrameGeometry(
-        robot_boxes=tuple(aabb_from_points(np.asarray(frame, dtype=float), padding=padding) for frame in joint_positions),
-    )
-    _GEOMETRY_CACHE.put(key, built)
-    return built, False
-
-
-
-def _coerce_planning_scene(*, planning_scene=None, collision_obstacles=()) -> tuple[PlanningScene | None, dict[str, object]]:
+def _coerce_planning_scene(*, planning_scene=None) -> tuple[PlanningScene | None, dict[str, object]]:
     """Return one canonical planning-scene validation source.
 
     Args:
         planning_scene: Canonical planning scene when already available.
-        collision_obstacles: Legacy obstacle collection accepted only as a migration adapter.
 
     Returns:
-        tuple[PlanningScene | None, dict[str, object]]: Canonical planning scene plus adapter metadata.
+        tuple[PlanningScene | None, dict[str, object]]: Canonical planning scene plus structured authority metadata.
 
     Raises:
         ValueError: If ``planning_scene`` is not a planning-scene instance.
@@ -393,66 +369,12 @@ def _coerce_planning_scene(*, planning_scene=None, collision_obstacles=()) -> tu
     if planning_scene is not None:
         return planning_scene, {
             'collision_input': 'planning_scene',
-            'adapter_applied': False,
             'degraded_reason': '',
         }
-    legacy = tuple(collision_obstacles or ())
-    if not legacy:
-        return None, {
-            'collision_input': 'none',
-            'adapter_applied': False,
-            'degraded_reason': 'planning_scene_missing',
-        }
-    adapted_scene = _planning_scene_from_legacy_obstacles(legacy)
-    return adapted_scene, {
-        'collision_input': 'legacy_obstacle_adapter',
-        'adapter_applied': True,
-        'degraded_reason': 'legacy_obstacle_adapter',
+    return None, {
+        'collision_input': 'none',
+        'degraded_reason': 'planning_scene_missing',
     }
-
-
-def _planning_scene_from_legacy_obstacles(collision_obstacles: tuple[object, ...]) -> PlanningScene:
-    """Adapt legacy obstacle collections into the canonical planning-scene authority."""
-    obstacles: list[SceneObject] = []
-    for index, obstacle in enumerate(collision_obstacles):
-        geometry = obstacle if isinstance(obstacle, AABB) else None
-        if geometry is None:
-            minimum = getattr(obstacle, 'minimum', None)
-            maximum = getattr(obstacle, 'maximum', None)
-            if minimum is not None and maximum is not None:
-                geometry = AABB(np.asarray(minimum, dtype=float), np.asarray(maximum, dtype=float))
-        if geometry is None:
-            continue
-        metadata = {
-            'source': 'legacy_collision_obstacles',
-            'shape': 'box',
-            'editor': 'legacy_collision_adapter',
-            'declaration_geometry_source': 'legacy_collision_obstacles',
-            'validation_geometry_source': 'aabb_planning_scene',
-            'render_geometry_source': 'legacy_collision_obstacles',
-            'declaration_geometry': _digest_geometry(geometry),
-            'validation_geometry': _digest_geometry(geometry),
-            'render_geometry': _digest_geometry(geometry),
-            'declared_geometry': _digest_geometry(geometry),
-            'resolved_geometry': _digest_geometry(geometry),
-        }
-        obstacles.append(SceneObject(object_id=f'legacy_obstacle_{index}', geometry=geometry, metadata=metadata))
-    scene = PlanningScene(
-        obstacles=tuple(obstacles),
-        revision=0,
-        geometry_source='legacy_collision_adapter',
-        metadata={
-            'scene_authority': 'planning_scene',
-            'scene_source': 'legacy_collision_adapter',
-            'scene_fidelity': 'legacy_obstacle_adapter',
-            'stable_surface_version': 'v2',
-            'legacy_obstacle_adapter_applied': True,
-            'declaration_geometry_source': 'legacy_collision_obstacles',
-            'validation_geometry_source': 'aabb_planning_scene',
-            'render_geometry_source': 'legacy_collision_obstacles',
-        },
-    )
-    return scene.with_metadata_patch(scene_geometry_contract='declaration_validation_render')
 
 
 def _resolve_backend_id(planning_scene) -> str:
@@ -488,11 +410,10 @@ def _backend_metadata(
     authority = getattr(planning_scene, 'geometry_authority', None) if planning_scene is not None else None
     validation_surface = summarize_scene_validation_surface(
         collision_backend=backend_id,
-        scene_fidelity=str(metadata.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'legacy')) or getattr(planning_scene, 'scene_fidelity', 'legacy')) if planning_scene is not None else 'legacy',
-        scene_authority=str(getattr(authority, 'authority', getattr(planning_scene, 'scene_authority', 'planning_scene')) or getattr(planning_scene, 'scene_authority', 'planning_scene')) if planning_scene is not None else 'legacy',
-        scene_geometry_contract=str(getattr(authority, 'scene_geometry_contract', metadata.get('scene_geometry_contract', 'resolved_only')) or 'resolved_only') if planning_scene is not None else 'legacy',
+        scene_fidelity=str(metadata.get('scene_fidelity', getattr(planning_scene, 'scene_fidelity', 'none')) or getattr(planning_scene, 'scene_fidelity', 'none')) if planning_scene is not None else 'none',
+        scene_authority=str(getattr(authority, 'authority', getattr(planning_scene, 'scene_authority', 'planning_scene')) or getattr(planning_scene, 'scene_authority', 'planning_scene')) if planning_scene is not None else 'none',
+        scene_geometry_contract=str(getattr(authority, 'scene_geometry_contract', metadata.get('scene_geometry_contract', 'resolved_only')) or 'resolved_only') if planning_scene is not None else 'none',
         attached_object_count=len(tuple(getattr(planning_scene, 'attached_objects', ()) or ())) if planning_scene is not None else 0,
-        adapter_applied=bool(metadata.get('legacy_obstacle_adapter_applied', False)),
         source=str(metadata.get('scene_source', 'planning_scene') if planning_scene is not None else 'none'),
     )
     payload = {
@@ -503,8 +424,21 @@ def _backend_metadata(
         'candidate_pair_count': int(candidate_pair_count),
         'scene_authority': validation_surface['scene_authority'],
         'scene_fidelity': validation_surface['scene_fidelity'],
-        'geometry_source': str(getattr(planning_scene, 'geometry_source', 'legacy') if planning_scene is not None else 'legacy'),
+        'geometry_source': str(getattr(planning_scene, 'geometry_source', 'none') if planning_scene is not None else 'none'),
         'scene_geometry_contract': validation_surface['scene_geometry_contract'],
+        'backend_evidence': {
+            'requested_backend': requested_backend,
+            'resolved_backend': backend_id,
+            'backend_available': backend_available,
+            'candidate_pair_count': int(candidate_pair_count),
+        },
+        'geometry_contract_evidence': {
+            'scene_authority': validation_surface['scene_authority'],
+            'scene_fidelity': validation_surface['scene_fidelity'],
+            'scene_geometry_contract': validation_surface['scene_geometry_contract'],
+            'scene_validation_mode': validation_surface['scene_validation_mode'],
+            'attached_object_validation': validation_surface['attached_object_validation'],
+        },
         **validation_surface,
     }
     if geometry_cache_hit is not None:
@@ -545,8 +479,8 @@ def _digest_obstacles(*, planning_scene=None) -> tuple[object, ...]:
             obstacles.append((
                 str(getattr(obstacle, 'object_id', '')),
                 _digest_geometry(geometry),
-                metadata.get('declared_geometry', metadata.get('declaration_geometry', {})),
-                metadata.get('resolved_geometry', metadata.get('validation_geometry', {})),
+                metadata.get('declaration_geometry', {}),
+                metadata.get('validation_geometry', {}),
             ))
         attached = []
         for obstacle in getattr(planning_scene, 'attached_objects', ()):
@@ -555,8 +489,8 @@ def _digest_obstacles(*, planning_scene=None) -> tuple[object, ...]:
             attached.append((
                 str(getattr(obstacle, 'object_id', '')),
                 _digest_geometry(geometry),
-                metadata.get('declared_geometry', metadata.get('declaration_geometry', {})),
-                metadata.get('resolved_geometry', metadata.get('validation_geometry', {})),
+                metadata.get('declaration_geometry', {}),
+                metadata.get('validation_geometry', {}),
                 str(metadata.get('attach_link', '')),
             ))
         return (tuple(obstacles), tuple(attached), tuple(sorted(getattr(planning_scene, 'allowed_collision_pairs', ()) or ())))

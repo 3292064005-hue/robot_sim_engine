@@ -15,7 +15,7 @@ def _configure_path() -> None:
 _configure_path()
 
 from robot_sim.infra.release_environment_gate import ReleaseEnvironmentGate  # noqa: E402
-from robot_sim.infra.release_package import build_release_zip  # noqa: E402
+from robot_sim.infra.release_package import build_verified_release_zip  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,7 +36,7 @@ def main() -> int:
         for error in report.errors:
             print(f'ERROR: {error}')
         raise SystemExit('release packaging requires a verified release environment; pass --allow-unsupported-environment to override')
-    archive = build_release_zip(args.root, args.output, top_level_dir=args.top_level_dir)
+    archive = build_verified_release_zip(args.root, args.output, top_level_dir=args.top_level_dir)
     print(archive)
     return 0
 

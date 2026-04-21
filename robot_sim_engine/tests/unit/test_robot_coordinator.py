@@ -14,7 +14,7 @@ class DummyWindow:
             load_robot=lambda name: self._fk,
             save_current_robot=lambda **kwargs: 'robot.yaml',
         )
-        self.robot_facade = SimpleNamespace(load_robot=lambda name: self._fk, save_current_robot=lambda **kwargs: 'robot.yaml')
+        self.robot_workflow = SimpleNamespace(load_robot=lambda name: self._fk, save_current_robot=lambda **kwargs: 'robot.yaml')
         self.scene_controller = SimpleNamespace(reset_path=lambda: setattr(self, 'reset', True), update_fk_projection=lambda fk: setattr(self, 'updated_fk', fk))
         self.target_panel = SimpleNamespace(set_from_pose=lambda pose: setattr(self, 'pose', pose))
         self.playback_panel = SimpleNamespace(set_total_frames=lambda total: setattr(self, 'total', total))
@@ -43,7 +43,7 @@ class DummyWindow:
 
 def test_robot_coordinator_loads_and_saves_robot():
     window = DummyWindow()
-    coord = RobotCoordinator(window, robot=window.robot_facade)
+    coord = RobotCoordinator(window, robot=window.robot_workflow)
     coord.load_robot()
     coord.save_current_robot()
     assert window.reset is True

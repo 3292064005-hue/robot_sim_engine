@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Protocol, TypeVar
+from typing import Protocol, TypeVar
+
+from robot_sim.presentation.state_events import (
+    CapabilityMatrixProjectedEvent,
+    ErrorPresentationProjectedEvent,
+    ModuleStatusesProjectedEvent,
+    SceneRuntimeProjectedEvent,
+    TaskSnapshotProjectedEvent,
+    WarningProjectedEvent,
+)
 
 from robot_sim.model.render_runtime import RenderCapabilityState, RenderRuntimeState
 from robot_sim.model.render_telemetry import (
@@ -16,6 +25,7 @@ from robot_sim.model.render_telemetry import (
 from robot_sim.model.session_state import SessionState
 from robot_sim.presentation.render_telemetry_aggregator import RenderTelemetryAggregator
 from robot_sim.presentation.render_telemetry_service import RenderTelemetryService
+from robot_sim.application.services.render_runtime_advisor import RenderRuntimeAdvisor
 
 SelectorValue = TypeVar('SelectorValue')
 StateSegment = str
@@ -30,7 +40,7 @@ class StateStoreProtocol(Protocol):
 
     def notify(self, *, segment: StateSegment | tuple[StateSegment, ...] | None = None, include_global: bool = True) -> SessionState: ...
 
-    def patch(self, *, segment: StateSegment = 'global', **kwargs: Any) -> SessionState: ...
+    def dispatch(self, event: object) -> SessionState: ...
 
     def subscribe_selector(
         self,
@@ -76,18 +86,26 @@ class SessionStateSegmentStore:
         Raises:
             None: Pure state mutation wrapper over ``StateStore.patch``.
         """
-        kwargs: dict[str, object] = {'scene_summary': dict(scene_summary)}
-        if planning_scene is not _SCENE_UNSET:
-            kwargs['planning_scene'] = planning_scene
-        if scene_revision is not None:
-            kwargs['scene_revision'] = int(scene_revision)
-        return self._parent.patch(segment='session', **kwargs)
+        return self._parent.dispatch(
+            SceneRuntimeProjectedEvent(
+                scene_summary=dict(scene_summary),
+                planning_scene=planning_scene,
+                scene_revision=scene_revision,
+            )
+        )
 
     def patch_capabilities(self, capability_matrix) -> SessionState:
         """Patch capability matrix state from a structured capability object or mapping."""
         payload = capability_matrix.as_dict() if hasattr(capability_matrix, 'as_dict') else dict(capability_matrix)
-        return self._parent.patch(segment='session', capability_matrix=payload)
+        return self._parent.dispatch(CapabilityMatrixProjectedEvent(capability_matrix=payload))
 
+    def patch_module_statuses(self, module_statuses: dict[str, object]) -> SessionState:
+        """Patch module governance status payload through the reducer surface."""
+        return self._parent.dispatch(
+            ModuleStatusesProjectedEvent(
+                module_statuses={str(key): str(value) for key, value in dict(module_statuses or {}).items()}
+            )
+        )
 
 class TaskStateSegmentStore:
     """Task/error/warning segment extracted from the monolithic presentation state store."""
@@ -101,33 +119,15 @@ class TaskStateSegmentStore:
 
     def patch_task(self, snapshot) -> SessionState:
         """Patch the active task snapshot fields."""
-        return self._parent.patch(
-            segment='task',
-            active_task_snapshot=snapshot,
-            active_task_id=getattr(snapshot, 'task_id', ''),
-            active_task_kind=getattr(snapshot, 'task_kind', ''),
-            task_state=getattr(snapshot, 'state', ''),
-            task_stop_reason=getattr(snapshot, 'stop_reason', ''),
-            task_correlation_id=getattr(snapshot, 'correlation_id', ''),
-        )
+        return self._parent.dispatch(TaskSnapshotProjectedEvent(snapshot=snapshot))
 
     def patch_error(self, error_presentation) -> SessionState:
         """Patch the last structured error presentation."""
-        return self._parent.patch(
-            segment='task',
-            last_error=getattr(error_presentation, 'user_message', ''),
-            last_error_payload=dict(getattr(error_presentation, 'log_payload', {}) or {}),
-            last_error_code=str(getattr(error_presentation, 'error_code', '') or ''),
-            last_error_title=str(getattr(error_presentation, 'title', '') or ''),
-            last_error_severity=str(getattr(error_presentation, 'severity', '') or ''),
-            last_error_hint=str(getattr(error_presentation, 'remediation_hint', '') or ''),
-        )
+        return self._parent.dispatch(ErrorPresentationProjectedEvent(presentation=error_presentation))
 
     def patch_warning(self, code: str, message: str) -> SessionState:
         """Patch warning state while preserving prior warning history."""
-        codes = tuple(dict.fromkeys((*self.state.active_warning_codes, str(code))))
-        warnings = tuple(dict.fromkeys((*self.state.warnings, str(message))))
-        return self._parent.patch(segment='task', active_warning_codes=codes, warnings=warnings, last_warning=str(message))
+        return self._parent.dispatch(WarningProjectedEvent(message=str(message), code=str(code)))
 
 
 class RenderStateSegmentStore:
@@ -139,11 +139,13 @@ class RenderStateSegmentStore:
         *,
         telemetry_aggregator: RenderTelemetryAggregator | None = None,
         telemetry_service: RenderTelemetryService | None = None,
+        runtime_advisor: RenderRuntimeAdvisor | None = None,
     ) -> None:
         self._parent = parent
         self._telemetry_service = telemetry_service or RenderTelemetryService(
             parent,
             telemetry_aggregator=telemetry_aggregator,
+            runtime_advisor=runtime_advisor,
         )
 
     @property
@@ -194,6 +196,14 @@ class RenderStateSegmentStore:
         emit_current: bool = False,
     ) -> Callable[[], None]:
         return self._telemetry_service.subscribe_render_backend_performance(callback, emit_current=emit_current)
+
+    def subscribe_render_runtime_advice(
+        self,
+        callback: Callable[[dict[str, object]], None],
+        *,
+        emit_current: bool = False,
+    ) -> Callable[[], None]:
+        return self._telemetry_service.subscribe_render_runtime_advice(callback, emit_current=emit_current)
 
     def record_render_operation_span(
         self,

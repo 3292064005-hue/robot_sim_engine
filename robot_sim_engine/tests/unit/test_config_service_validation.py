@@ -9,8 +9,9 @@ from robot_sim.infra.schema import SchemaError
 
 def test_config_service_rejects_invalid_solver_config(tmp_path):
     cfg_dir = tmp_path / 'configs'
-    cfg_dir.mkdir()
-    (cfg_dir / 'solver.yaml').write_text(yaml.safe_dump({
+    local_dir = cfg_dir / 'local'
+    local_dir.mkdir(parents=True)
+    (local_dir / 'solver.local.yaml').write_text(yaml.safe_dump({
         'ik': {
             'mode': 'dls',
             'min_damping_lambda': 2.0,

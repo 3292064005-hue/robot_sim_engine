@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from robot_sim.domain.enums import ReferenceFrame
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.domain.types import FloatArray
 from robot_sim.model.fk_result import FKResult
 from robot_sim.model.pose import Pose
@@ -11,11 +12,12 @@ from robot_sim.model.robot_spec import RobotSpec
 
 class ForwardKinematicsSolver:
     def solve(self, spec: RobotSpec, q: FloatArray) -> FKResult:
-        articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
         q_arr = np.asarray(q, dtype=float).reshape(-1)
-        frames = articulated.forward_transforms(q_arr)
-        joint_pairs = articulated.world_joint_axes_origins(q_arr)
+        frames = adapter.forward_transforms(q_arr)
+        graph_frames = adapter.forward_graph_transforms(q_arr)
+        joint_pairs = adapter.world_joint_axes_origins(q_arr)
         joint_positions = [np.asarray(frame[:3, 3], dtype=float).copy() for frame in frames]
         joint_axes = [np.asarray(axis, dtype=float).copy() for axis, _origin in joint_pairs]
         joint_origins = [np.asarray(origin, dtype=float).copy() for _axis, origin in joint_pairs]
@@ -35,8 +37,13 @@ class ForwardKinematicsSolver:
             joint_origins=np.asarray(joint_origins, dtype=float),
             reference_frame=ReferenceFrame.BASE,
             metadata={
-                'num_links': int(articulated.dof),
+                'num_links': int(adapter.active_dof),
+                'graph_joint_count': int(adapter.graph_dof),
+                'graph_frame_count': int(len(graph_frames)),
                 'includes_tool_transform': True,
-                'execution_adapter': 'articulated_serial_tree',
+                'execution_adapter': adapter.descriptor.adapter_id,
+                'execution_semantics': adapter.descriptor.execution_semantics,
+                'execution_joint_indices': [int(index) for index in adapter.active_joint_indices],
+                'execution_tip_joint_index': int(adapter.tip_joint_index),
             },
         )

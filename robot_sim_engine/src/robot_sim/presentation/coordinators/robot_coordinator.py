@@ -51,14 +51,14 @@ class RobotCoordinator:
         run_presented(self.window, action, title='错误')
 
     def import_robot_task(self) -> None:
-        """Import a robot through the view boundary and project the persisted result.
+        """Import a robot through the view boundary and project the resolved result.
 
         Returns:
             None: Updates the stable UI through boundary projection methods only.
 
         Raises:
-            Exception: Propagates importer parsing, persistence, and runtime projection
-                failures through the shared presentation error boundary.
+            Exception: Propagates importer parsing, staging/persistence, and runtime
+                projection failures through the shared presentation error boundary.
         """
         def action() -> None:
             request = require_view(self.window, 'read_robot_import_request')

@@ -21,7 +21,7 @@ class RobotModelBundle:
         warnings: User-facing bounded warning set.
         source_path: Source path used by the importer.
         importer_id: Canonical importer identifier.
-        metadata: Importer-specific metadata preserved for compatibility.
+        metadata: Importer-specific metadata carried alongside the canonical bundle.
         source_model_summary: Structured summary of the parsed source model.
     """
 
@@ -36,8 +36,3 @@ class RobotModelBundle:
     source_model_summary: dict[str, object] = field(default_factory=dict)
     canonical_model: CanonicalRobotModel | None = None
     imported_package: ImportedRobotPackage | None = None
-
-    @property
-    def import_metadata(self) -> dict[str, object]:
-        """Compatibility alias exposing importer metadata."""
-        return dict(self.metadata)

@@ -6,6 +6,7 @@ from typing import Callable
 import numpy as np
 
 from robot_sim.core.kinematics.fk_solver import ForwardKinematicsSolver
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.core.kinematics.jacobian_solver import JacobianSolver
 from robot_sim.core.kinematics.workspace import rough_reach_radius, target_is_certainly_outside_workspace
 from robot_sim.core.math.linalg import (
@@ -39,10 +40,10 @@ class IterativeIKSolverBase:
         raise NotImplementedError
 
     def _joint_motion_weights(self, spec: RobotSpec, q: FloatArray, config: IKConfig) -> np.ndarray:
-        articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
         weights = np.ones_like(q, dtype=float)
-        for i, joint in enumerate(articulated.joint_models):
+        for i, joint in enumerate(adapter.joint_models):
             q_min = float(joint.limit.lower)
             q_max = float(joint.limit.upper)
             span = max(q_max - q_min, 1.0e-9)
@@ -100,10 +101,10 @@ class IterativeIKSolverBase:
             return "orientation_not_satisfied", "position matched but orientation target not satisfied"
         if np.isfinite(cond) and cond >= config.singularity_cond_threshold:
             return "singularity_stall", "solver stalled near singular configuration"
-        articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
-        mins = articulated.joint_minima
-        maxs = articulated.joint_maxima
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
+        mins = adapter.joint_minima
+        maxs = adapter.joint_maxima
         at_lower = np.isclose(q, mins, atol=1.0e-6)
         at_upper = np.isclose(q, maxs, atol=1.0e-6)
         if np.any(at_lower | at_upper):

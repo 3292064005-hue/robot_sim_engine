@@ -61,7 +61,7 @@ def test_config_service_local_files_override_profiles_from_local_directory(tmp_p
 def test_shipped_repository_profiles_remain_observably_different(project_root):
     observed = {}
     for profile in ('default', 'dev', 'ci', 'research'):
-        service = ConfigService(project_root / 'configs', profile=profile, allow_legacy_local_override=False)
+        service = ConfigService(project_root / 'configs', profile=profile)
         app_cfg = service.load_app_config()
         solver_cfg = service.load_solver_config()
         observed[profile] = (

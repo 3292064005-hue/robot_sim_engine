@@ -1,5 +1,5 @@
 window:
-  title: "Robot Sim Engine [gui]"
+  title: Robot Sim Engine [gui]
   width: 1600
   height: 960
 plots:
@@ -9,7 +9,20 @@ features:
   experimental_backends_enabled: false
   plugin_discovery_enabled: false
   contract_doc_autogen_enabled: false
-  plugin_status_allowlist: [stable, deprecated]
-
+  plugin_status_allowlist:
+  - stable
+  - deprecated
 trajectory:
-  validation_layers: [timing, path_metrics, goal_metrics, collision, limits]
+  validation_layers:
+  - timing
+  - path_metrics
+  - goal_metrics
+  - collision
+  - limits
+  pipeline_id: default
+render:
+  advice:
+    high_p95_ms: 33.0
+    high_average_ms: 20.0
+    high_failure_ratio: 0.2
+    high_span_rate_per_sec: 24.0

@@ -31,6 +31,7 @@ from robot_sim.presentation.widgets.scene_toolbar import SceneToolbar
 from robot_sim.presentation.widgets.solver_panel import SolverPanel
 from robot_sim.presentation.render_telemetry_state import RenderTelemetryPanelState, build_render_telemetry_panel_state
 from robot_sim.presentation.status_panel_state import StatusPanelProjection
+from robot_sim.presentation.state_events import BusyStateChangedEvent, PlaybackStateChangedEvent
 from robot_sim.presentation.widgets.status_panel import StatusPanel
 from robot_sim.presentation.widgets.target_pose_panel import TargetPosePanel
 from robot_sim.render.plots_manager import PlotsManager
@@ -54,31 +55,31 @@ class MainWindowUIMixin(MainWindowRenderRuntimeUIMixin, MainWindowRequestReaders
 
     def _runtime_ops(self: 'MainWindowUIContract'):
         """Return the required runtime façade injected by the main window shell."""
-        return require_dependency(getattr(self, 'runtime_facade', None), 'runtime_facade')
+        return require_dependency(getattr(self, 'runtime_services', None), 'runtime_services').runtime_facade
 
     def _robot_ops(self: 'MainWindowUIContract'):
         """Return the required robot workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'robot_workflow', None), 'robot_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').robot_workflow
 
     def _solver_ops(self: 'MainWindowUIContract'):
         """Return the required motion workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').motion_workflow
 
     def _trajectory_ops(self: 'MainWindowUIContract'):
         """Return the required motion workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').motion_workflow
 
     def _playback_ops(self: 'MainWindowUIContract'):
         """Return the required motion workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').motion_workflow
 
     def _benchmark_ops(self: 'MainWindowUIContract'):
         """Return the required motion workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'motion_workflow', None), 'motion_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').motion_workflow
 
     def _export_ops(self: 'MainWindowUIContract'):
         """Return the required export workflow injected by the main window shell."""
-        return require_dependency(getattr(self, 'export_workflow', None), 'export_workflow')
+        return require_dependency(getattr(self, 'workflow_services', None), 'workflow_services').export_workflow
 
     def _projection_bindings(self: 'MainWindowUIContract') -> MainWindowProjectionBindings:
         """Return the lazily constructed main-window projection binding helper."""
@@ -193,8 +194,8 @@ class MainWindowUIMixin(MainWindowRenderRuntimeUIMixin, MainWindowRequestReaders
         self._feature_builders()['signals'].wire(self)
 
     def _wire_task_signals(self: 'MainWindowUIContract') -> None:
-        self.threader.task_state_changed.connect(self._on_task_state_changed)
-        self.playback_threader.task_state_changed.connect(self._on_task_state_changed)
+        self.task_orchestration.threader.task_state_changed.connect(self._on_task_state_changed)
+        self.task_orchestration.playback_threader.task_state_changed.connect(self._on_task_state_changed)
 
     def _show_error(self: 'MainWindowUIContract', title: str, exc: Exception | str) -> None:
         if not isinstance(self, QWidget):
@@ -277,12 +278,14 @@ class MainWindowUIMixin(MainWindowRenderRuntimeUIMixin, MainWindowRequestReaders
             from robot_sim.domain.enums import AppExecutionState
 
             next_state = AppExecutionState.ROBOT_READY if runtime.state.last_error == '' else runtime.state.app_state
-        runtime.state_store.patch(
-            is_busy=busy,
-            busy_reason=reason,
-            app_state=next_state,
-            active_task_kind=reason if busy else '',
-            active_task_id='' if not busy else runtime.state.active_task_id,
+        runtime.state_store.dispatch(
+            BusyStateChangedEvent(
+                is_busy=busy,
+                busy_reason=reason,
+                app_state=next_state,
+                active_task_kind=reason if busy else '',
+                active_task_id=runtime.state.active_task_id if busy else '',
+            )
         )
         self.solver_panel.set_running(busy)
         self.benchmark_panel.set_running(busy)
@@ -295,13 +298,15 @@ class MainWindowUIMixin(MainWindowRenderRuntimeUIMixin, MainWindowRequestReaders
         playback = runtime.state.playback.play() if running else runtime.state.playback.pause()
         from robot_sim.domain.enums import AppExecutionState
 
-        runtime.state_store.patch(
-            playback=playback,
-            app_state=AppExecutionState.PLAYING if running else (
-                AppExecutionState.ROBOT_READY if runtime.state.robot_spec is not None else AppExecutionState.IDLE
-            ),
-            active_task_kind='playback' if running else '',
-            active_task_id=runtime.state.active_task_id if running else '',
+        runtime.state_store.dispatch(
+            PlaybackStateChangedEvent(
+                playback=playback,
+                app_state=AppExecutionState.PLAYING if running else (
+                    AppExecutionState.ROBOT_READY if runtime.state.robot_spec is not None else AppExecutionState.IDLE
+                ),
+                active_task_kind='playback' if running else '',
+                active_task_id=runtime.state.active_task_id if running else '',
+            )
         )
         self._sync_status_after_snapshot()
 

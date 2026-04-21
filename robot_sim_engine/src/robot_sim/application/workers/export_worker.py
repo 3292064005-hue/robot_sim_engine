@@ -24,27 +24,19 @@ class ExportWorker(BaseWorker):
         self._kwargs = kwargs
 
     def _invoke_with_control(self) -> Any:
-        """Invoke the export callable while preserving backward compatibility."""
+        """Invoke the export callable through the canonical worker-control contract."""
         kwargs = dict(self._kwargs)
-        try:
-            signature = inspect.signature(self._func)
-        except (TypeError, ValueError):
-            signature = None
-        accepted = set(signature.parameters) if signature is not None else set()
-        if 'cancel_flag' in accepted:
-            kwargs.setdefault('cancel_flag', self.is_cancel_requested)
-        if 'progress_cb' in accepted:
-            kwargs.setdefault(
-                'progress_cb',
-                lambda percent, message='', payload=None: self.emit_progress(
-                    stage='export',
-                    percent=float(percent),
-                    message=str(message),
-                    payload=dict(payload or {}),
-                ),
-            )
-        if 'correlation_id' in accepted:
-            kwargs.setdefault('correlation_id', self.correlation_id)
+        kwargs.setdefault(
+            'progress_cb',
+            lambda percent, message='', payload=None: self.emit_progress(
+                stage='export',
+                percent=float(percent),
+                message=str(message),
+                payload=dict(payload or {}),
+            ),
+        )
+        kwargs.setdefault('cancel_flag', self.is_cancel_requested)
+        kwargs.setdefault('correlation_id', self.correlation_id)
         return self._func(*self._args, **kwargs)
 
     @Slot()

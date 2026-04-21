@@ -11,7 +11,7 @@ class RuntimePaths:
     """Resolved runtime filesystem layout.
 
     Attributes:
-        project_root: User-visible compatibility root that owns the active runtime resources.
+        project_root: Project root that owns the active runtime resources.
             Source runtimes retain the requested/source checkout root; packaged runtimes project
             the packaged resource root instead of an arbitrary ancestor directory.
         resource_root: Root containing runtime configuration assets.
@@ -191,10 +191,10 @@ def resolve_runtime_paths(project_root: str | Path | None = None, *, create_dirs
     export_root = _resolve_export_root(root=root, source_layout_available=source_layout_available, create_dirs=create_dirs)
     bundled_robot_root = config_root / 'robots'
 
-    compatibility_project_root = root if source_layout_available else resource_root
+    resolved_project_root = root if source_layout_available else resource_root
 
     return RuntimePaths(
-        project_root=compatibility_project_root,
+        project_root=resolved_project_root,
         resource_root=resource_root,
         config_root=config_root,
         robot_root=robot_root,

@@ -37,6 +37,7 @@ class StatusPanel(QWidget):  # pragma: no cover - GUI shell
             ("scene_3d", "3D 视图"),
             ("plots", "曲线面板"),
             ("screenshot", "截图能力"),
+            ("render_advice", "运行建议"),
         ]:
             label = QLabel("-")
             self.metric_labels[key] = label
@@ -47,6 +48,10 @@ class StatusPanel(QWidget):  # pragma: no cover - GUI shell
         render_layout = QFormLayout(render_group)
         self.render_summary = QLabel('Render 状态：等待初始化')
         render_layout.addRow('总体状态', self.render_summary)
+        self.render_advice_summary = QLabel('Render 建议：无')
+        if hasattr(self.render_advice_summary, 'setWordWrap'):
+            self.render_advice_summary.setWordWrap(True)
+        render_layout.addRow('策略建议', self.render_advice_summary)
         self.render_detail_labels = {}
         for key, title in [
             ('scene_3d', '3D 视图'),
@@ -74,29 +79,25 @@ class StatusPanel(QWidget):  # pragma: no cover - GUI shell
                 label.setText(str(value))
 
     def set_render_runtime(self, panel_state: RenderRuntimePanelState) -> None:
-        """Render the structured render-runtime projection into the status widget.
-
-        Args:
-            panel_state: Typed render-runtime projection built from shared session state.
-
-        Raises:
-            AttributeError: Propagates programmer errors when the caller passes an incompatible
-                projection object.
-
-        Boundary behavior:
-            Every known capability row is refreshed on each call so stale text/tooltips do not
-            survive capability recovery or downgrade transitions.
-        """
+        """Render the structured render-runtime projection into the status widget."""
         self.render_summary.setText(panel_state.summary_text)
+        self.render_advice_summary.setText(panel_state.advice_summary)
         if hasattr(self.render_summary, 'setStyleSheet'):
             self.render_summary.setStyleSheet(_STYLE_BY_SEVERITY.get(panel_state.overall_severity, ''))
+        if hasattr(self.render_advice_summary, 'setStyleSheet'):
+            advice_severity = panel_state.overall_severity if panel_state.advice_rows else 'nominal'
+            self.render_advice_summary.setStyleSheet(_STYLE_BY_SEVERITY.get(advice_severity, ''))
         detail_rows = panel_state.detail_rows
         alerts_by_capability = {alert.capability: alert for alert in panel_state.alerts}
         for key, label in self.render_detail_labels.items():
             detail = detail_rows.get(key, '-')
-            label.setText(detail)
+            advice = panel_state.advice_rows.get(key, '')
+            label.setText(detail if not advice else f'{detail} | {advice}')
             alert = alerts_by_capability.get(key)
             if alert is not None and hasattr(label, 'setStyleSheet'):
                 label.setStyleSheet(_STYLE_BY_SEVERITY.get(alert.severity, ''))
             if alert is not None and hasattr(label, 'setToolTip'):
-                label.setToolTip(alert.tooltip_text)
+                tooltip = alert.tooltip_text
+                if advice:
+                    tooltip = f'{tooltip}\n建议: {advice}'
+                label.setToolTip(tooltip)

@@ -80,7 +80,6 @@ class ValidateTrajectoryUseCase:
         self,
         trajectory: JointTrajectory,
         *,
-        collision_obstacles: tuple[object, ...] = (),
         target_pose=None,
         spec=None,
         q_goal=None,
@@ -91,8 +90,6 @@ class ValidateTrajectoryUseCase:
 
         Args:
             trajectory: Planned joint trajectory.
-            collision_obstacles: Legacy collision obstacle collection accepted only as a
-                migration adapter. Validation always normalizes to one planning-scene authority.
             target_pose: Optional explicit target pose.
             spec: Optional robot specification used for FK fallback.
             q_goal: Optional goal joint vector used to recover target pose.
@@ -187,7 +184,7 @@ class ValidateTrajectoryUseCase:
 
         collision_summary: dict[str, object] = {}
         if 'collision' in active_layers:
-            extra_reasons, collision_summary = evaluate_collision_summary(trajectory, planning_scene=planning_scene, collision_obstacles=collision_obstacles)
+            extra_reasons, collision_summary = evaluate_collision_summary(trajectory, planning_scene=planning_scene)
             reasons.extend(extra_reasons)
 
         limit_summary: dict[str, object] = {}
@@ -201,7 +198,6 @@ class ValidateTrajectoryUseCase:
             scene_authority=str(collision_summary.get('scene_authority', getattr(planning_scene, 'scene_authority', 'none') if planning_scene is not None else 'none')),
             scene_geometry_contract=str(collision_summary.get('scene_geometry_contract', getattr(getattr(planning_scene, 'geometry_authority', None), 'scene_geometry_contract', 'none') if planning_scene is not None else 'none')),
             attached_object_count=int(getattr(planning_scene, 'attached_object_ids', ()) and len(getattr(planning_scene, 'attached_object_ids', ())) or 0) if planning_scene is not None else 0,
-            adapter_applied=bool(collision_summary.get('adapter_applied', False)),
             source=str(collision_summary.get('scene_source', 'planning_scene' if planning_scene is not None else 'none')),
         ) if collision_summary else {
             'scene_source': 'none',
@@ -212,7 +208,6 @@ class ValidateTrajectoryUseCase:
             'scene_geometry_contract': 'none',
             'scene_fidelity': 'none',
             'attached_object_validation': 'none',
-            'adapter_applied': False,
         }
 
         feasible = not reasons

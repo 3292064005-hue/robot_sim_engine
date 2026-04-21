@@ -62,6 +62,7 @@ class SessionState:
     render_sampling_counters: tuple[RenderSamplingCounter, ...] = ()
     render_sampling_sequence: int = 0
     render_backend_performance: tuple[RenderBackendPerformanceTelemetry, ...] = ()
+    render_runtime_advice: dict[str, object] = field(default_factory=dict)
     last_error_payload: dict[str, object] = field(default_factory=dict)
     scene_summary: dict[str, object] = field(default_factory=dict)
     last_error_code: str = ''

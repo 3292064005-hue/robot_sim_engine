@@ -65,3 +65,28 @@ def test_shipped_plugin_manifest_loads_without_external_discovery(tmp_path: Path
     assert registrations[0].plugin_id == 'shipped_demo'
     assert registrations[0].metadata['api_version'] == 'v1'
     assert registrations[0].metadata['sdk_contract_version'] == 'v1'
+
+
+def test_plugin_loader_projects_governance_only_aliases_into_compatibility_map(tmp_path: Path, monkeypatch):
+    plugin_module = tmp_path / 'demo_plugin.py'
+    plugin_module.write_text(
+        'def build_plugin():\n'
+        '    return {"instance": object(), "metadata": {"runtime_provider_id": "lm"}}\n',
+        encoding='utf-8',
+    )
+    manifest = tmp_path / 'plugins.yaml'
+    manifest.write_text(
+        'plugins:\n'
+        '  - id: shipped_demo_alias\n'
+        '    kind: solver\n'
+        '    factory: demo_plugin:build_plugin\n'
+        '    source: shipped_plugin\n'
+        '    enabled_profiles: [default]\n'
+        '    metadata:\n'
+        '      canonical_target: lm\n',
+        encoding='utf-8',
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    loader = PluginLoader(manifest, policy=RuntimeFeaturePolicy(active_profile='default'))
+    assert loader.capability_registrations('solver') == ()
+    assert loader.compatibility_aliases('solver') == {'shipped_demo_alias': 'lm'}

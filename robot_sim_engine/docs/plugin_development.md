@@ -1,86 +1,21 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/guides/plugin-development.md
+last_reviewed: 2026-04-18
+---
 # Plugin Development
 
-## IK solver plugin
+> Legacy entry page. Canonical architecture doc now lives in `docs/guides/plugin-development.md`.
 
-新 solver 应实现：
+本入口页只保留摘要与跳转，不再重复维护完整字段、规则副本或实现细节。
 
-- `solve(spec, target, q0, config, *, cancel_flag=None, progress_cb=None, attempt_idx=0)`
+- canonical doc 是当前唯一 source of truth。
+- 需要字段级 contract、边界说明或演进策略时，请直接阅读 canonical 文档。
 
-并通过 `solver_registry.register('<solver_id>', solver)` 接入。
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
 
-## Trajectory planner plugin
-
-新 planner 应实现：
-
-- `plan(req)`
-
-并通过 `planner_registry.register('<planner_id>', planner)` 接入。
-
-## Robot importer plugin
-
-新 importer 应实现：
-
-- `load(source, **kwargs)`
-
-并通过 `importer_registry.register('<importer_id>', importer)` 接入。
-
-## Rule
-
-不要把新能力直接写进主窗体或总控制器。先定义 contract，再通过 registry 装配。
-
-
-## P1 additions
-
-- IK solvers now include `lm` (Levenberg–Marquardt).
-- Trajectory validation can consume a lightweight `PlanningScene` with ACM filtering.
-
-
-## Factory invocation contract
-
-- 通过装配层工厂注册的插件工厂现在在调用前进行签名判定：
-  - 若签名可接受上下文字段，则以 `factory(**context)` 调用。
-  - 若签名不接受上下文且无必需参数，则以 `factory()` 调用。
-- 工厂内部抛出的 `TypeError` 不再被解释为“签名不兼容”；这类错误会按真实执行失败向上抛出。
-- 不建议依赖模糊签名或可变位置参数来兼容不同装配环境，推荐显式声明所需上下文字段或使用无参工厂。
-
-## Public SDK examples
-
-- `examples/plugins/minimal_solver_plugin.py` 展示最小 solver plugin 工厂。
-- `examples/plugins/minimal_importer_plugin.py` 展示最小 importer plugin 工厂。
-- `examples/plugins/minimal_planner_plugin.py` 展示最小 planner plugin 工厂。
-- 三个样板都通过 `robot_sim.plugin_sdk.plugin_payload(...)` 生成稳定 payload，并受 `tests/unit/test_plugin_sdk_examples.py` 约束，保证文档示例不是失效伪代码。
-
-## Packaging notes
-
-- 外部插件推荐通过共享清单 `configs/plugins.yaml` 白名单声明后，再由 `PluginLoader` 受控装配；profile 专属 shipped plugin 建议放到 `configs/profiles/<profile>.plugins.yaml`。manifest 需显式声明 `api_version: v1`，并建议同时声明 `sdk_contract_version: v1` 与 `min_host_version`。当前保留的正式 kind 为 `solver / planner / importer / scene_backend / collision_backend`。
-- manifest 现在要求显式 `status`，允许值为 `stable / beta / experimental / internal / deprecated`。
-- profile 通过 `features.plugin_status_allowlist` 控制可装配插件等级：
-  - `default / gui / release / ci`: `stable`, `deprecated`
-  - `dev`: `stable`, `beta`, `deprecated`
-  - `research`: `stable`, `beta`, `experimental`, `internal`, `deprecated`
-- capability matrix 会把 plugin status 投影到 UI/runtime diagnostics，不再把所有插件都伪装成 stable。
-- 示例工厂同时兼容直接 `factory:` 引用与 entry-point 包装载荷。
-
-
-## Repository-shipped fixtures
-
-- `configs/plugins.yaml` 现在承载 stable/default shipped plugin 主干清单；除 solver / planner / importer 外，还保留 `scene_backend` 与 `collision_backend` 两个正式预留 kind 的 stable shipped fixtures。
-- `research_demo_dls`、`research_demo_cartesian_planner`、`research_demo_yaml_importer` 仍只在 `configs/profiles/research.plugins.yaml` 启用，用来持续验证 research profile 的扩展链。
-- shipped plugin 在 `plugin_discovery_enabled=false` 时仍允许通过 allowlist 装配；外部 plugin 仍必须显式开启 discovery。
-
-## SDK governance
-
-- `sdk_contract_version` 表示插件遵循的宿主 SDK 契约版本；当前仅支持 `v1`。
-- `min_host_version` 表示插件要求的最小宿主版本；当前不仅会进入 audit / diagnostics / registration metadata，还会在 `PluginLoader` 决策阶段阻止低于 `min_host_version` 的宿主继续加载该插件。
-
-## Host capability negotiation
-
-- manifest 现在可选声明 `required_host_capabilities` 与 `optional_host_capabilities`。
-- `required_host_capabilities` 中任一 capability 缺失时，`PluginLoader` 会在 audit 阶段直接拒载，并返回 `required_host_capability_missing`。
-- 宿主 capability 由 profile、experimental feature switch、允许的 plugin status 等 runtime feature 组合生成，当前会投影到 runtime diagnostics。
-
-
-## Entry-point packaging
-
-- `PluginLoader` 仍支持 `entry_point: <group>:<name>` 的受控装配路径，供外部插件或安装态插件使用。
-- 仓库内 research demo plugins 不再通过 `pyproject.toml` 暴露 repository 级 `robot_sim.plugins` entry points；它们只通过 `configs/profiles/research.plugins.yaml` 的 shipped-plugin manifest 进入 research profile，避免污染 stable/default 主干心智模型。
+请跳转阅读：[`docs/guides/plugin-development.md`](guides/plugin-development.md)

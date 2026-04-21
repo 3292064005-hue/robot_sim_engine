@@ -69,14 +69,6 @@ class ManifestBuilder:
             schema_version=str(schema_version or self._versions.export_schema_version),
             export_version=str(export_version or self._versions.export_schema_version),
             producer_version=self._versions.app_version,
-            compatibility_notes=(
-                'goal_position_error is canonical; endpoint_position_error is a legacy alias.',
-                'goal_orientation_error is canonical; endpoint_orientation_error is a legacy alias.',
-            ),
-            migration_aliases={
-                'endpoint_position_error': 'goal_position_error',
-                'endpoint_orientation_error': 'goal_orientation_error',
-            },
             correlation_id=str(correlation_id or ''),
             robot_id=robot_id,
             solver_id=solver_id,
@@ -99,6 +91,5 @@ class ManifestBuilder:
 def export_manifest_as_dict(manifest: ExportManifest) -> dict[str, object]:
     """Serialize an :class:`ExportManifest` into a JSON-friendly mapping."""
     payload = asdict(manifest)
-    payload['compatibility_notes'] = list(manifest.compatibility_notes)
     payload['files'] = list(manifest.files)
     return payload

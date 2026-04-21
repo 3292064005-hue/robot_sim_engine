@@ -9,6 +9,7 @@ import numpy as np
 from robot_sim.application.services.manifest_builder import ManifestBuilder, export_manifest_as_dict
 from robot_sim.application.trajectory_metadata import resolve_planner_metadata
 from robot_sim.domain.collision_fidelity import summarize_collision_fidelity
+from robot_sim.model.capability_schema import build_runtime_capability_schema
 from robot_sim.model.benchmark_report import BenchmarkReport
 from robot_sim.model.session_state import SessionState
 from robot_sim.model.trajectory import JointTrajectory
@@ -184,6 +185,7 @@ class ExportService:
         operation_spans = tuple(getattr(state, 'render_operation_spans', ()) or ())
         sampling_counters = tuple(getattr(state, 'render_sampling_counters', ()) or ())
         backend_performance = tuple(getattr(state, 'render_backend_performance', ()) or ())
+        runtime_advice = dict(getattr(state, 'render_runtime_advice', {}) or {})
         if normalized_telemetry_detail == 'full':
             render_telemetry_payload = {
                 'detail': 'full',
@@ -197,7 +199,9 @@ class ExportService:
                 'sampling_sequence': int(getattr(state, 'render_sampling_sequence', 0) or 0),
                 'sampling_counters': [counter.as_dict() if hasattr(counter, 'as_dict') else dict(counter) for counter in sampling_counters],
                 'backend_count': len(backend_performance),
+                'runtime_advice': runtime_advice,
                 'backend_performance': [entry.as_dict() if hasattr(entry, 'as_dict') else dict(entry) for entry in backend_performance],
+                'runtime_advice': runtime_advice,
             }
         else:
             render_telemetry_payload = {
@@ -222,6 +226,14 @@ class ExportService:
             }
         )
         scene_runtime_summary = dict(getattr(state, 'scene_summary', {}) or {})
+        if not scene_runtime_summary and planning_scene_summary is not None:
+            scene_runtime_summary = {
+                'revision': int(planning_scene_summary.get('revision', 0) or 0),
+                'environment_contract': dict(planning_scene_summary.get('environment_contract', {}) or {}),
+                'log_policy': dict(planning_scene_summary.get('log_policy', {}) or {}),
+                'diff_replication': dict(planning_scene_summary.get('diff_replication', {}) or {'change_count': 0, 'obstacle_delta': 0, 'attached_object_delta': 0}),
+                'replay_cursor': str(planning_scene_summary.get('replay_cursor', '') or ''),
+            }
         imported_package_summary = (
             dict(scene_runtime_summary.get('imported_package_summary', {}) or {})
             or (None if state.robot_spec is None or state.robot_spec.imported_package is None else state.robot_spec.imported_package.summary())
@@ -252,6 +264,14 @@ class ExportService:
             'scene_geometry_contract': None if planning_scene_summary is None else str(planning_scene_summary.get('scene_geometry_contract') or dict(imported_package_summary.get('geometry_model', {}) if imported_package_summary else {}).get('geometry_contract', '')),
             'stable_surface_version': None if planning_scene_summary is None else str(planning_scene_summary.get('stable_surface_version', '')),
         }
+        capability_schema = build_runtime_capability_schema(
+            execution_summary=None if state.robot_spec is None else dict(state.robot_spec.execution_summary or {}),
+            imported_package_summary=imported_package_summary,
+            scene_fidelity_summary=scene_fidelity_summary,
+            scene_snapshot=scene_snapshot or planning_scene_summary,
+            plugin_snapshot=plugin_snapshot,
+            capability_snapshot=capability_snapshot or dict(getattr(state, 'capability_matrix', {}) or {}),
+        )
         payload = {
             'manifest': self.build_manifest(
                 robot_id=state.robot_spec.name if state.robot_spec is not None else None,
@@ -351,7 +371,9 @@ class ExportService:
             },
             'scene_revision': int(state.scene_revision),
             'render_runtime': state.render_runtime.as_dict() if hasattr(state.render_runtime, 'as_dict') else dict(state.render_runtime),
+            'render_runtime_advice': runtime_advice,
             'capability_matrix': dict(getattr(state, 'capability_matrix', {}) or {}),
+            'capability_schema': capability_schema,
             'module_statuses': dict(getattr(state, 'module_statuses', {}) or {}),
             'render_telemetry': render_telemetry_payload,
         }

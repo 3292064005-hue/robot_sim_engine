@@ -115,19 +115,48 @@ class RuntimeRobotModel:
                 return articulated_model
         return build_articulated_robot_model_from_runtime(self)
 
+    @cached_property
+    def execution_layers(self) -> dict[str, object]:
+        metadata_layers = self.metadata.get('execution_layers')
+        if isinstance(metadata_layers, dict) and metadata_layers:
+            return dict(metadata_layers)
+        articulated = self.articulated_model
+        return {
+            'execution_contract_version': 'v2',
+            'source_model': {
+                'surface': str(self.source_surface or 'robot_spec'),
+                'format': str(self.source_format or ''),
+                'fidelity': str(self.fidelity or ''),
+            },
+            'articulated_graph': {
+                'surface': 'articulated_model',
+                'semantic_family': str(articulated.semantic_family),
+                'topology': dict(articulated.topology_summary),
+            },
+            'execution_adapter': {
+                'surface': 'serial_execution_rows',
+                'adapter_id': str(self.execution_adapter),
+                'row_count': int(self.dof),
+            },
+        }
+
     def summary(self) -> dict[str, object]:
         capability_badges = list(self.capability_badges)
         articulated_model = self.articulated_model
+        execution_layers = dict(self.execution_layers)
         return {
             'name': self.name,
             'dof': int(self.dof),
             'joint_names': list(self.joint_names),
             'link_names': list(self.link_names),
             'execution_adapter': self.execution_adapter,
+            'primary_execution_surface': 'articulated_model',
             'source_surface': self.source_surface,
             'source_format': self.source_format,
             'fidelity': self.fidelity,
             'semantic_family': self.semantic_family,
+            'execution_contract_version': str(execution_layers.get('execution_contract_version', 'v2')),
+            'execution_layers': execution_layers,
             'execution_row_count': int(len(self.execution_rows)),
             'joint_limit_count': int(len(self.joint_limits)),
             'execution_rows': [
@@ -160,6 +189,7 @@ class RuntimeRobotModel:
             'capability_badges': capability_badges,
             'provenance': dict(self.metadata),
             'articulated_model_summary': articulated_model.summary(),
+            'articulated_topology': dict(articulated_model.topology_summary),
         }
 
 
@@ -255,6 +285,23 @@ def build_runtime_robot_model(spec: 'RobotSpec') -> RuntimeRobotModel:
         'has_canonical_model': bool(spec.has_canonical_model),
         'geometry_available': bool(spec.geometry_available),
         'collision_model': spec.collision_model,
+        'execution_layers': {
+            'execution_contract_version': 'v2',
+            'source_model': {
+                'surface': str(source_surface),
+                'format': str(source_format),
+                'fidelity': str(fidelity),
+            },
+            'articulated_graph': {
+                'surface': 'articulated_model',
+                'semantic_family': 'articulated_serial_tree',
+            },
+            'execution_adapter': {
+                'surface': 'serial_execution_rows',
+                'adapter_id': str(execution_adapter),
+                'row_count': int(len(execution_rows)),
+            },
+        },
     }
     if canonical is not None:
         articulated_model = build_articulated_robot_model_from_canonical(

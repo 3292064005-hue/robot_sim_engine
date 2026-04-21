@@ -166,3 +166,5 @@ jobs:
         run: python -m robot_sim.infra.installed_runtime_smoke
       - name: Release package validation
         run: pytest tests/test_release_package.py -q
+      - name: Build clean source bundle
+        run: python scripts/package_release.py --output dist/source-release.zip --top-level-dir robot_sim_engine

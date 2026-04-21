@@ -21,6 +21,7 @@ class DiagnosticsController:
         if state.benchmark_report is not None:
             payload['benchmark'] = self._metrics.summarize_benchmark(state.benchmark_report)
         payload['render_runtime'] = state.render_runtime.as_dict() if hasattr(state.render_runtime, 'as_dict') else dict(state.render_runtime)
+        payload['render_runtime_advice'] = dict(getattr(state, 'render_runtime_advice', {}) or {})
         payload['render_telemetry'] = {
             'event_count': len(tuple(getattr(state, 'render_telemetry', ()) or ())),
             'sequence': int(getattr(state, 'render_telemetry_sequence', 0) or 0),

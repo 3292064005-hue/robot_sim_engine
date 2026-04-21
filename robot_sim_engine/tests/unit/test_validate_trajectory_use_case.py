@@ -74,7 +74,10 @@ def test_validate_trajectory_rejects_shape_mismatch() -> None:
 
 
 
-def test_validate_trajectory_projects_scene_validation_summary_for_legacy_adapter() -> None:
+def test_validate_trajectory_projects_scene_validation_summary_for_planning_scene() -> None:
+    from robot_sim.core.collision.geometry import AABB
+    from robot_sim.core.collision.scene import PlanningScene
+
     traj = JointTrajectory(
         t=np.array([0.0, 0.1], dtype=float),
         q=np.zeros((2, 2), dtype=float),
@@ -88,19 +91,11 @@ def test_validate_trajectory_projects_scene_validation_summary_for_legacy_adapte
             dtype=float,
         ),
     )
-    report = ValidateTrajectoryUseCase().execute(
-        traj,
-        collision_obstacles=(
-            type('LegacyObstacle', (), {
-                'minimum': np.array([0.2, -0.1, -0.1], dtype=float),
-                'maximum': np.array([0.6, 0.1, 0.1], dtype=float),
-            })(),
-        ),
-    )
+    scene = PlanningScene().add_obstacle('box', AABB(np.array([0.2, -0.1, -0.1], dtype=float), np.array([0.6, 0.1, 0.1], dtype=float)))
+    report = ValidateTrajectoryUseCase().execute(traj, planning_scene=scene)
     summary = report.metadata['scene_validation_summary']
-    assert summary['adapter_applied'] is True
-    assert summary['scene_source'] == 'legacy_collision_adapter'
-    assert report.metadata['collision_summary']['collision_input'] == 'legacy_obstacle_adapter'
+    assert summary['scene_source'] == 'planning_scene'
+    assert report.metadata['collision_summary']['collision_input'] == 'planning_scene'
 
 
 def test_validate_trajectory_reports_no_scene_validation_when_scene_is_missing() -> None:

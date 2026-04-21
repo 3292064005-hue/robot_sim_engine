@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from robot_sim.application.importers.importer_descriptor import ImporterDescriptor
 from robot_sim.application.importers.urdf_model_importer import URDFModelImporter
-from robot_sim.application.importers.urdf_skeleton_importer import URDFRobotImporter
+from robot_sim.application.importers.urdf_skeleton_importer import URDFSkeletonRobotImporter
 from robot_sim.application.importers.yaml_importer import YAMLRobotImporter
 
-__all__ = ['ImporterRegistry', 'URDFModelImporter', 'URDFRobotImporter', 'YAMLRobotImporter']
+__all__ = ['ImporterRegistry', 'URDFModelImporter', 'URDFSkeletonRobotImporter', 'YAMLRobotImporter']
 
 
 class ImporterRegistry:
@@ -51,6 +53,22 @@ class ImporterRegistry:
         )
         for alias in alias_tuple:
             self._aliases[alias] = canonical_id
+
+    def register_alias(self, alias: str, canonical_id: str) -> None:
+        """Register one compatibility alias for an existing canonical importer."""
+        normalized_alias = str(alias)
+        canonical = str(canonical_id)
+        if canonical not in self._importers:
+            raise KeyError(f'unknown importer canonical id: {canonical}')
+        if normalized_alias == canonical:
+            return
+        owner = self._aliases.get(normalized_alias)
+        if owner is not None and owner != canonical:
+            raise ValueError(f'duplicate importer alias: {normalized_alias}')
+        self._aliases[normalized_alias] = canonical
+        descriptor = self._metadata[canonical]
+        alias_tuple = tuple(dict.fromkeys((*descriptor.aliases, normalized_alias)))
+        self._metadata[canonical] = replace(descriptor, aliases=alias_tuple)
 
     def resolve_id(self, importer_id: str) -> str:
         key = str(importer_id)

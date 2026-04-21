@@ -22,7 +22,7 @@ def test_joint_trajectory_metadata_includes_phase_timings(planar_spec):
     )
     traj = PlanTrajectoryUseCase(build_default_planner_registry(RunIKUseCase(DefaultSolverRegistry()))).execute(req)
     phase_timings = traj.metadata['phase_timings_ms']
-    assert set(phase_timings) == {'planner', 'retime', 'validate', 'total'}
+    assert set(phase_timings) == {'planner', 'retime', 'validate', 'postprocess', 'total'}
     assert phase_timings['total'] >= phase_timings['planner']
     assert traj.feasibility['timing_summary']['phase_timings_ms']['total'] == phase_timings['total']
     assert traj.metadata['trajectory_digest'] == traj.trajectory_digest

@@ -41,7 +41,7 @@ trajectory:
     assert solver_cfg['trajectory']['validation_layers'] == ['timing', 'limits']
 
 
-def test_config_service_can_opt_into_legacy_repository_overrides(tmp_path):
+def test_config_service_ignores_repository_root_override_files(tmp_path):
     (tmp_path / 'app.yaml').write_text(
         """window:
   title: Legacy Title
@@ -54,11 +54,11 @@ def test_config_service_can_opt_into_legacy_repository_overrides(tmp_path):
 """,
         encoding='utf-8',
     )
-    service = ConfigService(tmp_path, allow_legacy_local_override=True)
+    service = ConfigService(tmp_path)
     app_cfg = service.load_app_config()
     solver_cfg = service.load_solver_config()
-    assert app_cfg['window']['title'] == 'Legacy Title'
-    assert solver_cfg['trajectory']['dt'] == 0.08
+    assert app_cfg['window']['title'] == 'Robot Sim Engine'
+    assert solver_cfg['trajectory']['dt'] == 0.02
 
 
 def test_config_service_resolution_summary_does_not_duplicate_default_profile(tmp_path):

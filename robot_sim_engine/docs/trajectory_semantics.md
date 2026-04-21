@@ -1,13 +1,21 @@
-# Trajectory semantics
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/reference/kinematics-and-trajectory.md
+last_reviewed: 2026-04-18
+---
+# Trajectory Semantics
 
-- `goal_position_error` / `goal_orientation_error` measure final state vs explicit target pose or target joint goal.
-- `start_to_end_position_delta` / `start_to_end_orientation_delta` measure intrinsic displacement across the produced trajectory and are not target errors.
-- Path generation, retiming, and validation are separate stages.
+> Legacy entry page. Canonical architecture doc now lives in `docs/reference/kinematics-and-trajectory.md`.
 
+本入口页只保留摘要与跳转，不再重复维护完整字段、规则副本或实现细节。
 
-## Cache integrity and playback readiness
+- canonical doc 是当前唯一 source of truth。
+- 需要字段级 contract、边界说明或演进策略时，请直接阅读 canonical 文档。
 
-- `JointTrajectory.cache_status` 会根据 `ee_positions`、`joint_positions`、`ee_rotations` 与样本数一致性做归一化。
-- `ready` / `recomputed` 只在缓存完整时成立；若数组缺失或长度不一致，会自动降级为 `partial` 或 `none`。
-- validation 阶段允许为诊断目的做 FK fallback，但该 fallback 不等价于“轨迹已具备 playback cache”。
-- presentation/playback 主链必须以 `trajectory.is_playback_ready` 作为进入 live playback 的硬门槛。
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
+
+请跳转阅读：[`docs/reference/kinematics-and-trajectory.md`](reference/kinematics-and-trajectory.md)

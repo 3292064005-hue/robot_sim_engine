@@ -30,9 +30,8 @@ class PresentationAssembly:
     """Composition bundle used by the Qt shell.
 
     This bundle centralizes presentation-layer object-graph construction so the main window
-    consumes a stable assembly instead of constructing controllers, orchestrators, compatibility
-    adapters, and coordinators inline. Canonical workflow services remain primary while legacy
-    facade adapters are created lazily only when compatibility accessors are used.
+    consumes a stable assembly instead of constructing controllers, orchestrators, and
+    coordinators inline. Canonical workflow services are the only presentation workflow surface.
     """
 
     controller: MainController
@@ -108,7 +107,6 @@ def build_presentation_assembly(project_root: str | Path, *, container: AppConta
         window_runtime=WindowRuntime(
             runtime_services=runtime_services,
             workflow_services=workflow_services,
-            workflow_facades=None,
             task_orchestration=task_orchestration,
         ),
     )

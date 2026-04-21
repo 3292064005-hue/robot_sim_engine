@@ -1,0 +1,43 @@
+contract_version: v2
+roadmap_owner: architecture
+levels:
+  none:
+    collision_level: none
+    precision: none
+    stable_surface: false
+    promotion_state: disabled
+    summary: collision checking disabled
+    roadmap_stage: disabled
+    stable_surface_target: none
+    geometry_requirements: []
+    degradation_policy: no_collision_queries
+  aabb:
+    collision_level: aabb
+    precision: broad_phase
+    stable_surface: true
+    promotion_state: stable
+    summary: AABB broad-phase validation
+    roadmap_stage: stable
+    stable_surface_target: stable
+    geometry_requirements: [declaration_projection, query_aabb]
+    degradation_policy: native_broad_phase
+  capsule:
+    collision_level: capsule
+    precision: capsule_narrow_phase
+    stable_surface: true
+    promotion_state: stable
+    summary: Capsule narrow-phase validation
+    roadmap_stage: stable
+    stable_surface_target: stable
+    geometry_requirements: [capsule_primitives, link_radii]
+    degradation_policy: fallback_to_aabb_when_capsule_contract_missing
+  mesh:
+    collision_level: mesh
+    precision: mesh_exact
+    stable_surface: false
+    promotion_state: planned
+    summary: mesh-level validation
+    roadmap_stage: planned
+    stable_surface_target: mesh_backend_after_exact_contact_validation
+    geometry_requirements: [mesh_assets, exact_contact_backend]
+    degradation_policy: fallback_to_capsule_or_aabb

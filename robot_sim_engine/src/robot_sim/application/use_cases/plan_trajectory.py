@@ -4,6 +4,10 @@ from collections.abc import Callable
 
 from robot_sim.application.dto import TrajectoryRequest
 from robot_sim.application.pipelines.trajectory_pipeline import TrajectoryExecutionPipeline
+from robot_sim.application.pipelines.trajectory_pipeline_registry import (
+    TrajectoryPipelineRegistry,
+    build_default_trajectory_pipeline_registry,
+)
 from robot_sim.application.trajectory_metadata import build_planner_metadata
 from robot_sim.application.use_cases.validate_trajectory import ValidateTrajectoryUseCase
 from robot_sim.core.trajectory.registry import TrajectoryPlannerRegistry
@@ -16,11 +20,20 @@ from robot_sim.model.version_catalog import VersionCatalog, current_version_cata
 class PlanTrajectoryUseCase:
     """Application use case that plans and validates robot trajectories."""
 
-    def __init__(self, planner_registry: TrajectoryPlannerRegistry, version_catalog: VersionCatalog | None = None) -> None:
+    def __init__(
+        self,
+        planner_registry: TrajectoryPlannerRegistry,
+        validate_uc: ValidateTrajectoryUseCase | None = None,
+        pipeline_registry: TrajectoryPipelineRegistry | None = None,
+        version_catalog: VersionCatalog | None = None,
+    ) -> None:
         """Create the trajectory-planning use case.
 
         Args:
             planner_registry: Planner registry used to resolve planning plugins.
+            validate_uc: Explicit validation use case consumed by named pipelines.
+            pipeline_registry: Optional named pipeline registry. When omitted the stable
+                default registry is installed.
             version_catalog: Optional version catalog used for export metadata.
 
         Returns:
@@ -31,9 +44,10 @@ class PlanTrajectoryUseCase:
         """
         if planner_registry is None:
             raise ValueError('PlanTrajectoryUseCase requires an explicit planner registry')
-        self._validate_uc = ValidateTrajectoryUseCase()
+        self._validate_uc = validate_uc or ValidateTrajectoryUseCase()
         self._planner_registry = planner_registry
-        self._pipeline = TrajectoryExecutionPipeline(planner_registry, self._validate_uc)
+        self._pipeline_registry = pipeline_registry or build_default_trajectory_pipeline_registry()
+        self._pipeline = TrajectoryExecutionPipeline(planner_registry, self._validate_uc, self._pipeline_registry)
         self._versions = version_catalog or current_version_catalog()
 
     def _resolve_planner_id(self, req: TrajectoryRequest) -> str:
@@ -51,8 +65,13 @@ class PlanTrajectoryUseCase:
         if cancel_flag is not None and bool(cancel_flag()):
             raise CancelledTaskError('trajectory planning cancelled')
         planner_id = self._resolve_planner_id(req)
+        pipeline_id = self._pipeline.resolve_pipeline_id(req)
         if progress_cb is not None:
-            progress_cb(5.0, 'resolved planner', {'planner_id': planner_id, 'correlation_id': str(correlation_id or '')})
+            progress_cb(
+                5.0,
+                'resolved planner',
+                {'planner_id': planner_id, 'pipeline_id': pipeline_id, 'correlation_id': str(correlation_id or '')},
+            )
         pipeline_result = self._pipeline.execute(req)
         if cancel_flag is not None and bool(cancel_flag()):
             raise CancelledTaskError('trajectory planning cancelled')
@@ -95,15 +114,23 @@ class PlanTrajectoryUseCase:
         metadata.setdefault('path_stage', planner_id)
         metadata['retiming_applied'] = bool(metadata.get('retimed', False))
         metadata.setdefault('retimer_id', 'builtin_scaling')
+        metadata.setdefault('pipeline_id', pipeline_result.pipeline_id)
         if req.max_velocity is not None:
             metadata['requested_max_velocity'] = float(req.max_velocity)
         if req.max_acceleration is not None:
             metadata['requested_max_acceleration'] = float(req.max_acceleration)
+        if req.execution_graph is not None:
+            metadata['execution_graph'] = req.execution_graph.summary()
         if progress_cb is not None:
             progress_cb(
                 100.0,
                 'trajectory planned',
-                {'planner_id': planner_id, 'cache_status': metadata['cache_status'], 'correlation_id': str(correlation_id or '')},
+                {
+                    'planner_id': planner_id,
+                    'pipeline_id': pipeline_result.pipeline_id,
+                    'cache_status': metadata['cache_status'],
+                    'correlation_id': str(correlation_id or ''),
+                },
             )
         planned = JointTrajectory(
             t=traj.t,

@@ -20,6 +20,7 @@ from robot_sim.model.render_telemetry import (
     normalize_render_telemetry_history,
 )
 from robot_sim.presentation.render_telemetry_aggregator import RenderTelemetryAggregator
+from robot_sim.application.services.render_runtime_advisor import RenderRuntimeAdvisor
 
 _RENDER_SEGMENT = 'render'
 
@@ -28,9 +29,9 @@ class RenderTelemetryService:
     """Canonical render-telemetry subsystem for the presentation state layer.
 
     The service owns render-runtime mutation, bounded telemetry/event histories, and
-    backend-performance aggregation. ``RenderStateSegmentStore`` remains the stable
-    compatibility façade, but render mutations now flush only the render segment instead
-    of routing every telemetry update through the global state-store fan-out path.
+    backend-performance aggregation. ``RenderStateSegmentStore`` is the stable render-state
+    entry point, and render mutations now flush only the render segment instead of routing
+    every telemetry update through the global state-store fan-out path.
     """
 
     def __init__(
@@ -38,9 +39,11 @@ class RenderTelemetryService:
         parent,
         *,
         telemetry_aggregator: RenderTelemetryAggregator | None = None,
+        runtime_advisor: RenderRuntimeAdvisor | None = None,
     ) -> None:
         self._parent = parent
         self._telemetry_aggregator = telemetry_aggregator or RenderTelemetryAggregator()
+        self._runtime_advisor = runtime_advisor or RenderRuntimeAdvisor()
 
     @property
     def state(self):
@@ -132,6 +135,21 @@ class RenderTelemetryService:
             snapshot_strategy='identity',
         )
 
+    def subscribe_render_runtime_advice(
+        self,
+        callback: Callable[[dict[str, object]], None],
+        *,
+        emit_current: bool = False,
+    ) -> Callable[[], None]:
+        """Subscribe to structured render-runtime strategy advice."""
+        return self._parent.subscribe_selector(
+            lambda state: dict(getattr(state, 'render_runtime_advice', {}) or {}),
+            callback,
+            emit_current=emit_current,
+            segment=_RENDER_SEGMENT,
+            snapshot_strategy='identity',
+        )
+
     def patch_render_capability(
         self,
         capability: str,
@@ -171,6 +189,7 @@ class RenderTelemetryService:
                 metadata=metadata,
                 telemetry_limit=telemetry_limit,
             )
+        self._refresh_runtime_advice()
         return self._parent.notify(segment=_RENDER_SEGMENT) if notify else self.state
 
     def patch_render_runtime(
@@ -195,6 +214,7 @@ class RenderTelemetryService:
                 metadata=metadata,
                 telemetry_limit=telemetry_limit,
             )
+        self._refresh_runtime_advice()
         return self._parent.notify(segment=_RENDER_SEGMENT) if notify else self.state
 
     def record_render_operation_span(
@@ -239,6 +259,7 @@ class RenderTelemetryService:
             finished_at=finished_at,
         )
         self._telemetry_aggregator.append_operation_span(self.state, span, span_limit=span_limit)
+        self._refresh_runtime_advice()
         return self._parent.notify(segment=_RENDER_SEGMENT) if notify else self.state
 
     def record_render_sampling_counter(
@@ -288,6 +309,7 @@ class RenderTelemetryService:
             counters,
             counter_limit=counter_limit,
         )
+        self._refresh_runtime_advice()
         return self._parent.notify(segment=_RENDER_SEGMENT) if notify else self.state
 
     def _replace_runtime_capability(
@@ -307,6 +329,28 @@ class RenderTelemetryService:
         }
         kwargs[normalized] = payload
         return RenderRuntimeState(**kwargs)
+
+    def _refresh_runtime_advice(self) -> None:
+        """Refresh structured render-runtime strategy advice from current telemetry state.
+
+        Returns:
+            None: Mutates the shared render segment in-place.
+
+        Raises:
+            None: Advice generation is defensive and degrades to an empty payload on error.
+        """
+        try:
+            self.state.render_runtime_advice = self._runtime_advisor.build_advice(
+                self.state.render_runtime,
+                self.state.render_backend_performance,
+            )
+        except (AttributeError, KeyError, TypeError, ValueError):
+            self.state.render_runtime_advice = {
+                'severity': 'warning',
+                'recommendation_count': 0,
+                'recommendations': [],
+                'error': 'render_runtime_advice_refresh_failed',
+            }
 
     def _record_render_telemetry(
         self,

@@ -168,6 +168,10 @@ class RunIKUseCase:
             'orientation_weight': req.constraint_summary.orientation_weight,
             'notes': list(req.constraint_summary.notes),
         }
+        if req.execution_graph is not None:
+            diagnostics['execution_graph'] = req.execution_graph.summary()
+        if req.request_metadata:
+            diagnostics['request_metadata'] = dict(req.request_metadata)
         if deadline is not None:
             diagnostics['timeout_ms'] = float(req.timeout_ms or 0.0)
             if not result.success and result.message == 'cancelled' and result.stop_reason == 'cancelled':

@@ -12,7 +12,7 @@ def test_read_os_release_parses_key_values(tmp_path) -> None:
     assert payload['NAME'] == 'Ubuntu'
 
 
-def test_headless_baseline_allows_python_313_with_warning() -> None:
+def test_headless_baseline_allows_python_313_without_warning() -> None:
     report = evaluate_runtime_baseline(
         'headless',
         platform_system='Linux',
@@ -22,7 +22,7 @@ def test_headless_baseline_allows_python_313_with_warning() -> None:
     )
     assert report.ok is True
     assert report.errors == ()
-    assert report.warnings
+    assert report.warnings == ()
 
 
 def test_gui_baseline_requires_ubuntu_2204_python310_and_pyside65() -> None:

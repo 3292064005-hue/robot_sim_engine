@@ -43,6 +43,7 @@ def _run_clean_headless_mainline() -> None:
         container.robot_registry,
         container.fk_uc,
         import_robot_uc=container.import_robot_uc,
+        application_workflow=container.workflow_facade,
     )
     controller.load_robot('planar_2dof')
     assert store.state.robot_spec is not None

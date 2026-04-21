@@ -5,16 +5,19 @@ from pathlib import Path
 
 import numpy as np
 
-from robot_sim.application.dto import FKRequest
 from robot_sim.application.services.robot_registry import RobotRegistry
-from robot_sim.application.services.runtime_asset_service import RobotRuntimeAssetService
 from robot_sim.application.use_cases.run_fk import RunFKUseCase
-from robot_sim.domain.enums import AppExecutionState
 from robot_sim.model.imported_robot_result import ImportedRobotResult
-from robot_sim.model.playback_state import PlaybackState
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.presentation.state_store import StateStore
+
+from typing import TYPE_CHECKING
+from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
+from robot_sim.presentation.state_events import FKProjectedEvent, WarningProjectedEvent
 from robot_sim.presentation.validators.input_validator import InputValidator
+
+if TYPE_CHECKING:  # pragma: no cover
+    from robot_sim.app.workflow_facade import ApplicationWorkflowFacade
 
 
 class RobotController:
@@ -25,13 +28,20 @@ class RobotController:
         fk_uc: RunFKUseCase,
         import_robot_uc=None,
         *,
-        runtime_asset_service: RobotRuntimeAssetService | None = None,
+        runtime_projection_service: RuntimeProjectionService | None = None,
+        runtime_asset_service=None,
+        application_workflow: 'ApplicationWorkflowFacade | None' = None,
     ) -> None:
         self._state_store = state_store
         self._registry = registry
         self._fk_uc = fk_uc
         self._import_robot_uc = import_robot_uc
-        self._runtime_asset_service = runtime_asset_service or RobotRuntimeAssetService()
+        self._application_workflow = application_workflow
+        self._runtime_projection_service = runtime_projection_service or RuntimeProjectionService(
+            state_store,
+            fk_uc,
+            runtime_asset_service=runtime_asset_service,
+        )
 
     def _load_spec_into_runtime(
         self,
@@ -57,41 +67,20 @@ class RobotController:
             Runtime geometry and planning-scene state are derived from one canonical asset
             service so validation/export/render share the same scene authority.
         """
-        fk = self._fk_uc.execute(FKRequest(spec, spec.home_q.copy()))
-        runtime_assets = self._runtime_asset_service.build_assets(
+        load_result = self._runtime_projection_service.load_robot_spec(
             spec,
             robot_geometry=robot_geometry,
             collision_geometry=collision_geometry,
         )
-        scene_revision = max(
-            int(self._state_store.state.scene_revision) + 1,
-            int(getattr(runtime_assets.planning_scene, 'revision', 0)),
-        )
-        self._state_store.patch(
-            robot_spec=spec,
-            q_current=spec.home_q.copy(),
-            fk_result=fk,
-            target_pose=None,
-            ik_result=None,
-            trajectory=None,
-            benchmark_report=None,
-            playback=PlaybackState(),
-            last_error='',
-            last_warning='',
-            app_state=AppExecutionState.ROBOT_READY,
-            scene_revision=scene_revision,
-            robot_geometry=runtime_assets.robot_geometry,
-            collision_geometry=runtime_assets.collision_geometry,
-        )
-        self._state_store.patch_scene(
-            runtime_assets.scene_summary,
-            planning_scene=runtime_assets.planning_scene,
-            scene_revision=scene_revision,
-        )
-        return fk
+        return load_result.fk_result
+
+    def _application_workflow_or_raise(self):
+        if self._application_workflow is None:
+            raise RuntimeError('application workflow facade is not configured')
+        return self._application_workflow
 
     def load_robot(self, name: str):
-        spec = self._registry.load(name)
+        spec = self._application_workflow_or_raise().load_robot_spec(name)
         return self._load_spec_into_runtime(spec)
 
     def _editor_mutates_runtime_model(self, existing_spec: RobotSpec, rows) -> bool:
@@ -264,16 +253,25 @@ class RobotController:
             self._load_spec_into_runtime(replace(spec, name=persisted_name, display_name=display_name))
         return path
 
-    def import_robot(self, source: str, importer_id: str | None = None) -> ImportedRobotResult:
-        """Import an external robot config, persist it safely, and load it into runtime state.
+    def import_robot(
+        self,
+        source: str,
+        importer_id: str | None = None,
+        *,
+        persist: bool = True,
+    ) -> ImportedRobotResult:
+        """Import an external robot config and optionally persist it into the registry.
 
         Args:
             source: User-selected robot source path (YAML / URDF / plugin importer input).
             importer_id: Optional importer override selected from the UI.
+            persist: When ``True`` the normalized import is written into the registry before
+                runtime projection. When ``False`` the import is staged transiently and must
+                be saved later through :meth:`save_current_robot`.
 
         Returns:
-            ImportedRobotResult: Structured import result containing the persisted path, the
-                loaded FK projection, and bounded warning metadata.
+            ImportedRobotResult: Structured import result containing the resolved runtime
+                identity, FK projection, and bounded warning metadata.
 
         Raises:
             RuntimeError: If the controller was not configured with an import use case.
@@ -281,49 +279,27 @@ class RobotController:
             Exception: Propagates importer parsing/validation errors.
 
         Boundary behavior:
-            Imports are persisted into the canonical robot registry without overwriting an
-            unrelated existing config silently. If the preferred slug is already occupied,
-            the registry allocates a deterministic suffixed name before the imported robot is
-            loaded into the live presentation state together with its canonical runtime
-            geometry and planning-scene authority.
+            The controller always normalizes the imported spec to a deterministic runtime name.
+            Persisted imports become immediately reloadable through ``RobotRegistry.load``;
+            staged imports keep the same collision-free identity but defer disk writes until a
+            later save/publish operation.
         """
-        if self._import_robot_uc is None:
-            raise RuntimeError('robot import use case is not configured')
-        source_path = Path(source).expanduser().resolve()
-        if not source_path.exists():
-            raise FileNotFoundError(f'import source not found: {source_path}')
-        bundle = self._import_robot_uc.execute_bundle(source_path, importer_id=importer_id)
-        requested_id = importer_id or source_path.suffix.lower().lstrip('.')
-        if requested_id == 'yml':
-            requested_id = 'yaml'
-        imported_spec = self._import_robot_uc.normalize_bundle_spec(bundle, requested_id=requested_id)
-        preferred_name = str(getattr(imported_spec, 'name', '') or source_path.stem)
-        exclude_path = source_path if source_path.parent.resolve() == self._registry.robots_dir.resolve() else None
-        persisted_name = self._registry.next_available_name(preferred_name, exclude_path=exclude_path)
-        persisted_spec = replace(imported_spec, name=persisted_name)
-        persisted_path = self._registry.save(persisted_spec, name=persisted_name)
+        workflow = self._application_workflow_or_raise()
+        resolved = workflow.resolve_import(source, importer_id=importer_id, persist=persist)
         fk = self._load_spec_into_runtime(
-            persisted_spec,
-            robot_geometry=bundle.geometry,
-            collision_geometry=bundle.collision_geometry,
+            resolved.spec,
+            robot_geometry=resolved.robot_geometry,
+            collision_geometry=resolved.collision_geometry,
         )
         loaded_spec = self._state_store.state.robot_spec
         metadata = dict(getattr(loaded_spec, 'metadata', {}) or {})
         warnings = tuple(str(item) for item in metadata.get('warnings', ()) or ())
-        importer_resolved = str(metadata.get('importer_resolved', importer_id or ''))
-        fidelity = str(metadata.get('import_fidelity', 'unknown'))
         if warnings:
-            self._state_store.patch(last_warning=' | '.join(warnings))
-        return ImportedRobotResult(
-            spec=loaded_spec,
+            self._state_store.dispatch(WarningProjectedEvent(message=' | '.join(warnings), code='import_warnings'))
+        return workflow.imported_robot_result_from_loaded(
+            resolved,
             fk_result=fk,
-            persisted_path=persisted_path,
-            source_path=source_path,
-            importer_id=importer_resolved,
-            fidelity=fidelity,
-            warnings=warnings,
-            geometry_available=bool(metadata.get('geometry_available', False)),
-            source_model_summary=dict(metadata.get('source_model_summary', {}) or {}),
+            loaded_spec=loaded_spec,
         )
 
     def run_fk(self, q=None):
@@ -332,9 +308,15 @@ class RobotController:
         if spec is None or q_current is None:
             raise RuntimeError('robot not loaded')
         q_current = InputValidator.validate_joint_vector(spec, q_current, clamp=False)
-        self._state_store.patch(q_current=q_current.copy())
-        fk = self._fk_uc.execute(FKRequest(spec, q_current))
-        self._state_store.patch(fk_result=fk, scene_revision=self._state_store.state.scene_revision + 1)
+        workflow = self._application_workflow_or_raise()
+        fk = workflow.run_fk(spec, q_current)
+        self._state_store.dispatch(
+            FKProjectedEvent(
+                q_current=q_current.copy(),
+                fk_result=fk,
+                scene_revision=self._state_store.state.scene_revision + 1,
+            )
+        )
         return fk
 
     def sample_ee_positions(self, q_samples) -> np.ndarray:
@@ -343,6 +325,6 @@ class RobotController:
             raise RuntimeError('robot not loaded')
         pts = []
         for q in np.asarray(q_samples, dtype=float):
-            fk = self._fk_uc.execute(FKRequest(spec, np.asarray(q, dtype=float)))
+            fk = self._application_workflow_or_raise().run_fk(spec, np.asarray(q, dtype=float))
             pts.append(np.asarray(fk.ee_pose.p, dtype=float))
         return np.asarray(pts, dtype=float)

@@ -1,8 +1,7 @@
-# Legacy compatibility override stub.
+# Non-runtime compatibility stub.
 #
 # Repository-managed runtime baselines live in configs/profiles/*.yaml.
-# This file is intentionally not used by the default container path.
-# To re-enable legacy override behavior for ad-hoc local workflows, set:
-#   ROBOT_SIM_ENABLE_LEGACY_LOCAL_OVERRIDE=1
+# The default runtime path does not consume this file; it remains only to preserve
+# legacy entry points without creating a second runtime truth source.
 # Prefer configs/local/solver.local.yaml or ROBOT_SIM_SOLVER_CONFIG_OVERRIDE instead.
 {}

@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Callable
 
 from robot_sim.model.session_state import SessionState
+from robot_sim.application.services.render_runtime_advisor import RenderRuntimeAdvisor
 from robot_sim.presentation.state_segments import (
     RenderStateSegmentStore,
     SessionStateSegmentStore,
@@ -11,6 +12,7 @@ from robot_sim.presentation.state_segments import (
 )
 from robot_sim.presentation.state_store_api import StateStoreApiMixin
 from robot_sim.presentation.state_store_registry import StateSubscriberRegistry
+from robot_sim.presentation.state_events import reduce_state_event
 from robot_sim.presentation.state_store_support import (
     GLOBAL_SEGMENT as _GLOBAL_SEGMENT,
     RENDER_SEGMENT as _RENDER_SEGMENT,
@@ -32,18 +34,18 @@ from robot_sim.presentation.state_store_support import (
 class StateStore(StateStoreApiMixin):
     """Observable mutable state container for the GUI layer.
 
-    The public ``StateStore`` API remains intact for compatibility. Internally the store
-    now keeps segment-local subscriber registries so render telemetry can notify only
+    The public ``StateStore`` API exposes the canonical GUI state surface. Internally the
+    store keeps segment-local subscriber registries so render telemetry can notify only
     render-aware projections instead of forcing every selector subscriber onto the hot
     path. Global subscribers remain supported and continue to observe all segment updates.
     """
 
-    def __init__(self, state: SessionState | None = None) -> None:
+    def __init__(self, state: SessionState | None = None, *, render_runtime_advisor: RenderRuntimeAdvisor | None = None) -> None:
         self._state = state or SessionState()
         self._subscriber_registry = StateSubscriberRegistry(segments=_SEGMENT_NAMES)
         self.session_store = SessionStateSegmentStore(self)
         self.task_store = TaskStateSegmentStore(self)
-        self.render_store = RenderStateSegmentStore(self)
+        self.render_store = RenderStateSegmentStore(self, runtime_advisor=render_runtime_advisor)
 
     @property
     def state(self) -> SessionState:
@@ -117,7 +119,7 @@ class StateStore(StateStoreApiMixin):
                 register under ``render`` so unrelated state patches do not fan out into
                 render diagnostics observers.
             snapshot_strategy: Snapshot policy used to persist the last selected value.
-                ``deepcopy`` preserves the historical defensive behavior, ``identity``
+                ``deepcopy`` preserves the default defensive behavior, ``identity``
                 reuses the selected immutable payload directly, and ``custom`` delegates
                 to ``snapshot_factory``.
             snapshot_factory: Optional custom snapshot builder used when
@@ -133,7 +135,7 @@ class StateStore(StateStoreApiMixin):
         Boundary behavior:
             Render telemetry selectors may opt into ``identity`` snapshots because they
             already project frozen dataclasses / tuples. Other selectors keep the
-            historical ``deepcopy`` default for compatibility.
+            default ``deepcopy`` snapshot policy.
         """
         sentinel = object()
         last_value: object = sentinel
@@ -230,6 +232,21 @@ class StateStore(StateStoreApiMixin):
         for key, value in kwargs.items():
             setattr(self._state, key, value)
         return self.notify(segment=segment)
+
+    def dispatch(self, event: object) -> SessionState:
+        """Reduce one canonical presentation-state event and notify affected segments.
+
+        Args:
+            event: Structured event dataclass understood by ``reduce_state_event``.
+
+        Returns:
+            SessionState: The mutated shared state after reducer application.
+
+        Raises:
+            TypeError: If ``event`` is unsupported by the reducer.
+        """
+        segments = normalize_segments(reduce_state_event(self._state, event))
+        return self.notify(segment=segments)
 
     def replace(self, state: SessionState) -> SessionState:
         """Replace the entire session state and notify every subscriber bucket."""

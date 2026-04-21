@@ -105,3 +105,74 @@ def test_canonical_articulated_projection_rejects_unresolved_parent_chain() -> N
         assert 'could not resolve parent link' in str(exc)
     else:
         raise AssertionError('expected ValueError for unresolved canonical parent chain')
+
+
+
+def test_robot_spec_runtime_projection_exposes_execution_layers(planar_spec) -> None:
+    runtime_summary = planar_spec.runtime_model.summary()
+    assert runtime_summary['primary_execution_surface'] == 'articulated_model'
+    assert runtime_summary['execution_contract_version'] == 'v2'
+    assert runtime_summary['execution_layers']['articulated_graph']['surface'] == 'articulated_model'
+    assert runtime_summary['articulated_topology']['joint_count'] == planar_spec.dof
+    assert runtime_summary['articulated_topology']['supports_serial_tree_execution'] is True
+
+
+def test_articulated_model_topology_summary_tracks_roots_and_leaves(planar_spec) -> None:
+    topology = planar_spec.articulated_model.topology_summary
+    assert topology['root_count'] == 1
+    assert topology['leaf_count'] == 1
+    assert topology['edge_pairs'] == [['link_0', 'link_1'], ['link_1', 'link_2']]
+    assert topology['branching_joint_names'] == []
+
+
+def test_articulated_branch_active_path_descriptor_exposes_tree_execution_semantics() -> None:
+    model = ArticulatedRobotModel(
+        name='branch_active_path',
+        root_link='base',
+        joint_models=(
+            ArticulatedJointModel(
+                name='j0',
+                parent_link='base',
+                child_link='shoulder',
+                joint_type=JointType.REVOLUTE,
+                axis=(0.0, 0.0, 1.0),
+                origin_translation=(0.0, 0.0, 0.2),
+                origin_rpy=(0.0, 0.0, 0.0),
+                parent_index=None,
+            ),
+            ArticulatedJointModel(
+                name='j1',
+                parent_link='shoulder',
+                child_link='left_tip',
+                joint_type=JointType.REVOLUTE,
+                axis=(0.0, 1.0, 0.0),
+                origin_translation=(0.5, 0.0, 0.0),
+                origin_rpy=(0.0, 0.0, 0.0),
+                parent_index=0,
+            ),
+            ArticulatedJointModel(
+                name='j2',
+                parent_link='shoulder',
+                child_link='right_tip',
+                joint_type=JointType.REVOLUTE,
+                axis=(0.0, 1.0, 0.0),
+                origin_translation=(0.6, 0.0, 0.0),
+                origin_rpy=(0.0, 0.0, 0.0),
+                parent_index=0,
+            ),
+        ),
+        link_names=('base', 'shoulder', 'left_tip', 'right_tip'),
+        base_T=np.eye(4, dtype=float),
+        tool_T=np.eye(4, dtype=float),
+        home_q=np.zeros(3, dtype=float),
+        semantic_family='articulated_tree_projection',
+        metadata={'selected_joint_names': ['j0', 'j2']},
+    )
+    descriptor = model.execution_descriptor
+    assert descriptor.execution_semantics == 'tree_active_path'
+    assert descriptor.execution_joint_indices == (0, 2)
+    assert model.execution_joint_names == ('j0', 'j2')
+    frames = model.forward_transforms(np.array([0.0, 0.1, -0.2], dtype=float))
+    assert len(frames) == 3
+    graph_frames = model.graph_forward_transforms(np.array([0.0, 0.1, -0.2], dtype=float))
+    assert len(graph_frames) == 4

@@ -4,6 +4,8 @@ from robot_sim.application.planner_capabilities import planner_capability_map
 from robot_sim.domain.capabilities import CapabilityDescriptor, CapabilityMatrix
 from robot_sim.domain.collision_backends import default_collision_backend_registry
 from robot_sim.domain.collision_fidelity import validation_backend_capability_matrix
+from robot_sim.application.services.collision_backend_runtime import install_collision_backend_runtime_plugins, resolve_collision_backend_runtime
+from robot_sim.application.services.scene_backend_runtime import install_scene_backend_runtime_plugins, resolve_scene_backend_runtime
 from robot_sim.domain.enums import ModuleStatus
 from robot_sim.domain.runtime_contracts import render_capability_matrix_markdown
 
@@ -23,6 +25,9 @@ class CapabilityService:
         self._runtime_feature_policy = runtime_feature_policy
         self._collision_registry = default_collision_backend_registry()
         self._plugin_loader = plugin_loader
+        if self._plugin_loader is not None:
+            install_scene_backend_runtime_plugins(self._plugin_loader.registrations('scene_backend'))
+            install_collision_backend_runtime_plugins(self._plugin_loader.registrations('collision_backend'))
 
     @property
     def _experimental_enabled(self) -> bool:
@@ -30,7 +35,7 @@ class CapabilityService:
 
     def _scene_features(self) -> tuple[CapabilityDescriptor, ...]:
         validation_matrix = validation_backend_capability_matrix(experimental_enabled=self._experimental_enabled)
-        scene_plugin_rows = [row for row in self._plugin_audit_rows() if str(row.get('kind', '')) == 'scene_backend']
+        scene_plugin_rows = [row for row in self._plugin_capability_rows() if str(row.get('kind', '')) == 'scene_backend']
         planning_scene_descriptor = CapabilityDescriptor(
             'planning_scene',
             'Planning scene',
@@ -53,6 +58,10 @@ class CapabilityService:
                 'validation_backend_capabilities': validation_matrix,
                 'scene_backend_plugin_kinds': ['scene_backend'],
                 'scene_backend_plugin_ids': [str(row['id']) for row in scene_plugin_rows if bool(row.get('enabled', False))],
+                'scene_backend_runtime': resolve_scene_backend_runtime('planning_scene_backend').capabilities(),
+                'collision_backend_runtimes': {backend: resolve_collision_backend_runtime(backend).capabilities() for backend in self._collision_registry.active_backend_ids(experimental_enabled=self._experimental_enabled)},
+                'scene_authority_model': 'canonical_declaration_authority',
+                'validation_adapter_model': 'explicit_backend_projection',
             },
         )
         plugin_surface = CapabilityDescriptor(
@@ -65,6 +74,7 @@ class CapabilityService:
                 'plugin_surface_version': 'v1',
                 'declared_plugin_ids': [str(row['id']) for row in scene_plugin_rows],
                 'enabled_plugin_ids': [str(row['id']) for row in scene_plugin_rows if bool(row.get('enabled', False))],
+                'production_plugin_ids': self._plugin_ids_by_tier('scene_backend', 'production'),
                 'scene_geometry_contract_version': 'v1',
                 'scene_validation_capability_matrix_version': 'v1',
             },
@@ -81,8 +91,88 @@ class CapabilityService:
             return ()
         return tuple(self._plugin_loader.audit())
 
+    def _plugin_capability_rows(self) -> tuple[dict[str, object], ...]:
+        if self._plugin_loader is None:
+            return ()
+        return tuple(self._plugin_loader.audit_split()['capability_entries'])
+
+    def _plugin_ids_by_tier(self, kind: str, tier: str) -> list[str]:
+        return [
+            str(row['id'])
+            for row in self._plugin_capability_rows()
+            if str(row.get('kind', '')) == str(kind) and str(row.get('deployment_tier', 'production')) == str(tier) and bool(row.get('enabled', False))
+        ]
+
+    def build_plugin_marketplace(self) -> dict[str, object]:
+        """Project plugin audit rows into a capability-market summary."""
+        audit_rows = list(self._plugin_audit_rows())
+        marketplace: dict[str, dict[str, object]] = {}
+        for row in audit_rows:
+            kind = str(row.get('kind', '') or 'unknown')
+            entry = marketplace.setdefault(kind, {
+                'kind': kind,
+                'declared_plugin_ids': [],
+                'enabled_plugin_ids': [],
+                'production_plugin_ids': [],
+                'experimental_plugin_ids': [],
+                'status_counts': {},
+                'deployment_tier_counts': {},
+            })
+            plugin_id = str(row.get('id', '') or '')
+            status = str(row.get('status', 'stable') or 'stable')
+            tier = str(row.get('deployment_tier', 'production') or 'production')
+            if plugin_id:
+                entry['declared_plugin_ids'].append(plugin_id)
+                if bool(row.get('enabled', False)):
+                    entry['enabled_plugin_ids'].append(plugin_id)
+                if tier == 'production':
+                    entry['production_plugin_ids'].append(plugin_id)
+                if tier == 'experimental':
+                    entry['experimental_plugin_ids'].append(plugin_id)
+            entry['status_counts'][status] = int(entry['status_counts'].get(status, 0)) + 1
+            entry['deployment_tier_counts'][tier] = int(entry['deployment_tier_counts'].get(tier, 0)) + 1
+        return {
+            'plugin_surface_version': 'v1',
+            'kinds': {key: value for key, value in sorted(marketplace.items())},
+            'total_declared_plugins': int(len(audit_rows)),
+            'total_enabled_plugins': int(sum(1 for row in audit_rows if bool(row.get('enabled', False)))),
+        }
+
+    def build_domain_map(self, *, solver_registry, planner_registry, importer_registry) -> dict[str, object]:
+        """Build a first-class domain map separating core, adapter, and plugin surfaces."""
+        return {
+            'scene': {
+                'canonical_core': 'planning_scene',
+                'canonical_runtime': resolve_scene_backend_runtime('planning_scene_backend').capabilities(),
+                'adapter_surfaces': ['scene_backend', 'collision_backend'],
+                'plugin_surfaces': {
+                    'scene_backend': self._plugin_ids_by_tier('scene_backend', 'production'),
+                    'collision_backend': self._plugin_ids_by_tier('collision_backend', 'production'),
+                },
+                'active_collision_backend_runtimes': {backend: resolve_collision_backend_runtime(backend).capabilities() for backend in self._collision_registry.active_backend_ids(experimental_enabled=self._experimental_enabled)},
+            },
+            'kinematics': {
+                'canonical_core': 'ik_solver_registry',
+                'alternatives': [descriptor.solver_id for descriptor in solver_registry.descriptors()],
+            },
+            'planning': {
+                'canonical_core': 'trajectory_planner_registry',
+                'alternatives': [descriptor.planner_id for descriptor in planner_registry.descriptors()],
+            },
+            'import': {
+                'canonical_core': 'robot_importer_registry',
+                'alternatives': [descriptor.importer_id for descriptor in importer_registry.descriptors()],
+            },
+            'render': {
+                'canonical_core': 'render_runtime_state',
+                'adapter_surfaces': ['render_runtime_advice'],
+            },
+            'plugin_marketplace': self.build_plugin_marketplace(),
+        }
+
     def _plugin_features(self) -> tuple[CapabilityDescriptor, ...]:
         audit_rows = self._plugin_audit_rows()
+        capability_rows = self._plugin_capability_rows()
         descriptors = [
             CapabilityDescriptor(
                 key='plugin_host',
@@ -93,9 +183,16 @@ class CapabilityService:
                     'plugin_surface_version': 'v1',
                     'declared_plugin_count': len(audit_rows),
                     'enabled_plugin_count': sum(1 for row in audit_rows if bool(row.get('enabled', False))),
+                    'runtime_provider_count': len(capability_rows),
+                    'runtime_provider_enabled_count': sum(1 for row in capability_rows if bool(row.get('enabled', False))),
                     'active_profile': str(getattr(self._runtime_feature_policy, 'active_profile', 'default') or 'default'),
                     'plugin_discovery_enabled': bool(getattr(self._runtime_feature_policy, 'plugin_discovery_enabled', False)),
                     'plugin_status_allowlist': list(getattr(self._runtime_feature_policy, 'plugin_status_allowlist', ()) or ()),
+                    'counts_by_tier': {
+                        tier: sum(1 for row in audit_rows if str(row.get('deployment_tier', 'production')) == tier)
+                        for tier in ('production', 'experimental', 'fixture', 'compatibility')
+                    },
+                    'plugin_marketplace': self.build_plugin_marketplace(),
                 },
             ),
         ]
@@ -109,6 +206,7 @@ class CapabilityService:
                 metadata={
                     'plugin_id': str(row['id']),
                     'kind': str(row.get('kind', '')),
+                    'deployment_tier': str(row.get('deployment_tier', 'production')),
                     'source': str(row.get('source', '')),
                     'reason': str(row.get('reason', '')),
                     'enabled_profiles': list(row.get('enabled_profiles', []) or []),
@@ -121,7 +219,7 @@ class CapabilityService:
                     **dict(row.get('metadata', {}) or {}),
                 },
             )
-            for row in audit_rows
+            for row in capability_rows
         )
         return tuple(descriptors)
 
@@ -165,7 +263,7 @@ class CapabilityService:
             )
             for desc in importer_registry.descriptors()
         )
-        collision_plugin_rows = [row for row in self._plugin_audit_rows() if str(row.get('kind', '')) == 'collision_backend']
+        collision_plugin_rows = [row for row in self._plugin_capability_rows() if str(row.get('kind', '')) == 'collision_backend']
         collision_features = (
             CapabilityDescriptor(
                 'collision_backend_plugin_surface',
@@ -214,6 +312,11 @@ class CapabilityService:
                 metadata={'capability_matrix_version': 'v1', 'consumed_by': ['export_manifest', 'diagnostics', 'ui_state']},
             ),
         )
+        domain_map = self.build_domain_map(
+            solver_registry=solver_registry,
+            planner_registry=planner_registry,
+            importer_registry=importer_registry,
+        )
         return CapabilityMatrix(
             solvers=solvers,
             planners=tuple(planners),
@@ -222,7 +325,13 @@ class CapabilityService:
             export_features=export_features,
             scene_features=self._scene_features(),
             collision_features=tuple(collision_features),
-            plugin_features=self._plugin_features(),
+            plugin_features=self._plugin_features() + (CapabilityDescriptor(
+                'runtime_domain_map',
+                'Runtime domain map',
+                owner_module='capability_service',
+                status=ModuleStatus.STABLE,
+                metadata=domain_map,
+            ),),
         )
 
     def render_markdown(self, *, solver_registry=None, planner_registry=None, importer_registry=None) -> str:

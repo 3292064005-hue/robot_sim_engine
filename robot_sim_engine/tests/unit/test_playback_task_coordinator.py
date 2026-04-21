@@ -36,7 +36,7 @@ class DummyWindow:
             set_playback_options=lambda **kwargs: self._options.append(kwargs),
         )
         self.runtime_facade = SimpleNamespace(state=SimpleNamespace(trajectory=SimpleNamespace()))
-        self.playback_facade = SimpleNamespace(
+        self.motion_workflow = SimpleNamespace(
             ensure_playback_ready=lambda strict=True: None,
             set_playback_options=lambda **kwargs: self._options.append(kwargs),
         )
@@ -59,7 +59,7 @@ class DummyWindow:
 
 def test_playback_task_coordinator_covers_play_pause_stop():
     window = DummyWindow()
-    coord = PlaybackTaskCoordinator(window, runtime=window.runtime_facade, playback=window.playback_facade, playback_threader=window.playback_threader)
+    coord = PlaybackTaskCoordinator(window, runtime=window.runtime_facade, playback=window.motion_workflow, playback_threader=window.playback_threader)
     coord.play()
     coord.pause()
     coord.stop()

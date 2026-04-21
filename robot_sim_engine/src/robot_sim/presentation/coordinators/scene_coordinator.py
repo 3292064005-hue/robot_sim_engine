@@ -28,19 +28,15 @@ class SceneCoordinator:
         threader=None,
         screenshot_service: ScreenshotService | None = None,
         capture_scene_use_case: CaptureSceneUseCase | None = None,
-        capture_scene_uc: CaptureSceneUseCase | None = None,
         scene_authority_service: SceneAuthorityService | None = None,
         scene_capture_service: SceneCaptureService | None = None,
     ) -> None:
         """Construct the stable scene coordinator."""
-        if capture_scene_use_case is not None and capture_scene_uc is not None and capture_scene_use_case is not capture_scene_uc:
-            raise ValueError('capture_scene_use_case and capture_scene_uc must reference the same use case when both are provided')
         self.window = window
         self.runtime = require_dependency(runtime, 'runtime_facade')
         self.threader = require_dependency(threader, 'threader')
         self.screenshot_service = screenshot_service or ScreenshotService()
-        effective_capture_use_case = capture_scene_use_case or capture_scene_uc
-        self.capture_scene_use_case = effective_capture_use_case or CaptureSceneUseCase(self.screenshot_service)
+        self.capture_scene_use_case = capture_scene_use_case or CaptureSceneUseCase(self.screenshot_service)
         self.scene_capture_service = scene_capture_service or SceneCaptureService(self.capture_scene_use_case)
         self.scene_authority_service = scene_authority_service or SceneAuthorityService()
 
@@ -63,12 +59,17 @@ class SceneCoordinator:
                 authority='scene_coordinator',
                 edit_surface='stable_scene_editor',
             )
-            updated_scene = self.scene_authority_service.apply_obstacle_edit(
+            mutation = self.scene_authority_service.execute_obstacle_edit(
                 scene,
                 edit,
                 source='scene_toolbar',
             )
+            updated_scene = mutation.scene
             self.runtime.state_store.patch_scene(updated_scene.summary(), planning_scene=updated_scene, scene_revision=int(updated_scene.revision))
+            runtime_asset_service = getattr(self.runtime, 'runtime_asset_service', None)
+            robot_spec = getattr(self.runtime.state, 'robot_spec', None)
+            if runtime_asset_service is not None and robot_spec is not None:
+                runtime_asset_service.invalidate(robot_spec, reason='scene_edit')
             require_view(self.window, 'project_scene_obstacles_updated', updated_scene)
 
         run_presented(self.window, action, title='场景障碍更新失败')
@@ -82,8 +83,16 @@ class SceneCoordinator:
                 authority='scene_coordinator',
                 edit_surface='stable_scene_editor',
             )
-            updated_scene = scene.clear_obstacles()
+            mutation = self.scene_authority_service.execute_clear_obstacles(
+                scene,
+                source='scene_toolbar',
+            )
+            updated_scene = mutation.scene
             self.runtime.state_store.patch_scene(updated_scene.summary(), planning_scene=updated_scene, scene_revision=int(updated_scene.revision))
+            runtime_asset_service = getattr(self.runtime, 'runtime_asset_service', None)
+            robot_spec = getattr(self.runtime.state, 'robot_spec', None)
+            if runtime_asset_service is not None and robot_spec is not None:
+                runtime_asset_service.invalidate(robot_spec, reason='scene_edit')
             require_view(self.window, 'project_scene_obstacles_updated', updated_scene)
 
         run_presented(self.window, action, title='清空场景障碍失败')

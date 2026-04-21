@@ -1,40 +1,22 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/governance/external-code-intake-policy.md
+last_reviewed: 2026-04-18
+---
 # External code intake policy
 
-## Allowed intake modes
+> Legacy entry page. Canonical governance policy now lives in `docs/governance/external-code-intake-policy.md`.
 
-### 1. White-list migration
-Only permissive-license sources may be copied or closely adapted into this
-repository.
+本入口页只保留 intake 范围摘要与跳转，不再重复维护完整白名单/黑盒重实现规则。
+当前治理结论：
+- 允许的 intake 方式仍分为 **white-list migration** 与 **black-box reimplementation**。
+- 许可证、第三方声明、变更记录、回滚路径与同步测试/文档更新的强约束，以 canonical policy 为准。
+- 任何需要字段级要求、许可证边界或 intake checklist 的场景，都应直接阅读 canonical 文档。
 
-Accepted families:
-- MIT
-- BSD-2-Clause / BSD-3-Clause
-- Apache-2.0
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
 
-Requirements:
-- preserve upstream copyright / license notices when code is copied
-- register the source in `THIRD_PARTY_NOTICES.md`
-- document the intake in commit history and release notes when user-facing
-  behavior changes
-
-### 2. Black-box reimplementation
-Any external project may be used as a behavioral or architectural benchmark
-without copying implementation.
-
-Allowed references:
-- public documentation
-- public APIs
-- algorithm papers
-- benchmark behavior
-- test semantics
-
-Forbidden behavior:
-- copying code from projects whose licenses are absent, incompatible, or
-  otherwise unclear
-
-## Intake checklist
-1. Confirm upstream license.
-2. Classify the intake as migration or black-box reimplementation.
-3. Record the source in `THIRD_PARTY_NOTICES.md`.
-4. Update tests / docs / runtime contracts together with the code change.
-5. Keep a rollback path for replaced modules.
+请跳转阅读：[`docs/governance/external-code-intake-policy.md`](governance/external-code-intake-policy.md)

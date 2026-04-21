@@ -49,9 +49,9 @@ def test_main_window_uses_grouped_runtime_bundles_instead_of_installing_peer_ali
 
 def test_main_window_ui_consumes_workflow_services_as_primary_surface():
     text = (SRC_ROOT / 'presentation' / 'main_window_ui.py').read_text(encoding='utf-8')
-    assert "getattr(self, 'robot_workflow', None)" in text
-    assert "getattr(self, 'motion_workflow', None)" in text
-    assert "getattr(self, 'export_workflow', None)" in text
+    assert "getattr(self, 'workflow_services', None)" in text
+    assert ".motion_workflow" in text
+    assert ".export_workflow" in text
     assert "getattr(self, 'robot_facade', None)" not in text
     assert "getattr(self, 'solver_facade', None)" not in text
     assert "getattr(self, 'trajectory_facade', None)" not in text
@@ -77,7 +77,40 @@ def test_main_controller_builds_collaborators_through_support_module():
     assert 'class _PresentationControllerCollaborators' not in text
 
 
-def test_collision_validator_keeps_planning_scene_as_canonical_validation_surface():
+def test_collision_validator_accepts_only_canonical_planning_scene_surface():
     text = (SRC_ROOT / 'application' / 'validators' / 'collision_validator.py').read_text(encoding='utf-8')
-    assert 'legacy_obstacle_adapter' in text
+    assert 'legacy_obstacle_adapter' not in text
+    assert 'collision_obstacles' not in text
     assert 'collision_input' in text
+
+
+def test_large_entrypoint_modules_are_reduced_to_compatibility_shims():
+    expectations = {
+        SRC_ROOT / 'presentation' / 'workflow_services.py': 'robot_sim.presentation.workflows',
+        SRC_ROOT / 'app' / 'workflow_facade.py': 'robot_sim.app.workflows',
+        SRC_ROOT / 'app' / 'container.py': 'robot_sim.app.container_builder',
+        SRC_ROOT / 'application' / 'services' / 'runtime_asset_service.py': 'robot_sim.application.services.runtime_assets',
+    }
+    for path, marker in expectations.items():
+        text = path.read_text(encoding='utf-8')
+        assert marker in text, f'missing compatibility shim import: {path.relative_to(PROJECT_ROOT)}'
+        assert 'class ' not in text, f'shim should not define concrete classes: {path.relative_to(PROJECT_ROOT)}'
+        assert len(text.splitlines()) <= 40, f'shim regrew beyond boundary budget: {path.relative_to(PROJECT_ROOT)}'
+
+
+def test_split_runtime_and_workflow_modules_exist():
+    expected_paths = [
+        SRC_ROOT / 'presentation' / 'workflows' / 'robot_workflow_service.py',
+        SRC_ROOT / 'presentation' / 'workflows' / 'motion_workflow_service.py',
+        SRC_ROOT / 'presentation' / 'workflows' / 'export_workflow_service.py',
+        SRC_ROOT / 'app' / 'workflows' / 'import_resolution.py',
+        SRC_ROOT / 'app' / 'workflows' / 'session_projection.py',
+        SRC_ROOT / 'app' / 'container_types.py',
+        SRC_ROOT / 'app' / 'container_builder.py',
+        SRC_ROOT / 'application' / 'services' / 'runtime_assets' / 'models.py',
+        SRC_ROOT / 'application' / 'services' / 'runtime_assets' / 'geometry_support.py',
+        SRC_ROOT / 'application' / 'services' / 'runtime_assets' / 'planning_scene_support.py',
+        SRC_ROOT / 'application' / 'services' / 'runtime_assets' / 'service.py',
+    ]
+    for path in expected_paths:
+        assert path.exists(), f'missing split module: {path.relative_to(PROJECT_ROOT)}'

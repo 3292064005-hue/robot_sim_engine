@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from robot_sim.domain.enums import JointType
+from robot_sim.core.kinematics.execution_adapter import ExecutionAdapterDescriptor
 from robot_sim.model.dh_row import DHRow
 from robot_sim.model.robot_links import RobotJointLimit
 
@@ -169,9 +170,9 @@ class ArticulatedJointModel:
 class ArticulatedRobotModel:
     """Structured articulated robot model.
 
-    Unlike the legacy DH adapter payload, this model is now a real execution surface for serial
-    articulated robots: FK, Jacobian, and numeric IK read transforms, axes, and joint origins from
-    ``origin_transform`` + ``motion_transform`` instead of silently re-projecting back to DH.
+    This model is the execution surface for serial articulated robots: FK, Jacobian, and
+    numeric IK read transforms, axes, and joint origins from ``origin_transform`` +
+    ``motion_transform`` instead of silently re-projecting back to DH rows.
     """
 
     name: str
@@ -221,12 +222,15 @@ class ArticulatedRobotModel:
 
     @property
     def capability_badges(self) -> tuple[str, ...]:
+        descriptor = self.execution_descriptor
         return (
             f'semantic_family:{self.semantic_family}',
             f'source_surface:{self.source_surface}',
             f'source_format:{self.source_format or "unknown"}',
             f'fidelity:{self.fidelity or "unknown"}',
             f'dof:{self.dof}',
+            f'execution_adapter:{descriptor.adapter_id}',
+            f'execution_semantics:{descriptor.execution_semantics}',
         )
 
     @cached_property
@@ -247,6 +251,117 @@ class ArticulatedRobotModel:
             )
         return int(leaf_indices[0])
 
+    @cached_property
+    def root_joint_indices(self) -> tuple[int, ...]:
+        return tuple(index for index, joint in enumerate(self.joint_models) if joint.parent_index is None)
+
+    @cached_property
+    def leaf_joint_indices(self) -> tuple[int, ...]:
+        child_parents = {int(joint.parent_index) for joint in self.joint_models if joint.parent_index is not None}
+        return tuple(index for index in range(len(self.joint_models)) if index not in child_parents)
+
+    @cached_property
+    def edge_pairs(self) -> tuple[tuple[str, str], ...]:
+        return tuple((str(joint.parent_link), str(joint.child_link)) for joint in self.joint_models)
+
+    @cached_property
+    def branching_joint_names(self) -> tuple[str, ...]:
+        child_counts = {index: int(count) for index, count in enumerate(self._serial_child_counts)}
+        return tuple(
+            str(joint.name)
+            for index, joint in enumerate(self.joint_models)
+            if int(child_counts.get(index, 0)) > 1
+        )
+
+    @cached_property
+    def topology_summary(self) -> dict[str, object]:
+        descriptor = self.execution_descriptor
+        return {
+            'root_joint_indices': [int(index) for index in self.root_joint_indices],
+            'leaf_joint_indices': [int(index) for index in self.leaf_joint_indices],
+            'edge_pairs': [[str(parent), str(child)] for parent, child in self.edge_pairs],
+            'branching_joint_names': [str(name) for name in self.branching_joint_names],
+            'joint_count': int(self.dof),
+            'root_count': int(len(self.root_joint_indices)),
+            'leaf_count': int(len(self.leaf_joint_indices)),
+            'supports_serial_tree_execution': bool(self.semantic_family == 'articulated_serial_tree' and len(self.root_joint_indices) == 1 and len(self.leaf_joint_indices) == 1),
+            'supports_branched_tree_projection': bool(len(self.root_joint_indices) == 1),
+            'supports_active_path_execution': bool(descriptor.supports_active_path_execution),
+            'execution_semantics': str(descriptor.execution_semantics),
+            'execution_joint_indices': [int(index) for index in descriptor.execution_joint_indices],
+            'execution_tip_joint_index': int(descriptor.execution_tip_joint_index),
+            'supports_closed_loop_execution': False,
+        }
+
+    @cached_property
+    def _children_by_parent_index(self) -> dict[int | None, tuple[int, ...]]:
+        mapping: dict[int | None, list[int]] = {}
+        for index, joint in enumerate(self.joint_models):
+            mapping.setdefault(joint.parent_index, []).append(index)
+        return {parent: tuple(indices) for parent, indices in mapping.items()}
+
+    def _default_execution_joint_indices(self) -> tuple[int, ...]:
+        explicit_names = tuple(str(item) for item in self.metadata.get('selected_joint_names', ()) or ())
+        if explicit_names:
+            index_by_name = {joint.name: index for index, joint in enumerate(self.joint_models)}
+            explicit_indices = tuple(index_by_name[name] for name in explicit_names if name in index_by_name)
+            if explicit_indices:
+                return explicit_indices
+        if self.semantic_family == 'articulated_serial_tree':
+            return tuple(range(self.dof))
+        longest: tuple[int, ...] = ()
+        def _visit(index: int, prefix: tuple[int, ...]) -> None:
+            nonlocal longest
+            next_prefix = (*prefix, int(index))
+            children = self._children_by_parent_index.get(index, ())
+            if not children:
+                if len(next_prefix) > len(longest):
+                    longest = next_prefix
+                return
+            for child_index in children:
+                _visit(int(child_index), next_prefix)
+        for root_index in self.root_joint_indices:
+            _visit(int(root_index), ())
+        if longest:
+            return longest
+        return tuple(range(self.dof))
+
+    @cached_property
+    def execution_joint_indices(self) -> tuple[int, ...]:
+        indices = tuple(int(index) for index in self._default_execution_joint_indices())
+        if not indices:
+            raise ValueError('articulated robot model does not contain an executable joint path')
+        return indices
+
+    @cached_property
+    def execution_joint_names(self) -> tuple[str, ...]:
+        return tuple(self.joint_models[index].name for index in self.execution_joint_indices)
+
+    @cached_property
+    def execution_tip_joint_index(self) -> int:
+        return int(self.execution_joint_indices[-1])
+
+    @cached_property
+    def execution_descriptor(self) -> ExecutionAdapterDescriptor:
+        execution_semantics = 'serial_tree'
+        supports_full_tree_execution = False
+        if self.semantic_family != 'articulated_serial_tree' or len(self.execution_joint_indices) != self.dof:
+            execution_semantics = 'tree_active_path'
+        adapter_id = 'articulated_serial_tree' if execution_semantics == 'serial_tree' else 'articulated_tree_active_path'
+        return ExecutionAdapterDescriptor(
+            adapter_id=adapter_id,
+            semantic_family=str(self.semantic_family),
+            execution_semantics=execution_semantics,
+            execution_joint_indices=self.execution_joint_indices,
+            execution_tip_joint_index=self.execution_tip_joint_index,
+            supports_tree_projection=bool(len(self.root_joint_indices) == 1),
+            supports_active_path_execution=True,
+            supports_full_tree_execution=supports_full_tree_execution,
+        )
+
+    def require_active_path_execution(self) -> None:
+        _ = self.execution_descriptor
+
     def require_serial_tree_execution(self) -> None:
         if self.semantic_family != 'articulated_serial_tree':
             raise ValueError(f'articulated robot model does not satisfy serial-tree execution semantics: {self.semantic_family!r}')
@@ -260,7 +375,7 @@ class ArticulatedRobotModel:
 
     @cached_property
     def serial_projection_rows(self) -> tuple[DHRow, ...]:
-        """Compatibility DH rows used only by legacy analytic adapters.
+        """Lossy serial-projection rows for diagnostics, export, and bounded baselines.
 
         Boundary behavior:
             This projection is intentionally lossy. Runtime FK/Jacobian/IK must use the articulated
@@ -322,7 +437,7 @@ class ArticulatedRobotModel:
         return q_arr
 
     def _parent_child_link_frames(self, q: np.ndarray) -> tuple[tuple[np.ndarray, ...], tuple[np.ndarray, ...]]:
-        self.require_serial_tree_execution()
+        self.require_active_path_execution()
         q_arr = self._validated_q(q)
         child_frames: list[np.ndarray] = []
         joint_origin_frames: list[np.ndarray] = []
@@ -343,6 +458,31 @@ class ArticulatedRobotModel:
             child_frames.append(np.asarray(child_frame, dtype=float).copy())
         return tuple(joint_origin_frames), tuple(child_frames)
 
+    def graph_forward_transforms(self, q: np.ndarray) -> tuple[np.ndarray, ...]:
+        """Return root plus every articulated child-link transform in graph order."""
+        _joint_origins, child_frames = self._parent_child_link_frames(q)
+        frames = [np.asarray(self.base_T, dtype=float).copy()]
+        frames.extend(np.asarray(frame, dtype=float).copy() for frame in child_frames)
+        return tuple(frames)
+
+    def execution_forward_transforms(self, q: np.ndarray) -> tuple[np.ndarray, ...]:
+        """Return world transforms for the active execution path plus the tool frame.
+
+        Returns:
+            tuple[np.ndarray, ...]: ``(root_link_T, active_link_0_T, ..., tool_T_world)`` where
+            the final frame applies ``tool_T`` on the active execution tip.
+
+        Raises:
+            ValueError: If ``q`` shape is invalid, contains non-finite values, or the articulated
+                hierarchy is not topologically ordered.
+        """
+        frames = [np.asarray(self.base_T, dtype=float).copy()]
+        graph_frames = self.graph_forward_transforms(q)
+        for joint_index in self.execution_joint_indices:
+            frames.append(np.asarray(graph_frames[int(joint_index) + 1], dtype=float).copy())
+        frames[-1] = frames[-1] @ np.asarray(self.tool_T, dtype=float)
+        return tuple(frames)
+
     def forward_transforms(self, q: np.ndarray) -> tuple[np.ndarray, ...]:
         """Return world transforms for the root link and each articulated child link.
 
@@ -354,15 +494,9 @@ class ArticulatedRobotModel:
             ValueError: If ``q`` shape is invalid, contains non-finite values, or the articulated
                 hierarchy is not topologically ordered.
         """
-        _joint_origins, child_frames = self._parent_child_link_frames(q)
-        frames = [np.asarray(self.base_T, dtype=float).copy()]
-        frames.extend(np.asarray(frame, dtype=float).copy() for frame in child_frames)
-        if frames:
-            terminal_index = self._serial_leaf_joint_index + 1
-            frames[terminal_index] = frames[terminal_index] @ np.asarray(self.tool_T, dtype=float)
-        return tuple(frames)
+        return self.execution_forward_transforms(q)
 
-    def world_joint_axes_origins(self, q: np.ndarray) -> tuple[tuple[np.ndarray, np.ndarray], ...]:
+    def graph_world_joint_axes_origins(self, q: np.ndarray) -> tuple[tuple[np.ndarray, np.ndarray], ...]:
         """Return each joint axis and origin in world coordinates.
 
         Returns:
@@ -384,9 +518,24 @@ class ArticulatedRobotModel:
             pairs.append((np.asarray(axis_world, dtype=float).copy(), np.asarray(origin_world, dtype=float).copy()))
         return tuple(pairs)
 
+    def world_joint_axes_origins(self, q: np.ndarray) -> tuple[tuple[np.ndarray, np.ndarray], ...]:
+        """Return each joint axis and origin in world coordinates.
+
+        Returns:
+            tuple[tuple[np.ndarray, np.ndarray], ...]: One ``(axis_world, origin_world)`` tuple per
+            joint in dynamic-joint order, including inactive tree branches when present.
+        """
+        return self.graph_world_joint_axes_origins(q)
+
+    def execution_path_axes_origins(self, q: np.ndarray) -> tuple[tuple[np.ndarray, np.ndarray], ...]:
+        """Return world axes/origins for joints on the active execution path only."""
+        pairs = self.graph_world_joint_axes_origins(q)
+        return tuple(pairs[index] for index in self.execution_joint_indices)
+
     def rough_reach_radius(self) -> float:
         radius = 0.0
-        for joint in self.joint_models:
+        for index in self.execution_joint_indices:
+            joint = self.joint_models[index]
             radius += float(np.linalg.norm(np.asarray(joint.origin_translation, dtype=float)))
         radius += float(np.linalg.norm(np.asarray(self.tool_T[:3, 3], dtype=float)))
         return radius if radius > 0.0 else 1.0
@@ -426,9 +575,12 @@ class ArticulatedRobotModel:
             'source_format': self.source_format,
             'fidelity': self.fidelity,
             'capability_badges': list(self.capability_badges),
+            'execution_descriptor': self.execution_descriptor.summary(),
+            'selected_execution_joint_names': list(self.execution_joint_names),
             'base_T': np.asarray(self.base_T, dtype=float).tolist(),
             'tool_T': np.asarray(self.tool_T, dtype=float).tolist(),
             'home_q': np.asarray(self.home_q, dtype=float).tolist(),
+            'topology': dict(self.topology_summary),
             'joints': [joint.summary() for joint in self.joint_models],
             'metadata': dict(self.metadata or {}),
         }

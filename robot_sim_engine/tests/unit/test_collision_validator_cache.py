@@ -35,16 +35,19 @@ def test_collision_summary_reports_backend_and_cache_state():
     assert first_summary['requested_backend'] == 'aabb'
     assert first_summary['cache_hit'] is False
     assert first_summary['candidate_pair_count'] > 0
+    assert first_summary['backend_evidence']['resolved_backend'] == 'aabb'
+    assert first_summary['geometry_contract_evidence']['scene_geometry_contract'] == first_summary['scene_geometry_contract']
     assert second_summary['cache_hit'] is True
 
 
-def test_collision_summary_preserves_backend_fallback_warning():
+def test_collision_summary_preserves_stable_capsule_backend_selection():
     traj = _trajectory()
     obstacle = SceneObject('wall', aabb_from_points(np.array([[0.0, -0.1, -0.1], [1.1, 0.2, 0.1]], dtype=float), padding=0.0))
     scene = PlanningScene(obstacles=(obstacle,), revision=3).with_collision_backend('capsule')
 
     _, summary = evaluate_collision_summary(traj, planning_scene=scene)
 
-    assert summary['resolved_backend'] == 'aabb'
+    assert summary['resolved_backend'] == 'capsule'
     assert summary['requested_backend'] == 'capsule'
-    assert 'collision_backend_warning' in summary
+    assert summary['backend_evidence']['resolved_backend'] == 'capsule'
+    assert 'collision_backend_warning' not in summary

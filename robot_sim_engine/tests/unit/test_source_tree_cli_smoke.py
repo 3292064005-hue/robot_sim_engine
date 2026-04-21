@@ -12,15 +12,15 @@ def test_source_tree_cli_smoke_is_side_effect_free_and_reports_bootstrap_consist
     env = dict(os.environ)
     env['ROBOT_SIM_EXPORT_DIR'] = str(export_root)
     completed = subprocess.run(
-        [sys.executable, '-m', 'robot_sim.app.cli', 'source-layout-smoke'],
-        cwd=project_root / 'src',
+        [sys.executable, 'robot_sim_cli.py', 'source-layout-smoke'],
+        cwd=project_root,
         text=True,
         capture_output=True,
         check=True,
         env=env,
     )
     payload = json.loads(completed.stdout)
-    assert payload['entrypoint_mode'] == 'python -m robot_sim.app.cli'
+    assert payload['entrypoint_mode'] == 'python robot_sim_cli.py'
     assert payload['layout_mode'] == 'source'
     assert payload['source_layout_available'] is True
     assert payload['project_root'] == str(project_root)

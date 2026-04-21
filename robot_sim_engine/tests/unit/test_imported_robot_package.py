@@ -90,3 +90,54 @@ def test_robot_registry_round_trips_imported_package_summaries(tmp_path: Path, p
     assert loaded.imported_package.articulated_model.semantic_family == 'articulated_serial_tree'
     assert 'runtime_model_summary' not in loaded.metadata
     assert 'articulated_model_summary' not in loaded.metadata
+
+
+class _LegacyImporterRegistryStub:
+    def resolve_id(self, importer_id: str) -> str:
+        return str(importer_id)
+
+    def get(self, importer_id: str):
+        class _LegacyImporter:
+            def load(self, source, **kwargs):
+                return object()
+        return _LegacyImporter()
+
+
+def test_import_robot_use_case_rejects_non_bundle_importers(tmp_path: Path) -> None:
+    source = tmp_path / 'legacy.urdf'
+    source.write_text('<robot name="legacy"/>', encoding='utf-8')
+    use_case = ImportRobotUseCase(_LegacyImporterRegistryStub())
+    try:
+        use_case.execute_bundle(source, importer_id='legacy')
+    except TypeError as exc:
+        assert 'RobotModelBundle' in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError('expected canonical importer contract failure')
+
+
+
+def test_import_robot_use_case_surfaces_execution_layers_and_graph_state(tmp_path: Path) -> None:
+    source = tmp_path / 'projection_contract.urdf'
+    source.write_text(
+        '<robot name="projection_contract">\n'
+        '  <link name="base"/>\n'
+        '  <link name="link_1"/>\n'
+        '  <joint name="joint_1" type="revolute">\n'
+        '    <parent link="base"/>\n'
+        '    <child link="link_1"/>\n'
+        '    <origin xyz="1 0 0" rpy="0 0 0"/>\n'
+        '    <axis xyz="0 0 1"/>\n'
+        '    <limit lower="-3.14" upper="3.14"/>\n'
+        '  </joint>\n'
+        '</robot>\n',
+        encoding='utf-8',
+    )
+    use_case = ImportRobotUseCase(_ImporterRegistryStub(URDFModelImporter()))
+    bundle = use_case.execute_bundle(source, importer_id='urdf_model')
+    package_summary = bundle.imported_package.summary()
+    runtime_summary = package_summary['runtime_model']
+
+    assert runtime_summary['primary_execution_surface'] == 'articulated_model'
+    assert runtime_summary['execution_layers']['execution_adapter']['surface'] == 'serial_execution_rows'
+    assert package_summary['fidelity_breakdown']['graph_recovered'] is True
+    assert package_summary['fidelity_breakdown']['execution_adapter_state'] == 'adapter_ready'

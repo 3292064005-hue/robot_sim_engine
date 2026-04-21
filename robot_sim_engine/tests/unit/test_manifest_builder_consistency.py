@@ -13,7 +13,7 @@ def test_export_and_package_services_share_manifest_builder_contract(tmp_path):
 
     assert export_manifest['app_name'] == package_manifest.app_name
     assert export_manifest['schema_version'] == package_manifest.schema_version
-    assert export_manifest['migration_aliases'] == package_manifest.migration_aliases
+    assert 'migration_aliases' not in export_manifest
     assert export_manifest['correlation_id'] == package_manifest.correlation_id == 'corr-1'
     assert export_manifest['bundle_kind'] == package_manifest.bundle_kind == 'artifact_bundle'
     assert export_manifest['bundle_contract'] == package_manifest.bundle_contract == 'artifact_audit_bundle'

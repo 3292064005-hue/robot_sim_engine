@@ -146,6 +146,39 @@ def test_state_store_rebuilds_backend_percentiles_and_throughput_from_histories(
 
 
 
+
+
+def test_state_store_refreshes_render_runtime_advice_from_span_and_sampling_updates():
+    store = StateStore(SessionState())
+    store.patch_render_runtime({
+        'screenshot': {'status': 'available', 'backend': 'snapshot_renderer'}
+    }, emit_telemetry=False)
+
+    store.record_render_operation_span(
+        'screenshot',
+        'capture_frame',
+        backend='snapshot_renderer',
+        duration_ms=40.0,
+        sample_count=12,
+        source='scene_capture_worker',
+        notify=False,
+    )
+    store.record_render_sampling_counter(
+        'screenshot',
+        'drawable_samples',
+        backend='snapshot_renderer',
+        value=12.0,
+        unit='samples',
+        source='scene_capture_worker',
+        notify=False,
+    )
+
+    snap = store.notify()
+
+    assert snap.render_runtime_advice['recommendation_count'] >= 1
+    assert snap.render_runtime_advice['recommendations'][0]['capability'] == 'screenshot'
+    assert snap.render_runtime_advice['recommendations'][0]['action'] in {'reduce_sampling_rate', 'throttle_render_updates'}
+
 def test_state_store_selector_identity_snapshot_strategy_skips_deepcopy(monkeypatch):
     store = StateStore(SessionState())
     seen = []

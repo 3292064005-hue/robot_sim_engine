@@ -42,19 +42,21 @@ def run_installed_runtime_smoke() -> dict[str, str]:
     context = bootstrap(startup_mode='headless')
     project_root = context.project_root
     container = context.container
+    bootstrap_bundle = container.bootstrap_bundle
     controller = RobotController(
         StateStore(),
-        container.robot_registry,
-        container.fk_uc,
-        import_robot_uc=container.import_robot_uc,
+        bootstrap_bundle.registries.robot_registry,
+        bootstrap_bundle.workflows.fk_uc,
+        import_robot_uc=bootstrap_bundle.workflows.import_robot_uc,
+        application_workflow=bootstrap_bundle.workflow_facade,
     )
 
-    available_names = container.robot_registry.list_names()
+    available_names = bootstrap_bundle.registries.robot_registry.list_names()
     if 'planar_2dof' not in available_names:
         raise RuntimeError('installed runtime smoke requires bundled robot planar_2dof')
 
-    writable_root = Path(container.runtime_paths.robot_root).resolve()
-    bundled_root = Path(container.runtime_paths.bundled_robot_root).resolve()
+    writable_root = Path(bootstrap_bundle.services.runtime_paths.robot_root).resolve()
+    bundled_root = Path(bootstrap_bundle.services.runtime_paths.bundled_robot_root).resolve()
     assert writable_root.exists(), 'writable robot root must exist'
 
     with tempfile.TemporaryDirectory(prefix='robot-smoke-') as tmpdir:

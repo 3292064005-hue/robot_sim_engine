@@ -19,4 +19,11 @@ def test_capability_descriptors_include_metadata(project_root):
     assert 'urdf_skeleton' in importer_desc
     assert 'urdf_model' in importer_desc
     assert importer_desc['urdf_model']['aliases'] == ['urdf']
-    assert importer_desc['urdf_skeleton']['aliases'] == ['urdf_approx']
+    assert importer_desc['urdf_skeleton']['aliases'] == []
+
+    plugin_matrix = caps['plugin_features'].metadata['matrix']
+    plugin_host = next(entry for entry in plugin_matrix if entry['key'] == 'plugin_host')
+    marketplace = plugin_host['metadata']['plugin_marketplace']
+    assert marketplace['plugin_surface_version'] == 'v1'
+    assert 'collision_backend' in marketplace['kinds']
+    assert marketplace['total_declared_plugins'] >= marketplace['total_enabled_plugins']

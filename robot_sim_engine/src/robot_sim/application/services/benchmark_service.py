@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from copy import deepcopy
 
 import numpy as np
 
 from robot_sim.application.dto import IKRequest
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.application.use_cases.run_ik import RunIKUseCase
 from robot_sim.core.kinematics.fk_solver import ForwardKinematicsSolver
 from robot_sim.core.math.so3 import exp_so3
 from robot_sim.domain.errors import CancelledTaskError
 from robot_sim.model.benchmark_case import BenchmarkCase, BenchmarkCaseResult
+from robot_sim.model.execution_graph import ExecutionGraphDescriptor, default_execution_graph_descriptor
 from robot_sim.model.pose import Pose
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.model.solver_config import IKConfig
@@ -38,10 +41,16 @@ class BenchmarkService:
         self._ik_uc = run_ik_uc
         self._versions = version_catalog or current_version_catalog()
 
-    def default_cases(self, spec: RobotSpec) -> list[BenchmarkCase]:
+    def default_cases(
+        self,
+        spec: RobotSpec,
+        *,
+        execution_graph: ExecutionGraphDescriptor | None = None,
+    ) -> list[BenchmarkCase]:
         """Build the default benchmark-suite case list for a robot spec."""
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
         articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
         home_q = np.asarray(articulated.home_q, dtype=float)
         q_mid = np.asarray(spec.q_mid(), dtype=float)
         home_fk = self._fk.solve(spec, home_q)
@@ -53,27 +62,29 @@ class BenchmarkService:
         singular_probe_q = np.clip(home_q * 0.25 + q_mid * 0.75, q_min, q_max)
         singular_fk = self._fk.solve(spec, singular_probe_q)
         unreachable_offset = np.array([self._rough_radius(spec) * 1.25, 0.0, 0.0], dtype=float)
+        descriptor = execution_graph or default_execution_graph_descriptor(spec)
+        execution_metadata = self._execution_contract_metadata(descriptor)
         pack_version = self._versions.benchmark_pack_version
         return [
-            BenchmarkCase('home_pose', home_fk.ee_pose, metadata={'seed': 'home_q', 'pack_version': pack_version}),
-            BenchmarkCase('mid_pose', mid_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version}),
+            BenchmarkCase('home_pose', home_fk.ee_pose, metadata={'seed': 'home_q', 'pack_version': pack_version, **deepcopy(execution_metadata)}),
+            BenchmarkCase('mid_pose', mid_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version, **deepcopy(execution_metadata)}),
             BenchmarkCase(
                 'orientation_shifted',
                 Pose(p=home_fk.ee_pose.p + np.array([0.05, 0.02, 0.0]), R=home_fk.ee_pose.R @ exp_so3(np.array([0.0, 0.0, 0.25]))),
-                metadata={'seed': 'home_q', 'pack_version': pack_version},
+                metadata={'seed': 'home_q', 'pack_version': pack_version, **deepcopy(execution_metadata)},
             ),
             BenchmarkCase(
                 'position_only_hard',
                 Pose(p=mid_fk.ee_pose.p + np.array([0.02, -0.03, 0.01]), R=np.eye(3)),
                 position_only=True,
-                metadata={'seed': 'home_q', 'pack_version': pack_version},
+                metadata={'seed': 'home_q', 'pack_version': pack_version, **deepcopy(execution_metadata)},
             ),
-            BenchmarkCase('near_limit_pose', near_limit_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version}),
-            BenchmarkCase('near_singular_pose', singular_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version}),
+            BenchmarkCase('near_limit_pose', near_limit_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version, **deepcopy(execution_metadata)}),
+            BenchmarkCase('near_singular_pose', singular_fk.ee_pose, metadata={'seed': 'q_mid', 'pack_version': pack_version, **deepcopy(execution_metadata)}),
             BenchmarkCase(
                 'unreachable_far',
                 Pose(p=np.asarray(articulated.base_T[:3, 3], dtype=float) + unreachable_offset, R=np.eye(3)),
-                metadata={'seed': 'home_q', 'pack_version': pack_version},
+                metadata={'seed': 'home_q', 'pack_version': pack_version, **deepcopy(execution_metadata)},
             ),
         ]
 
@@ -87,9 +98,11 @@ class BenchmarkService:
         cancel_flag: Callable[[], bool] | None = None,
         progress_cb: Callable[[float, str, dict[str, object] | None], None] | None = None,
         correlation_id: str | None = None,
+        execution_graph: ExecutionGraphDescriptor | None = None,
     ) -> dict[str, object]:
         """Execute a benchmark suite and return a structured payload."""
-        cases = list(cases) if cases is not None else self.default_cases(spec)
+        descriptor = execution_graph or default_execution_graph_descriptor(spec)
+        cases = list(cases) if cases is not None else self.default_cases(spec, execution_graph=descriptor)
         results: list[BenchmarkCaseResult] = []
         elapsed_ms_values: list[float] = []
         pos_err_values: list[float] = []
@@ -105,12 +118,23 @@ class BenchmarkService:
                         'completed_cases': len(results),
                         'total_cases': len(cases),
                         'correlation_id': str(correlation_id or ''),
+                        'execution_graph': descriptor.summary(),
                     },
                 )
             q0 = self._seed_for_case(spec, case)
             cfg = config if not case.position_only else IKConfig(**{**config.__dict__, 'position_only': True})
             result = self._ik_uc.execute(
-                IKRequest(spec=spec, target=case.target, q0=q0, config=cfg),
+                IKRequest(
+                    spec=spec,
+                    target=case.target,
+                    q0=q0,
+                    config=cfg,
+                    request_metadata={
+                        'execution_graph': descriptor.summary(),
+                        'benchmark_case': case.name,
+                    },
+                    execution_graph=descriptor,
+                ),
                 cancel_flag=cancel_flag,
                 progress_cb=None,
                 correlation_id=correlation_id,
@@ -140,6 +164,7 @@ class BenchmarkService:
                         'completed_cases': idx + 1,
                         'total_cases': len(cases),
                         'correlation_id': str(correlation_id or ''),
+                        'execution_graph': descriptor.summary(),
                     },
                 )
         success_vector = np.array([1.0 if item.success else 0.0 for item in results], dtype=float)
@@ -172,6 +197,7 @@ class BenchmarkService:
             ],
             'aggregate': aggregate,
             'metadata': {
+                **self._execution_contract_metadata(descriptor),
                 'suite_metadata': {
                     'producer_version': self._versions.app_version,
                     'pack_version': self._versions.benchmark_pack_version,
@@ -181,6 +207,30 @@ class BenchmarkService:
                 'correlation_id': str(correlation_id or ''),
             },
             'comparison': comparison,
+        }
+
+    @staticmethod
+    def _execution_contract_metadata(descriptor: ExecutionGraphDescriptor) -> dict[str, object]:
+        """Build canonical and compatibility execution metadata for benchmark payloads.
+
+        Args:
+            descriptor: Execution graph descriptor resolved for the current benchmark run.
+
+        Returns:
+            dict[str, object]: Metadata containing canonical ``execution_graph`` and the
+            backward-compatible ``execution_scope`` alias.
+
+        Raises:
+            ValueError: Propagated by ``descriptor.summary()`` when the descriptor cannot be summarized.
+
+        Boundary behavior:
+            Returned mappings are deep-copied before being attached to each case so per-case
+            metadata mutation cannot leak across payloads.
+        """
+        summary = descriptor.summary()
+        return {
+            'execution_graph': deepcopy(summary),
+            'execution_scope': deepcopy(summary),
         }
 
     def _comparison_payload(self, aggregate: dict[str, object], *, baseline: dict[str, object] | None) -> dict[str, object]:
@@ -210,4 +260,4 @@ class BenchmarkService:
         return np.asarray(spec.articulated_model.home_q, dtype=float)
 
     def _rough_radius(self, spec: RobotSpec) -> float:
-        return float(spec.articulated_model.rough_reach_radius())
+        return float(resolve_execution_adapter(spec).rough_reach_radius())

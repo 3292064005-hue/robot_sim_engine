@@ -1,0 +1,6 @@
+robot: planar_2dof
+mode: joint_space
+q_start: [0.0, 0.0]
+q_goal: [0.4, -0.3]
+duration: 2.0
+dt: 0.05

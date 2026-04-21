@@ -167,11 +167,17 @@ class MainWindowResultProjectionMixin:
         Raises:
             None: View projection is deterministic once the import succeeds.
         """
-        self.robot_panel.set_robot_entries(self._robot_ops().robot_entries(), selected_name=result.persisted_name)
+        if not bool(getattr(result, 'staged_only', False)):
+            self.robot_panel.set_robot_entries(self._robot_ops().robot_entries(), selected_name=result.persisted_name)
+        else:
+            self.robot_panel.set_robot_entries(self._robot_ops().robot_entries())
         self.project_robot_loaded(result.fk_result)
+        destination = result.persisted_path.name if getattr(result, 'persisted_path', None) is not None else f"staged:{result.persisted_name}"
         self.status_panel.append(
-            f'机器人导入完成：{result.spec.label} -> {result.persisted_path.name} | importer={result.importer_id or "auto"} | fidelity={result.fidelity}'
+            f'机器人导入完成：{result.spec.label} -> {destination} | importer={result.importer_id or "auto"} | fidelity={result.fidelity}'
         )
+        if bool(getattr(result, 'staged_only', False)):
+            self.status_panel.append('当前导入结果仅已加载到运行时，会在后续“保存 YAML”时正式落库。')
         self.status_panel.append(f'导入源文件：{result.source_path}')
         scene_summary = dict(getattr(self._runtime_ops().state, 'scene_summary', {}) or {})
         if scene_summary:

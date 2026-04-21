@@ -53,7 +53,7 @@ def build_payload_progress_callback(
         ``progress_cb(payload)``.
 
     Raises:
-        None: The callback wraps non-mapping payloads into the legacy ``{'value': ...}`` envelope.
+        None: The callback wraps non-mapping payloads into a normalized ``{'value': ...}`` envelope.
     """
 
     def _callback(payload: object) -> None:

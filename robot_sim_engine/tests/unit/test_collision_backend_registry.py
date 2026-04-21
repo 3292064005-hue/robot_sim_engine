@@ -15,17 +15,18 @@ def test_collision_backend_registry_normalizes_unknown_and_profile_gated_backend
     assert payload_unknown['resolved_collision_backend'] == 'aabb'
 
     resolved_capsule, payload_capsule = registry.normalize_backend('capsule', experimental_enabled=False)
-    assert resolved_capsule == 'aabb'
+    assert resolved_capsule == 'capsule'
     assert payload_capsule['requested_collision_backend'] == 'capsule'
-    assert payload_capsule['resolved_collision_backend'] == 'aabb'
-    assert 'disabled by active profile' in payload_capsule['collision_backend_warning']
+    assert payload_capsule['resolved_collision_backend'] == 'capsule'
+    assert payload_capsule['collision_backend_available'] is True
+    assert 'collision_backend_warning' not in payload_capsule
 
 
 def test_planning_scene_uses_registry_normalization_for_collision_backend():
     scene = PlanningScene().with_collision_backend('capsule')
-    assert scene.collision_backend == 'aabb'
+    assert scene.collision_backend == 'capsule'
     assert scene.metadata['requested_collision_backend'] == 'capsule'
-    assert scene.metadata['resolved_collision_backend'] == 'aabb'
+    assert scene.metadata['resolved_collision_backend'] == 'capsule'
 
 
 def test_capability_service_renders_backend_registry_availability():

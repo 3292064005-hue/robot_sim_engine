@@ -62,9 +62,6 @@ def test_worker_binding_prefers_structured_events_for_external_callbacks():
         failed_event_callback=lambda event: None,
         finished_event_callback=lambda event: None,
         cancelled_event_callback=lambda event: None,
-        failed_callback=lambda message: None,
-        finished_callback=lambda payload: None,
-        cancelled_callback=lambda: None,
         queued_callback=lambda: observed.__setitem__('queued', observed['queued'] + 1),
         cleanup_callback=lambda: None,
     )
@@ -79,7 +76,6 @@ def test_worker_binding_prefers_structured_events_for_external_callbacks():
     assert observed['finished'] == [{'done': True}]
     assert observed['failed'] == ['boom']
     assert observed['cancelled'] == 1
-
 
 
 class _StructuredSignal:
@@ -113,7 +109,6 @@ class _StructuredOnlyWorker:
         self.deleted = True
 
 
-
 def test_worker_binding_quits_thread_for_structured_only_workers():
     worker = _StructuredOnlyWorker()
     thread = _DummyThread()
@@ -131,16 +126,12 @@ def test_worker_binding_quits_thread_for_structured_only_workers():
         failed_event_callback=lambda event: None,
         finished_event_callback=lambda event: None,
         cancelled_event_callback=lambda event: None,
-        failed_callback=lambda message: None,
-        finished_callback=lambda payload: None,
-        cancelled_callback=lambda: None,
         queued_callback=lambda: None,
         cleanup_callback=lambda: None,
     )
 
     worker.finished_event.emit(SimpleNamespace(payload='done'))
     assert thread.quit_calls == 1
-
 
 
 def test_worker_binding_routes_external_structured_terminal_event_callbacks():
@@ -164,9 +155,6 @@ def test_worker_binding_routes_external_structured_terminal_event_callbacks():
         failed_event_callback=lambda event: None,
         finished_event_callback=lambda event: None,
         cancelled_event_callback=lambda event: None,
-        failed_callback=lambda message: None,
-        finished_callback=lambda payload: None,
-        cancelled_callback=lambda: None,
         queued_callback=lambda: None,
         cleanup_callback=lambda: None,
     )
@@ -202,9 +190,6 @@ def test_worker_binding_suppresses_cleanup_callback_failures(caplog):
         failed_event_callback=lambda event: None,
         finished_event_callback=lambda event: None,
         cancelled_event_callback=lambda event: None,
-        failed_callback=lambda message: None,
-        finished_callback=lambda payload: None,
-        cancelled_callback=lambda: None,
         queued_callback=lambda: None,
         cleanup_callback=failing_cleanup,
     )
@@ -217,3 +202,42 @@ def test_worker_binding_suppresses_cleanup_callback_failures(caplog):
     assert worker.deleted is True
     assert thread.delete_later_calls == 1
     assert any('worker cleanup callback failed' in record.message for record in caplog.records)
+
+
+def test_worker_binding_rejects_missing_structured_signals():
+    class _MissingSignalsWorker:
+        started = _StructuredSignal()
+
+        def moveToThread(self, thread) -> None:
+            self.thread = thread
+
+        def deleteLater(self) -> None:
+            return None
+
+        def run(self) -> None:
+            return None
+
+    worker = _MissingSignalsWorker()
+    thread = _DummyThread()
+    service = WorkerBindingService()
+
+    try:
+        service.bind(
+            worker=worker,
+            thread=thread,
+            on_progress=None,
+            on_finished=None,
+            on_failed=None,
+            on_cancelled=None,
+            progress_event_callback=lambda event: None,
+            state_changed_callback=lambda state: None,
+            failed_event_callback=lambda event: None,
+            finished_event_callback=lambda event: None,
+            cancelled_event_callback=lambda event: None,
+            queued_callback=lambda: None,
+            cleanup_callback=lambda: None,
+        )
+    except TypeError as exc:
+        assert 'canonical lifecycle signals' in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError('expected TypeError for missing structured signal surface')

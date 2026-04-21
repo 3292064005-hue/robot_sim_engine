@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from robot_sim.presentation.scene_ui_support import build_default_scene_obstacle_request
+from robot_sim.presentation.state_events import WarningProjectedEvent
 from robot_sim.presentation.widgets.scene_editor_dialog import SceneEditorDialog
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -44,7 +45,7 @@ class MainWindowSceneUIMixin:
         """Project planning-scene mutations into the live UI shell."""
         runtime = self._runtime_ops()
         self.scene_controller.update_planning_scene_projection(scene)
-        runtime.state_store.patch(last_warning='')
+        runtime.state_store.dispatch(WarningProjectedEvent(message=''))
         scene_summary = dict(getattr(runtime.state, 'scene_summary', {}) or {})
         self.status_panel.append(
             '场景已更新：'

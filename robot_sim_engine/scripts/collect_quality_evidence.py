@@ -70,13 +70,13 @@ def _normalize_loaded_record(record: QualityEvidenceRecord, *, source_path: Path
             integrity_errors.append('benchmark_matrix evidence must be generated with --execute-gates')
         if required and set(executed) != set(required):
             integrity_errors.append('benchmark_matrix evidence must include executed results for every required quality gate')
-        pytest_targets_executed = bool(details.get('pytest_targets_executed', False))
-        pytest_targets_ok = details.get('pytest_targets_ok')
-        pytest_targets_status = str(details.get('pytest_targets_status', ''))
-        if not pytest_targets_executed and pytest_targets_ok is not None:
-            integrity_errors.append('benchmark_matrix evidence cannot mark pytest targets ok when targets were not executed')
-        if not pytest_targets_executed and pytest_targets_status not in {'not_requested', 'skipped_due_to_failed_gates'}:
-            integrity_errors.append('benchmark_matrix evidence must explain why pytest targets were not executed')
+        targets_executed = bool(details.get('executed_targets', False))
+        target_ok = details.get('target_ok')
+        target_status = str(details.get('target_status', ''))
+        if not targets_executed and target_ok is not None:
+            integrity_errors.append('benchmark_matrix evidence cannot mark benchmark targets ok when targets were not executed')
+        if not targets_executed and target_status not in {'not_requested', 'skipped_due_to_failed_gates'}:
+            integrity_errors.append('benchmark_matrix evidence must explain why benchmark targets were not executed')
 
     environment = dict(record.environment or {})
     expected_provenance = _expected_provenance(repo_root)

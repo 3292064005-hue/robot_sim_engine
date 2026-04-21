@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from robot_sim.application.workers.base import BaseWorker, Slot
-from robot_sim.application.workers.invocation import build_structured_progress_callback, call_with_worker_support
 from robot_sim.domain.errors import CancelledTaskError
 
 
@@ -30,7 +29,7 @@ class ScreenshotWorker(BaseWorker):
         self._kwargs = kwargs
 
     def _invoke_with_control(self) -> Any:
-        """Invoke the capture callable while preserving backward compatibility.
+        """Invoke the capture callable through the canonical worker-control contract.
 
         Returns:
             Any: Path or payload returned by the capture callable.
@@ -38,17 +37,19 @@ class ScreenshotWorker(BaseWorker):
         Raises:
             Exception: Re-raises capture failures unchanged.
         """
-        return call_with_worker_support(
-            self._func,
-            *self._args,
-            cancel_flag=self.is_cancel_requested,
-            correlation_id=self.correlation_id,
-            progress_factory=lambda: build_structured_progress_callback(
-                emit_progress=self.emit_progress,
+        kwargs = dict(self._kwargs)
+        kwargs.setdefault('cancel_flag', self.is_cancel_requested)
+        kwargs.setdefault('correlation_id', self.correlation_id)
+        kwargs.setdefault(
+            'progress_cb',
+            lambda percent, message='', payload=None: self.emit_progress(
                 stage='screenshot',
+                percent=float(percent),
+                message=str(message),
+                payload=dict(payload or {}),
             ),
-            keyword_overrides=self._kwargs,
         )
+        return self._func(*self._args, **kwargs)
 
     @staticmethod
     def _build_cancelled_metadata(exc: CancelledTaskError) -> dict[str, object]:

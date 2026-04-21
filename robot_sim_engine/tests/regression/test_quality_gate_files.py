@@ -25,6 +25,7 @@ def test_ci_workflow_contains_quality_gates(project_root: Path):
         "python scripts/verify_partition_coverage.py --coverage-json coverage.json",
         "python scripts/verify_gui_smoke.py",
         "pytest tests/gui -q",
+        "python scripts/package_release.py --output dist/source-release.zip --top-level-dir robot_sim_engine",
     ]:
         assert marker in ci_text
 
@@ -45,8 +46,12 @@ def test_checked_in_quality_contract_docs_are_current(project_root: Path):
 
 def test_capability_contract_docs_match_runtime_truth(project_root: Path):
     snapshot = _build_runtime_truth_quality_service(project_root).snapshot()
-    capability_doc = (project_root / 'docs' / 'capability_matrix.md').read_text(encoding='utf-8').strip()
-    assert capability_doc == snapshot.capability_matrix_markdown.strip()
-    assert 'stable_demo_scene_backend_contract' in capability_doc
-    assert 'stable_demo_collision_backend_contract' in capability_doc
+    generated_capability_doc = (project_root / 'docs' / 'generated' / 'capability_matrix.md').read_text(encoding='utf-8').strip()
+    legacy_entry_doc = (project_root / 'docs' / 'capability_matrix.md').read_text(encoding='utf-8').strip()
+    assert 'status: generated' in generated_capability_doc
+    assert snapshot.capability_matrix_markdown.strip() in generated_capability_doc
+    assert 'planning_scene_backend' in generated_capability_doc
+    assert 'aabb_collision_backend' in generated_capability_doc
+    assert 'status: entry-page' in legacy_entry_doc
+    assert 'canonical generated doc: `docs/generated/capability_matrix.md`' in legacy_entry_doc
 

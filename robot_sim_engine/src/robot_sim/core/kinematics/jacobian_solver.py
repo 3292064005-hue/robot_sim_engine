@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from robot_sim.core.kinematics.fk_solver import ForwardKinematicsSolver
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.core.metrics.condition_number import condition_number
 from robot_sim.core.metrics.manipulability import manipulability
 from robot_sim.domain.enums import JointType, ReferenceFrame
@@ -17,19 +18,22 @@ class JacobianSolver:
         self._fk = ForwardKinematicsSolver()
 
     def _geometric_world(self, spec: RobotSpec, q: FloatArray, fk_result: FKResult) -> np.ndarray:
-        articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
         p_n = np.asarray(fk_result.ee_pose.p, dtype=float)
-        J = np.zeros((6, articulated.dof), dtype=float)
-        for i, (joint, (axis, origin)) in enumerate(zip(articulated.joint_models, articulated.world_joint_axes_origins(q))):
+        J = np.zeros((6, adapter.dof), dtype=float)
+        all_pairs = adapter.world_joint_axes_origins(q)
+        for column, joint_index in enumerate(adapter.active_joint_indices):
+            joint = adapter.articulated_model.joint_models[int(joint_index)]
+            axis, origin = all_pairs[int(joint_index)]
             z = np.asarray(axis, dtype=float)
             p = np.asarray(origin, dtype=float)
             if joint.joint_type is JointType.REVOLUTE:
-                J[:3, i] = np.cross(z, p_n - p)
-                J[3:, i] = z
+                J[:3, column] = np.cross(z, p_n - p)
+                J[3:, column] = z
             else:
-                J[:3, i] = z
-                J[3:, i] = 0.0
+                J[:3, column] = z
+                J[3:, column] = 0.0
         return J
 
     def geometric(self, spec: RobotSpec, q: FloatArray, fk: FKResult | None = None, *, reference_frame: ReferenceFrame = ReferenceFrame.WORLD) -> JacobianResult:
@@ -46,14 +50,14 @@ class JacobianSolver:
         return JacobianResult(J=J, condition_number=condition_number(J), manipulability=manipulability(J), reference_frame=reference_frame)
 
     def finite_difference(self, spec: RobotSpec, q: FloatArray, *, eps: float = 1.0e-7, reference_frame: ReferenceFrame = ReferenceFrame.WORLD) -> JacobianResult:
-        articulated = spec.articulated_model
-        articulated.require_serial_tree_execution()
+        adapter = resolve_execution_adapter(spec)
+        adapter.require_active_path_execution()
         q = np.asarray(q, dtype=float)
         fk = self._fk.solve(spec, q)
         base_pos = np.asarray(fk.ee_pose.p, dtype=float)
         base_rot = np.asarray(fk.ee_pose.R, dtype=float)
-        J = np.zeros((6, articulated.dof), dtype=float)
-        for i in range(articulated.dof):
+        J = np.zeros((6, adapter.dof), dtype=float)
+        for i in range(adapter.dof):
             q_plus = q.copy()
             q_plus[i] += eps
             fk_plus = self._fk.solve(spec, q_plus)

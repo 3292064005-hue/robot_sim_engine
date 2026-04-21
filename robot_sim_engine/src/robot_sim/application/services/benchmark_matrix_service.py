@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
 
 from robot_sim.domain.benchmark_target_contracts import benchmark_target_contract
+from robot_sim.infra.benchmark_runtime_cases import benchmark_runtime_case
 from robot_sim.domain.quality_gate_catalog import ensure_quality_gates_registered
 
 
@@ -15,9 +16,15 @@ class BenchmarkExecutionTarget:
     kind: str
     selector: str
     execution_environment: str = 'headless'
+    metadata: dict[str, object] = field(default_factory=dict)
 
-    def summary(self) -> dict[str, str]:
-        return {'kind': str(self.kind), 'selector': str(self.selector), 'execution_environment': str(self.execution_environment)}
+    def summary(self) -> dict[str, object]:
+        return {
+            'kind': str(self.kind),
+            'selector': str(self.selector),
+            'execution_environment': str(self.execution_environment),
+            'metadata': dict(self.metadata or {}),
+        }
 
 
 @dataclass(frozen=True)
@@ -62,11 +69,11 @@ class BenchmarkMatrix:
     required_pairs: tuple[BenchmarkMatrixPair, ...]
 
     @property
-    def pytest_targets(self) -> tuple[str, ...]:
+    def target_ids(self) -> tuple[str, ...]:
         selectors: list[str] = []
         for pair in self.required_pairs:
             for target in pair.execution_targets:
-                if target.kind == 'pytest' and target.selector not in selectors:
+                if target.selector not in selectors:
                     selectors.append(target.selector)
         return tuple(selectors)
 
@@ -205,18 +212,21 @@ class BenchmarkMatrixService:
             raise ValueError('benchmark_matrix.required_pairs.execution_targets must be a non-empty list')
         targets: list[BenchmarkExecutionTarget] = []
         seen: set[tuple[str, str]] = set()
+        supported_kinds = {'runtime_case'}
         for item in raw_value:
             if not isinstance(item, Mapping):
                 raise ValueError('benchmark matrix execution target must be a mapping')
             selector = str(item.get('selector', '')).strip()
             contract = benchmark_target_contract(selector)
             execution_environment = str(item.get('execution_environment', contract.execution_environment if contract is not None else 'headless')).strip() or 'headless'
+            metadata = dict(item.get('metadata', {}) or {}) if isinstance(item.get('metadata', {}), Mapping) else {}
             target = BenchmarkExecutionTarget(
                 kind=str(item.get('kind', '')).strip(),
                 selector=selector,
                 execution_environment=execution_environment,
+                metadata=metadata,
             )
-            if target.kind != 'pytest':
+            if target.kind not in supported_kinds:
                 raise ValueError(f'unsupported benchmark execution target kind: {target.kind!r}')
             if not target.selector:
                 raise ValueError('benchmark execution target selector must be non-empty')
@@ -227,6 +237,8 @@ class BenchmarkMatrixService:
                     f'benchmark execution target environment mismatch for {target.selector!r}: '
                     f'{target.execution_environment!r} != {contract.execution_environment!r}'
                 )
+            if target.kind == 'runtime_case' and benchmark_runtime_case(target.selector) is None:
+                raise ValueError(f'benchmark runtime case is not registered: {target.selector!r}')
             key = (target.kind, target.selector)
             if key not in seen:
                 seen.add(key)

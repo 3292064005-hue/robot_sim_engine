@@ -101,6 +101,12 @@ class MainWindowRightColumnBuilder:
         return window.right_tabs
 
 
+def _window_cfg(window: 'MainWindowUIContract') -> dict[str, object]:
+    runtime_services = getattr(window, 'runtime_services', None)
+    if runtime_services is not None and hasattr(runtime_services, 'window_cfg'):
+        return dict(getattr(runtime_services, 'window_cfg') or {})
+    return dict(getattr(window, 'window_cfg', {}) or {})
+
 @dataclass(frozen=True)
 class MainWindowLayoutBuilder:
     """Feature-oriented main-window layout builder.
@@ -128,7 +134,7 @@ class MainWindowLayoutBuilder:
         _safe_add_widget(top_split, self.left_builder.build(window))
         _safe_add_widget(top_split, self.center_builder.build(window))
         _safe_add_widget(top_split, self.right_builder.build(window))
-        top_split.setSizes([int(v) for v in window.window_cfg.get('splitter_sizes', [420, 820, 360])])
+        top_split.setSizes([int(v) for v in _window_cfg(window).get('splitter_sizes', [420, 820, 360])])
 
         window.plots_panel = self.PlotsPanel_cls()
         window.plots_manager = self.PlotsManager_cls(getattr(window.plots_panel, 'plot_widgets', None))
@@ -136,7 +142,7 @@ class MainWindowLayoutBuilder:
         v_split = self.QSplitter_cls(self.Qt_namespace.Vertical)
         _safe_add_widget(v_split, top_split)
         _safe_add_widget(v_split, window.plots_panel)
-        v_split.setSizes([int(v) for v in window.window_cfg.get('vertical_splitter_sizes', [700, 260])])
+        v_split.setSizes([int(v) for v in _window_cfg(window).get('vertical_splitter_sizes', [700, 260])])
         _safe_add_widget(root_layout, v_split)
 
 
@@ -160,7 +166,7 @@ class MainWindowSignalBinder:
         window.playback_panel.slider.valueChanged.connect(window.on_seek_frame)
         window.playback_panel.speed.valueChanged.connect(window.on_playback_speed_changed)
         window.playback_panel.loop.toggled.connect(window.on_playback_loop_changed)
-        window.playback_panel.export_btn.clicked.connect(window.on_export_trajectory)
+        window.playback_panel.export_btn.clicked.connect(window.on_export_trajectory_bundle)
         window.playback_panel.session_btn.clicked.connect(window.on_export_session)
         window.playback_panel.package_btn.clicked.connect(window.on_export_package)
         window.scene_toolbar.fit_requested.connect(window.on_fit_scene)

@@ -15,6 +15,7 @@ from robot_sim.app.version_catalog import current_version_catalog
 _SUPPORTED_PLUGIN_API_VERSION = 'v1'
 _SUPPORTED_PLUGIN_KINDS = {'solver', 'planner', 'importer', 'scene_backend', 'collision_backend'}
 _SUPPORTED_PLUGIN_STATUSES = {'stable', 'beta', 'experimental', 'internal', 'deprecated'}
+_SUPPORTED_PLUGIN_DEPLOYMENT_TIERS = {'production', 'experimental', 'fixture', 'compatibility'}
 _ALWAYS_ALLOWED_PLUGIN_SOURCES = {'builtin', 'shipped_plugin'}
 _EXTERNAL_PLUGIN_SOURCES = {'external', 'entry_point'}
 _SUPPORTED_PLUGIN_SOURCES = _ALWAYS_ALLOWED_PLUGIN_SOURCES | _EXTERNAL_PLUGIN_SOURCES
@@ -39,6 +40,7 @@ class PluginManifest:
     min_host_version: str = ''
     required_host_capabilities: tuple[str, ...] = ()
     optional_host_capabilities: tuple[str, ...] = ()
+    deployment_tier: str = 'production'
 
     def allows_profile(self, profile: str) -> bool:
         if not self.enabled_profiles:
@@ -88,69 +90,152 @@ class PluginLoader:
         return tuple(manifests)
 
     def registrations(self, kind: str, **context) -> tuple[PluginRegistration, ...]:
+        """Return runtime capability-provider registrations for one plugin kind."""
+        return self.capability_registrations(kind, **context)
+
+    def governance_registrations(self, kind: str, **context) -> tuple[PluginRegistration, ...]:
+        """Return enabled governance registrations, including alias-only policy surfaces."""
         registrations: list[PluginRegistration] = []
         for manifest in self.manifests(kind):
-            factory = self._resolve_factory(manifest)
-            negotiated = self._negotiated_capabilities(manifest)
-            payload = self._call_factory(factory, {**context, **negotiated})
-            instance = payload['instance'] if isinstance(payload, dict) else payload
-            metadata = dict(manifest.metadata)
-            aliases = manifest.aliases
-            if isinstance(payload, dict):
-                metadata.update(dict(payload.get('metadata', {}) or {}))
-                aliases = tuple(str(alias) for alias in payload.get('aliases', aliases) or ())
-            metadata.setdefault('status', manifest.status)
-            metadata.setdefault('source', manifest.source)
-            metadata.setdefault('api_version', manifest.api_version)
-            metadata.setdefault('sdk_contract_version', manifest.sdk_contract_version)
-            metadata.setdefault('min_host_version', manifest.min_host_version)
-            metadata.setdefault('kind', manifest.kind)
-            metadata.setdefault('required_host_capabilities', list(manifest.required_host_capabilities))
-            metadata.setdefault('optional_host_capabilities', list(manifest.optional_host_capabilities))
-            metadata.setdefault('negotiated_host_capabilities', list(negotiated['negotiated_host_capabilities']))
-            metadata.setdefault('missing_optional_host_capabilities', list(negotiated['missing_optional_host_capabilities']))
-            registrations.append(
-                PluginRegistration(
-                    plugin_id=manifest.plugin_id,
-                    instance=instance,
-                    aliases=aliases,
-                    metadata=metadata,
-                    negotiated_host_capabilities=tuple(negotiated['negotiated_host_capabilities']),
-                    missing_optional_host_capabilities=tuple(negotiated['missing_optional_host_capabilities']),
-                    replace=manifest.replace,
-                    source=manifest.source,
-                )
-            )
+            registrations.append(self._resolve_registration(manifest, context))
         return tuple(registrations)
 
+    def capability_registrations(self, kind: str, **context) -> tuple[PluginRegistration, ...]:
+        """Return only registrations that introduce concrete runtime capability providers."""
+        registrations: list[PluginRegistration] = []
+        for manifest in self.manifests(kind):
+            registration = self._resolve_registration(manifest, context)
+            if not self._is_capability_provider_registration(registration):
+                continue
+            registrations.append(registration)
+        return tuple(registrations)
+
+    def compatibility_aliases(self, kind: str | None = None) -> dict[str, str]:
+        """Return compatibility aliases projected from governance-only manifests.
+
+        The runtime registry only consumes concrete capability providers. Governance-only entries
+        remain visible for policy/audit surfaces and may still contribute compatibility aliases
+        that resolve to an existing runtime provider.
+        """
+        aliases: dict[str, str] = {}
+        for row in self.audit_split(kind=kind)['governance_entries']:
+            if not bool(row.get('enabled', False)):
+                continue
+            if bool(row.get('is_capability_provider', False)):
+                continue
+            runtime_provider_id = str(row.get('runtime_provider_id', '') or '').strip()
+            if not runtime_provider_id:
+                continue
+            plugin_id = str(row.get('id', '') or '').strip()
+            if plugin_id:
+                aliases.setdefault(plugin_id, runtime_provider_id)
+            for alias in row.get('aliases', ()) or ():
+                normalized = str(alias).strip()
+                if normalized:
+                    aliases.setdefault(normalized, runtime_provider_id)
+        return aliases
+
     def audit(self, kind: str | None = None) -> tuple[dict[str, object], ...]:
-        rows: list[dict[str, object]] = []
+        """Return governance audit rows enriched with capability-layer classification."""
+        return self.audit_split(kind=kind)['governance_entries']
+
+    def audit_split(self, kind: str | None = None) -> dict[str, tuple[dict[str, object], ...]]:
+        governance_rows: list[dict[str, object]] = []
+        capability_rows: list[dict[str, object]] = []
         for manifest in self._load_manifests():
             enabled, reason = self._decision_for_manifest(manifest, requested_kind=kind)
             if kind is not None and manifest.kind != str(kind):
                 continue
-            rows.append(
-                {
-                    'id': manifest.plugin_id,
-                    'kind': manifest.kind,
-                    'status': manifest.status,
-                    'enabled': enabled,
-                    'reason': reason,
-                    'source': manifest.source,
-                    'replace': manifest.replace,
-                    'enabled_profiles': list(manifest.enabled_profiles),
-                    'aliases': list(manifest.aliases),
-                    'sdk_contract_version': manifest.sdk_contract_version,
-                    'min_host_version': manifest.min_host_version,
-                    'host_version': self._host_version,
-                    'metadata': dict(manifest.metadata),
-                    'required_host_capabilities': list(manifest.required_host_capabilities),
-                    'optional_host_capabilities': list(manifest.optional_host_capabilities),
-                    'negotiated_host_capabilities': list(self._negotiated_capabilities(manifest)['negotiated_host_capabilities']),
-                    'missing_optional_host_capabilities': list(self._negotiated_capabilities(manifest)['missing_optional_host_capabilities']),
-                }
-            )
-        return tuple(rows)
+            row = self._audit_row(manifest, enabled=enabled, reason=reason)
+            governance_rows.append(row)
+            if bool(row.get('enabled', False)) and bool(row.get('is_capability_provider', False)):
+                capability_rows.append(dict(row))
+        return {
+            'governance_entries': tuple(governance_rows),
+            'capability_entries': tuple(capability_rows),
+        }
+
+    def _resolve_registration(self, manifest: PluginManifest, context: dict[str, object]) -> PluginRegistration:
+        factory = self._resolve_factory(manifest)
+        negotiated = self._negotiated_capabilities(manifest)
+        payload = self._call_factory(factory, {**context, **negotiated})
+        instance = payload['instance'] if isinstance(payload, dict) else payload
+        metadata = dict(manifest.metadata)
+        aliases = manifest.aliases
+        if isinstance(payload, dict):
+            metadata.update(dict(payload.get('metadata', {}) or {}))
+            aliases = tuple(str(alias) for alias in payload.get('aliases', aliases) or ())
+        metadata.setdefault('status', manifest.status)
+        metadata.setdefault('source', manifest.source)
+        metadata.setdefault('api_version', manifest.api_version)
+        metadata.setdefault('sdk_contract_version', manifest.sdk_contract_version)
+        metadata.setdefault('min_host_version', manifest.min_host_version)
+        metadata.setdefault('kind', manifest.kind)
+        metadata.setdefault('deployment_tier', manifest.deployment_tier)
+        metadata.setdefault('required_host_capabilities', list(manifest.required_host_capabilities))
+        metadata.setdefault('optional_host_capabilities', list(manifest.optional_host_capabilities))
+        metadata.setdefault('negotiated_host_capabilities', list(negotiated['negotiated_host_capabilities']))
+        metadata.setdefault('missing_optional_host_capabilities', list(negotiated['missing_optional_host_capabilities']))
+        metadata.setdefault('plugin_layer', self._plugin_layer(metadata))
+        metadata.setdefault('governance_identity', manifest.plugin_id)
+        if manifest.plugin_id != str(metadata.get('runtime_provider_id', manifest.plugin_id) or manifest.plugin_id):
+            metadata.setdefault('runtime_provider_id', str(metadata.get('runtime_provider_id')))
+        return PluginRegistration(
+            plugin_id=manifest.plugin_id,
+            instance=instance,
+            aliases=aliases,
+            metadata=metadata,
+            negotiated_host_capabilities=tuple(negotiated['negotiated_host_capabilities']),
+            missing_optional_host_capabilities=tuple(negotiated['missing_optional_host_capabilities']),
+            replace=manifest.replace,
+            source=manifest.source,
+        )
+
+    @staticmethod
+    def _plugin_layer(metadata: dict[str, object]) -> str:
+        canonical_target = str(metadata.get('canonical_target', '') or '').strip()
+        if canonical_target:
+            return 'governance_only'
+        declared = str(metadata.get('plugin_layer', '') or '').strip()
+        if declared:
+            return declared
+        return 'capability_provider'
+
+    def _is_capability_provider_registration(self, registration: PluginRegistration) -> bool:
+        layer = self._plugin_layer(dict(registration.metadata))
+        return layer != 'governance_only'
+
+    def _audit_row(self, manifest: PluginManifest, *, enabled: bool, reason: str) -> dict[str, object]:
+        negotiated = self._negotiated_capabilities(manifest)
+        metadata = dict(manifest.metadata)
+        plugin_layer = self._plugin_layer(metadata)
+        runtime_provider_id = str(metadata.get('canonical_target', manifest.plugin_id) or manifest.plugin_id)
+        row = {
+            'id': manifest.plugin_id,
+            'kind': manifest.kind,
+            'status': manifest.status,
+            'enabled': enabled,
+            'reason': reason,
+            'source': manifest.source,
+            'replace': manifest.replace,
+            'enabled_profiles': list(manifest.enabled_profiles),
+            'aliases': list(manifest.aliases),
+            'sdk_contract_version': manifest.sdk_contract_version,
+            'min_host_version': manifest.min_host_version,
+            'host_version': self._host_version,
+            'metadata': metadata,
+            'required_host_capabilities': list(manifest.required_host_capabilities),
+            'optional_host_capabilities': list(manifest.optional_host_capabilities),
+            'negotiated_host_capabilities': list(negotiated['negotiated_host_capabilities']),
+            'missing_optional_host_capabilities': list(negotiated['missing_optional_host_capabilities']),
+            'deployment_tier': manifest.deployment_tier,
+            'plugin_layer': plugin_layer,
+            'runtime_provider_id': runtime_provider_id,
+            'is_capability_provider': plugin_layer != 'governance_only',
+        }
+        if plugin_layer == 'governance_only':
+            row['canonical_target'] = runtime_provider_id
+        return row
 
     def _load_manifests(self) -> tuple[PluginManifest, ...]:
         manifests: list[PluginManifest] = []
@@ -194,6 +279,7 @@ class PluginLoader:
                     min_host_version=str(entry.get('min_host_version', '') or ''),
                     required_host_capabilities=tuple(str(item) for item in entry.get('required_host_capabilities', ()) or ()),
                     optional_host_capabilities=tuple(str(item) for item in entry.get('optional_host_capabilities', ()) or ()),
+                    deployment_tier=str(entry.get('deployment_tier', 'production') or 'production'),
                 )
                 self._validate_manifest(manifest)
                 manifests.append(manifest)
@@ -319,6 +405,11 @@ class PluginLoader:
             raise ValueError(
                 f'unsupported plugin status for {manifest.plugin_id!r}: {manifest.status!r}; '
                 f'supported={tuple(sorted(_SUPPORTED_PLUGIN_STATUSES))!r}'
+            )
+        if manifest.deployment_tier not in _SUPPORTED_PLUGIN_DEPLOYMENT_TIERS:
+            raise ValueError(
+                f'unsupported plugin deployment_tier for {manifest.plugin_id!r}: {manifest.deployment_tier!r}; '
+                f'supported={tuple(sorted(_SUPPORTED_PLUGIN_DEPLOYMENT_TIERS))!r}'
             )
         if manifest.source not in _SUPPORTED_PLUGIN_SOURCES:
             raise ValueError(

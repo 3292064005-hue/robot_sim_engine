@@ -1,0 +1,3570 @@
+id: mini
+name: mini
+metadata:
+  importer: urdf
+  importer_impl: urdf_model
+  import_semantics: serial_model
+  model_source: urdf_model
+  kinematic_convention: dh_approximate_from_urdf
+  geometry_available: true
+  collision_model: structured
+  source: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+  warnings: []
+  notes: URDF source semantics are preserved in canonical/articulated payloads; the
+    runtime now keeps the full articulated source graph for scene/runtime projection
+    while the solver adapter remains a bounded serial projection for execution baselines.
+  runtime_fidelity_contract:
+    contract_version: v4
+    source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+    source_family: urdf_tree
+    runtime_family: articulated_serial_tree
+    execution_surface: canonical_model
+    execution_adapter: canonical_articulated_chain
+    runtime_dispatch:
+      primary_execution_surface: articulated_model
+      primary_execution_adapter: canonical_articulated_chain
+      execution_semantics: serial_tree
+      execution_scope: serial_tree
+    source_model_layer:
+      surface: urdf_tree
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      selected_root_link: base
+      candidate_root_links:
+      - base
+    articulated_graph_layer:
+      surface: articulated_model
+      semantic_family: articulated_serial_tree
+      root_link: base
+      graph_link_names:
+      - base
+      - tip
+      graph_edge_pairs:
+      - - base
+        - tip
+      graph_dynamic_joint_names:
+      - j1
+      selected_joint_names:
+      - j1
+      branching_link_names: []
+      supports_branched_tree_projection: true
+      supports_branched_tree_execution: true
+      supports_closed_loop_execution: false
+      supports_mobile_base_execution: false
+    execution_adapter_layer:
+      surface: serial_execution_rows
+      adapter_id: canonical_articulated_chain
+      selected_dynamic_joint_count: 1
+      pruned_dynamic_joint_names: []
+      adapter_scope: solver_kinematics_baseline
+      execution_semantics: serial_tree
+      execution_scope: serial_tree
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+      selected_tip_joint_name: j1
+    kinematic_convention: dh_approximate_from_urdf
+    root_link: base
+    selected_root_link: base
+    selected_joint_names:
+    - j1
+    pruned_dynamic_joint_names: []
+    dynamic_joint_count_total: 1
+    selected_dynamic_joint_count: 1
+    branched_tree_supported: true
+    branched_tree_execution_mode: serial_tree
+    closed_loop_supported: false
+    mobile_base_supported: false
+    has_visual: true
+    has_collision: true
+    fidelity: serial_with_collision
+    downgrade_records: []
+    capability_badges:
+    - source_family:urdf_tree
+    - runtime_family:articulated_serial_tree
+    - primary_execution_surface:articulated_model
+    - execution_surface:canonical_model
+    - execution_adapter:canonical_articulated_chain
+    - graph_preserved:full_source_tree
+    - execution_scope:serial_tree
+    - fidelity:serial_with_collision
+  downgrade_records: []
+  runtime_semantic_family: articulated_serial_tree
+  importer_requested: urdf
+  importer_resolved: urdf_model
+  import_fidelity: serial_with_collision
+  geometry_ref: spec.imported_package.geometry_model.visual_geometry
+  collision_geometry_ref: spec.imported_package.geometry_model.collision_geometry
+  import_family: serial_model_import
+  source_model_summary:
+    source_format: urdf
+    source_family: urdf_tree
+    runtime_family: articulated_serial_tree
+    import_semantics: serial_model
+    joint_count: 1
+    link_count: 2
+    dynamic_joint_count_total: 1
+    has_visual: true
+    has_collision: true
+    root_link: base
+    selected_joint_names:
+    - j1
+    graph_link_names:
+    - base
+    - tip
+    graph_edge_pairs:
+    - - base
+      - tip
+    branching_link_names: []
+    downgrade_records: []
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    fidelity_roadmap:
+      roadmap_level: serial_with_collision
+      source_model_state: structured_source
+      runtime_state: runtime_executable
+      geometry_state: geometry_recoverable
+  canonical_model_summary:
+    name: mini
+    root_link: base
+    source_format: urdf
+    execution_adapter: canonical_articulated_chain
+    execution_surface: canonical_model
+    execution_row_count: 1
+    fidelity: serial_with_collision
+    joint_count: 1
+    link_count: 2
+    has_visual: true
+    has_collision: true
+  execution_adapter: canonical_articulated_chain
+  execution_surface: canonical_model
+  execution_row_count: 1
+  execution_summary:
+    execution_adapter: canonical_articulated_chain
+    execution_surface: canonical_model
+    primary_execution_surface: articulated_model
+    execution_row_count: 1
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: urdf
+        fidelity: serial_with_collision
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        row_count: 1
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+    runtime_semantic_family: articulated_serial_tree
+    runtime_source_format: urdf
+    runtime_fidelity: serial_with_collision
+  runtime_package_family: source_runtime_geometry_split
+  runtime_model_ref: spec.runtime_model
+  articulated_model_ref: spec.articulated_model
+  geometry_model_ref: spec.imported_package.geometry_model
+  imported_package_ref: spec.imported_package
+dh_rows:
+- a: 0.0
+  alpha: 0.0
+  d: 1.0
+  theta_offset: 0.0
+  joint_type: revolute
+  q_min: -1.0
+  q_max: 1.0
+base_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+tool_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+home_q:
+- 0.0
+joint_names:
+- j1
+link_names:
+- base
+- tip
+joint_types:
+- revolute
+joint_axes:
+- - 0.0
+  - 0.0
+  - 1.0
+joint_limits:
+- lower: -1.0
+  upper: 1.0
+  velocity: null
+  effort: null
+structured_joints:
+- name: j1
+  parent_link: base
+  child_link: tip
+  joint_type: revolute
+  axis:
+  - 0.0
+  - 0.0
+  - 1.0
+  limit:
+    lower: -1.0
+    upper: 1.0
+    velocity: null
+    effort: null
+  origin_translation:
+  - 0.0
+  - 0.0
+  - 1.0
+  origin_rpy:
+  - 0.0
+  - 0.0
+  - 0.0
+  metadata:
+    chain_index: 0
+structured_links:
+- name: base
+  parent_joint: null
+  inertial_mass: null
+  inertial_origin: null
+  has_visual: true
+  has_collision: false
+  metadata:
+    source: urdf
+- name: tip
+  parent_joint: null
+  inertial_mass: null
+  inertial_origin: null
+  has_visual: false
+  has_collision: true
+  metadata:
+    source: urdf
+kinematic_source: urdf_model
+geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+source_model_summary:
+  source_format: urdf
+  source_family: urdf_tree
+  runtime_family: articulated_serial_tree
+  import_semantics: serial_model
+  joint_count: 1
+  link_count: 2
+  dynamic_joint_count_total: 1
+  has_visual: true
+  has_collision: true
+  root_link: base
+  selected_joint_names:
+  - j1
+  graph_link_names:
+  - base
+  - tip
+  graph_edge_pairs:
+  - - base
+    - tip
+  branching_link_names: []
+  downgrade_records: []
+  runtime_fidelity_contract:
+    contract_version: v4
+    source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+    source_family: urdf_tree
+    runtime_family: articulated_serial_tree
+    execution_surface: canonical_model
+    execution_adapter: canonical_articulated_chain
+    runtime_dispatch:
+      primary_execution_surface: articulated_model
+      primary_execution_adapter: canonical_articulated_chain
+      execution_semantics: serial_tree
+      execution_scope: serial_tree
+    source_model_layer:
+      surface: urdf_tree
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      selected_root_link: base
+      candidate_root_links:
+      - base
+    articulated_graph_layer:
+      surface: articulated_model
+      semantic_family: articulated_serial_tree
+      root_link: base
+      graph_link_names:
+      - base
+      - tip
+      graph_edge_pairs:
+      - - base
+        - tip
+      graph_dynamic_joint_names:
+      - j1
+      selected_joint_names:
+      - j1
+      branching_link_names: []
+      supports_branched_tree_projection: true
+      supports_branched_tree_execution: true
+      supports_closed_loop_execution: false
+      supports_mobile_base_execution: false
+    execution_adapter_layer:
+      surface: serial_execution_rows
+      adapter_id: canonical_articulated_chain
+      selected_dynamic_joint_count: 1
+      pruned_dynamic_joint_names: []
+      adapter_scope: solver_kinematics_baseline
+      execution_semantics: serial_tree
+      execution_scope: serial_tree
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+      selected_tip_joint_name: j1
+    kinematic_convention: dh_approximate_from_urdf
+    root_link: base
+    selected_root_link: base
+    selected_joint_names:
+    - j1
+    pruned_dynamic_joint_names: []
+    dynamic_joint_count_total: 1
+    selected_dynamic_joint_count: 1
+    branched_tree_supported: true
+    branched_tree_execution_mode: serial_tree
+    closed_loop_supported: false
+    mobile_base_supported: false
+    has_visual: true
+    has_collision: true
+    fidelity: serial_with_collision
+    downgrade_records: []
+    capability_badges:
+    - source_family:urdf_tree
+    - runtime_family:articulated_serial_tree
+    - primary_execution_surface:articulated_model
+    - execution_surface:canonical_model
+    - execution_adapter:canonical_articulated_chain
+    - graph_preserved:full_source_tree
+    - execution_scope:serial_tree
+    - fidelity:serial_with_collision
+  fidelity_roadmap:
+    roadmap_level: serial_with_collision
+    source_model_state: structured_source
+    runtime_state: runtime_executable
+    geometry_state: geometry_recoverable
+runtime_model:
+  name: mini
+  dof: 1
+  joint_names:
+  - j1
+  link_names:
+  - base
+  - tip
+  execution_adapter: canonical_articulated_chain
+  primary_execution_surface: articulated_model
+  source_surface: canonical_model
+  source_format: urdf
+  fidelity: serial_with_collision
+  semantic_family: articulated_serial_tree
+  execution_contract_version: v2
+  execution_layers:
+    execution_contract_version: v2
+    source_model:
+      surface: canonical_model
+      format: urdf
+      fidelity: serial_with_collision
+    articulated_graph:
+      surface: articulated_model
+      semantic_family: articulated_serial_tree
+    execution_adapter:
+      surface: serial_execution_rows
+      adapter_id: canonical_articulated_chain
+      row_count: 1
+  execution_row_count: 1
+  joint_limit_count: 1
+  execution_rows:
+  - a: 0.0
+    alpha: 0.0
+    d: 1.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -1.0
+    q_max: 1.0
+  joint_limits:
+  - lower: -1.0
+    upper: 1.0
+    velocity: null
+    effort: null
+  has_base_transform: true
+  has_tool_transform: true
+  home_q_norm: 0.0
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  capability_badges:
+  - execution_adapter:canonical_articulated_chain
+  - source_surface:canonical_model
+  - fidelity:serial_with_collision
+  - semantic_family:articulated_serial_tree
+  provenance:
+    model_source: urdf_model
+    kinematic_source: urdf_model
+    geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+    collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+    has_structured_model: true
+    has_canonical_model: true
+    geometry_available: true
+    collision_model: structured
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: urdf
+        fidelity: serial_with_collision
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        row_count: 1
+    articulated_model_payload:
+      name: mini
+      root_link: base
+      dof: 1
+      joint_names:
+      - j1
+      link_names:
+      - base
+      - tip
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: urdf
+      fidelity: serial_with_collision
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:urdf
+      - fidelity:serial_with_collision
+      - dof:1
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - j1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 0
+        edge_pairs:
+        - - base
+          - tip
+        branching_joint_names: []
+        joint_count: 1
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_closed_loop_execution: false
+      joints:
+      - name: j1
+        parent_link: base
+        child_link: tip
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -1.0
+          upper: 1.0
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            chain_index: 0
+          execution_adapter: canonical_articulated_chain
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_articulated_chain
+        importer_id: urdf_model
+        warnings: []
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        runtime_fidelity_contract:
+          contract_version: v4
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          source_family: urdf_tree
+          runtime_family: articulated_serial_tree
+          execution_surface: canonical_model
+          execution_adapter: canonical_articulated_chain
+          runtime_dispatch:
+            primary_execution_surface: articulated_model
+            primary_execution_adapter: canonical_articulated_chain
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+          source_model_layer:
+            surface: urdf_tree
+            source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+            selected_root_link: base
+            candidate_root_links:
+            - base
+          articulated_graph_layer:
+            surface: articulated_model
+            semantic_family: articulated_serial_tree
+            root_link: base
+            graph_link_names:
+            - base
+            - tip
+            graph_edge_pairs:
+            - - base
+              - tip
+            graph_dynamic_joint_names:
+            - j1
+            selected_joint_names:
+            - j1
+            branching_link_names: []
+            supports_branched_tree_projection: true
+            supports_branched_tree_execution: true
+            supports_closed_loop_execution: false
+            supports_mobile_base_execution: false
+          execution_adapter_layer:
+            surface: serial_execution_rows
+            adapter_id: canonical_articulated_chain
+            selected_dynamic_joint_count: 1
+            pruned_dynamic_joint_names: []
+            adapter_scope: solver_kinematics_baseline
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+            supports_active_path_execution: true
+            supports_full_tree_execution: false
+            selected_tip_joint_name: j1
+          kinematic_convention: dh_approximate_from_urdf
+          root_link: base
+          selected_root_link: base
+          selected_joint_names:
+          - j1
+          pruned_dynamic_joint_names: []
+          dynamic_joint_count_total: 1
+          selected_dynamic_joint_count: 1
+          branched_tree_supported: true
+          branched_tree_execution_mode: serial_tree
+          closed_loop_supported: false
+          mobile_base_supported: false
+          has_visual: true
+          has_collision: true
+          fidelity: serial_with_collision
+          downgrade_records: []
+          capability_badges:
+          - source_family:urdf_tree
+          - runtime_family:articulated_serial_tree
+          - primary_execution_surface:articulated_model
+          - execution_surface:canonical_model
+          - execution_adapter:canonical_articulated_chain
+          - graph_preserved:full_source_tree
+          - execution_scope:serial_tree
+          - fidelity:serial_with_collision
+        downgrade_records: []
+        canonical_model_contract_version: v1
+        canonical_model_layer: urdf_serial_intermediate
+        runtime_projection: true
+  articulated_model_summary:
+    name: mini
+    root_link: base
+    dof: 1
+    joint_names:
+    - j1
+    link_names:
+    - base
+    - tip
+    semantic_family: articulated_serial_tree
+    source_surface: canonical_model
+    source_format: urdf
+    fidelity: serial_with_collision
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:canonical_model
+    - source_format:urdf
+    - fidelity:serial_with_collision
+    - dof:1
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - j1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+    joints:
+    - name: j1
+      parent_link: base
+      child_link: tip
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -1.0
+        upper: 1.0
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source_joint_metadata:
+          chain_index: 0
+        execution_adapter: canonical_articulated_chain
+    metadata:
+      derived_from_canonical_model: true
+      execution_adapter: canonical_articulated_chain
+      importer_id: urdf_model
+      warnings: []
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      runtime_fidelity_contract:
+        contract_version: v4
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        source_family: urdf_tree
+        runtime_family: articulated_serial_tree
+        execution_surface: canonical_model
+        execution_adapter: canonical_articulated_chain
+        runtime_dispatch:
+          primary_execution_surface: articulated_model
+          primary_execution_adapter: canonical_articulated_chain
+          execution_semantics: serial_tree
+          execution_scope: serial_tree
+        source_model_layer:
+          surface: urdf_tree
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          selected_root_link: base
+          candidate_root_links:
+          - base
+        articulated_graph_layer:
+          surface: articulated_model
+          semantic_family: articulated_serial_tree
+          root_link: base
+          graph_link_names:
+          - base
+          - tip
+          graph_edge_pairs:
+          - - base
+            - tip
+          graph_dynamic_joint_names:
+          - j1
+          selected_joint_names:
+          - j1
+          branching_link_names: []
+          supports_branched_tree_projection: true
+          supports_branched_tree_execution: true
+          supports_closed_loop_execution: false
+          supports_mobile_base_execution: false
+        execution_adapter_layer:
+          surface: serial_execution_rows
+          adapter_id: canonical_articulated_chain
+          selected_dynamic_joint_count: 1
+          pruned_dynamic_joint_names: []
+          adapter_scope: solver_kinematics_baseline
+          execution_semantics: serial_tree
+          execution_scope: serial_tree
+          supports_active_path_execution: true
+          supports_full_tree_execution: false
+          selected_tip_joint_name: j1
+        kinematic_convention: dh_approximate_from_urdf
+        root_link: base
+        selected_root_link: base
+        selected_joint_names:
+        - j1
+        pruned_dynamic_joint_names: []
+        dynamic_joint_count_total: 1
+        selected_dynamic_joint_count: 1
+        branched_tree_supported: true
+        branched_tree_execution_mode: serial_tree
+        closed_loop_supported: false
+        mobile_base_supported: false
+        has_visual: true
+        has_collision: true
+        fidelity: serial_with_collision
+        downgrade_records: []
+        capability_badges:
+        - source_family:urdf_tree
+        - runtime_family:articulated_serial_tree
+        - primary_execution_surface:articulated_model
+        - execution_surface:canonical_model
+        - execution_adapter:canonical_articulated_chain
+        - graph_preserved:full_source_tree
+        - execution_scope:serial_tree
+        - fidelity:serial_with_collision
+      downgrade_records: []
+      canonical_model_contract_version: v1
+      canonical_model_layer: urdf_serial_intermediate
+      runtime_projection: true
+  articulated_topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 0
+    edge_pairs:
+    - - base
+      - tip
+    branching_joint_names: []
+    joint_count: 1
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    execution_tip_joint_index: 0
+    supports_closed_loop_execution: false
+articulated_model:
+  name: mini
+  root_link: base
+  dof: 1
+  joint_names:
+  - j1
+  link_names:
+  - base
+  - tip
+  semantic_family: articulated_serial_tree
+  source_surface: urdf_source_graph
+  source_format: urdf
+  fidelity: serial_with_collision
+  capability_badges:
+  - semantic_family:articulated_serial_tree
+  - source_surface:urdf_source_graph
+  - source_format:urdf
+  - fidelity:serial_with_collision
+  - dof:1
+  - execution_adapter:articulated_serial_tree
+  - execution_semantics:serial_tree
+  execution_descriptor:
+    adapter_id: articulated_serial_tree
+    semantic_family: articulated_serial_tree
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    execution_tip_joint_index: 0
+    supports_tree_projection: true
+    supports_active_path_execution: true
+    supports_full_tree_execution: false
+  selected_execution_joint_names:
+  - j1
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 0
+    edge_pairs:
+    - - base
+      - tip
+    branching_joint_names: []
+    joint_count: 1
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    execution_tip_joint_index: 0
+    supports_closed_loop_execution: false
+  joints:
+  - name: j1
+    parent_link: base
+    child_link: tip
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -1.0
+      upper: 1.0
+      velocity: null
+      effort: null
+    parent_index: null
+    metadata:
+      source: urdf_model
+      raw_type: revolute
+      graph_preserved: true
+  metadata:
+    graph_contract_version: v1
+    graph_edge_pairs:
+    - - base
+      - tip
+    root_candidates:
+    - base
+    branching_link_names: []
+    supports_branched_tree_projection: true
+    dynamic_joint_count_total: 1
+    fixed_joint_count_total: 0
+    graph_preserved: true
+imported_package:
+  package_id: mini
+  importer_id: urdf_model
+  source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+  runtime_model:
+    name: mini
+    dof: 1
+    joint_names:
+    - j1
+    link_names:
+    - base
+    - tip
+    execution_adapter: canonical_articulated_chain
+    primary_execution_surface: articulated_model
+    source_surface: canonical_model
+    source_format: urdf
+    fidelity: serial_with_collision
+    semantic_family: articulated_serial_tree
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: urdf
+        fidelity: serial_with_collision
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        row_count: 1
+    execution_row_count: 1
+    joint_limit_count: 1
+    execution_rows:
+    - a: 0.0
+      alpha: 0.0
+      d: 1.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -1.0
+      q_max: 1.0
+    joint_limits:
+    - lower: -1.0
+      upper: 1.0
+      velocity: null
+      effort: null
+    has_base_transform: true
+    has_tool_transform: true
+    home_q_norm: 0.0
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    capability_badges:
+    - execution_adapter:canonical_articulated_chain
+    - source_surface:canonical_model
+    - fidelity:serial_with_collision
+    - semantic_family:articulated_serial_tree
+    provenance:
+      model_source: urdf_model
+      kinematic_source: urdf_model
+      geometry_bundle_ref: bundle.geometry
+      collision_bundle_ref: bundle.collision_geometry
+      has_structured_model: true
+      has_canonical_model: true
+      geometry_available: true
+      collision_model: structured
+      execution_layers:
+        execution_contract_version: v2
+        source_model:
+          surface: canonical_model
+          format: urdf
+          fidelity: serial_with_collision
+        articulated_graph:
+          surface: articulated_model
+          semantic_family: articulated_serial_tree
+        execution_adapter:
+          surface: serial_execution_rows
+          adapter_id: canonical_articulated_chain
+          row_count: 1
+      articulated_model_payload:
+        name: mini
+        root_link: base
+        dof: 1
+        joint_names:
+        - j1
+        link_names:
+        - base
+        - tip
+        semantic_family: articulated_serial_tree
+        source_surface: canonical_model
+        source_format: urdf
+        fidelity: serial_with_collision
+        capability_badges:
+        - semantic_family:articulated_serial_tree
+        - source_surface:canonical_model
+        - source_format:urdf
+        - fidelity:serial_with_collision
+        - dof:1
+        - execution_adapter:articulated_serial_tree
+        - execution_semantics:serial_tree
+        execution_descriptor:
+          adapter_id: articulated_serial_tree
+          semantic_family: articulated_serial_tree
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          execution_tip_joint_index: 0
+          supports_tree_projection: true
+          supports_active_path_execution: true
+          supports_full_tree_execution: false
+        selected_execution_joint_names:
+        - j1
+        base_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        tool_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        home_q:
+        - 0.0
+        topology:
+          root_joint_indices:
+          - 0
+          leaf_joint_indices:
+          - 0
+          edge_pairs:
+          - - base
+            - tip
+          branching_joint_names: []
+          joint_count: 1
+          root_count: 1
+          leaf_count: 1
+          supports_serial_tree_execution: true
+          supports_branched_tree_projection: true
+          supports_active_path_execution: true
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          execution_tip_joint_index: 0
+          supports_closed_loop_execution: false
+        joints:
+        - name: j1
+          parent_link: base
+          child_link: tip
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -1.0
+            upper: 1.0
+            velocity: null
+            effort: null
+          parent_index: null
+          metadata:
+            source_joint_metadata:
+              chain_index: 0
+            execution_adapter: canonical_articulated_chain
+        metadata:
+          derived_from_canonical_model: true
+          execution_adapter: canonical_articulated_chain
+          importer_id: urdf_model
+          warnings: []
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          runtime_fidelity_contract:
+            contract_version: v4
+            source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+            source_family: urdf_tree
+            runtime_family: articulated_serial_tree
+            execution_surface: canonical_model
+            execution_adapter: canonical_articulated_chain
+            runtime_dispatch:
+              primary_execution_surface: articulated_model
+              primary_execution_adapter: canonical_articulated_chain
+              execution_semantics: serial_tree
+              execution_scope: serial_tree
+            source_model_layer:
+              surface: urdf_tree
+              source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+              selected_root_link: base
+              candidate_root_links:
+              - base
+            articulated_graph_layer:
+              surface: articulated_model
+              semantic_family: articulated_serial_tree
+              root_link: base
+              graph_link_names:
+              - base
+              - tip
+              graph_edge_pairs:
+              - - base
+                - tip
+              graph_dynamic_joint_names:
+              - j1
+              selected_joint_names:
+              - j1
+              branching_link_names: []
+              supports_branched_tree_projection: true
+              supports_branched_tree_execution: true
+              supports_closed_loop_execution: false
+              supports_mobile_base_execution: false
+            execution_adapter_layer:
+              surface: serial_execution_rows
+              adapter_id: canonical_articulated_chain
+              selected_dynamic_joint_count: 1
+              pruned_dynamic_joint_names: []
+              adapter_scope: solver_kinematics_baseline
+              execution_semantics: serial_tree
+              execution_scope: serial_tree
+              supports_active_path_execution: true
+              supports_full_tree_execution: false
+              selected_tip_joint_name: j1
+            kinematic_convention: dh_approximate_from_urdf
+            root_link: base
+            selected_root_link: base
+            selected_joint_names:
+            - j1
+            pruned_dynamic_joint_names: []
+            dynamic_joint_count_total: 1
+            selected_dynamic_joint_count: 1
+            branched_tree_supported: true
+            branched_tree_execution_mode: serial_tree
+            closed_loop_supported: false
+            mobile_base_supported: false
+            has_visual: true
+            has_collision: true
+            fidelity: serial_with_collision
+            downgrade_records: []
+            capability_badges:
+            - source_family:urdf_tree
+            - runtime_family:articulated_serial_tree
+            - primary_execution_surface:articulated_model
+            - execution_surface:canonical_model
+            - execution_adapter:canonical_articulated_chain
+            - graph_preserved:full_source_tree
+            - execution_scope:serial_tree
+            - fidelity:serial_with_collision
+          downgrade_records: []
+          canonical_model_contract_version: v1
+          canonical_model_layer: urdf_serial_intermediate
+          runtime_projection: true
+    articulated_model_summary:
+      name: mini
+      root_link: base
+      dof: 1
+      joint_names:
+      - j1
+      link_names:
+      - base
+      - tip
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: urdf
+      fidelity: serial_with_collision
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:urdf
+      - fidelity:serial_with_collision
+      - dof:1
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - j1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 0
+        edge_pairs:
+        - - base
+          - tip
+        branching_joint_names: []
+        joint_count: 1
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_closed_loop_execution: false
+      joints:
+      - name: j1
+        parent_link: base
+        child_link: tip
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -1.0
+          upper: 1.0
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            chain_index: 0
+          execution_adapter: canonical_articulated_chain
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_articulated_chain
+        importer_id: urdf_model
+        warnings: []
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        runtime_fidelity_contract:
+          contract_version: v4
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          source_family: urdf_tree
+          runtime_family: articulated_serial_tree
+          execution_surface: canonical_model
+          execution_adapter: canonical_articulated_chain
+          runtime_dispatch:
+            primary_execution_surface: articulated_model
+            primary_execution_adapter: canonical_articulated_chain
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+          source_model_layer:
+            surface: urdf_tree
+            source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+            selected_root_link: base
+            candidate_root_links:
+            - base
+          articulated_graph_layer:
+            surface: articulated_model
+            semantic_family: articulated_serial_tree
+            root_link: base
+            graph_link_names:
+            - base
+            - tip
+            graph_edge_pairs:
+            - - base
+              - tip
+            graph_dynamic_joint_names:
+            - j1
+            selected_joint_names:
+            - j1
+            branching_link_names: []
+            supports_branched_tree_projection: true
+            supports_branched_tree_execution: true
+            supports_closed_loop_execution: false
+            supports_mobile_base_execution: false
+          execution_adapter_layer:
+            surface: serial_execution_rows
+            adapter_id: canonical_articulated_chain
+            selected_dynamic_joint_count: 1
+            pruned_dynamic_joint_names: []
+            adapter_scope: solver_kinematics_baseline
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+            supports_active_path_execution: true
+            supports_full_tree_execution: false
+            selected_tip_joint_name: j1
+          kinematic_convention: dh_approximate_from_urdf
+          root_link: base
+          selected_root_link: base
+          selected_joint_names:
+          - j1
+          pruned_dynamic_joint_names: []
+          dynamic_joint_count_total: 1
+          selected_dynamic_joint_count: 1
+          branched_tree_supported: true
+          branched_tree_execution_mode: serial_tree
+          closed_loop_supported: false
+          mobile_base_supported: false
+          has_visual: true
+          has_collision: true
+          fidelity: serial_with_collision
+          downgrade_records: []
+          capability_badges:
+          - source_family:urdf_tree
+          - runtime_family:articulated_serial_tree
+          - primary_execution_surface:articulated_model
+          - execution_surface:canonical_model
+          - execution_adapter:canonical_articulated_chain
+          - graph_preserved:full_source_tree
+          - execution_scope:serial_tree
+          - fidelity:serial_with_collision
+        downgrade_records: []
+        canonical_model_contract_version: v1
+        canonical_model_layer: urdf_serial_intermediate
+        runtime_projection: true
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+  articulated_model:
+    name: mini
+    root_link: base
+    dof: 1
+    joint_names:
+    - j1
+    link_names:
+    - base
+    - tip
+    semantic_family: articulated_serial_tree
+    source_surface: urdf_source_graph
+    source_format: urdf
+    fidelity: serial_with_collision
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:urdf_source_graph
+    - source_format:urdf
+    - fidelity:serial_with_collision
+    - dof:1
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - j1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+    joints:
+    - name: j1
+      parent_link: base
+      child_link: tip
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -1.0
+        upper: 1.0
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source: urdf_model
+        raw_type: revolute
+        graph_preserved: true
+    metadata:
+      graph_contract_version: v1
+      graph_edge_pairs:
+      - - base
+        - tip
+      root_candidates:
+      - base
+      branching_link_names: []
+      supports_branched_tree_projection: true
+      dynamic_joint_count_total: 1
+      fixed_joint_count_total: 0
+      graph_preserved: true
+  geometry_model:
+    geometry_contract: split_visual_collision
+    visual_geometry:
+      source: urdf_model
+      fidelity: serial_with_visual
+      collision_backend_hint: capsule
+      metadata:
+        source: urdf_model
+        has_visual: true
+      links:
+      - name: base
+        radius: 0.05
+        points_local: null
+        visual_primitives:
+        - kind: box
+          params:
+            size: 1 1 1
+          local_transform: null
+        collision_primitives: []
+        metadata:
+          source: urdf_model
+      - name: tip
+        radius: 0.05
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: sphere
+          params:
+            radius: '0.1'
+          local_transform: null
+        metadata:
+          source: urdf_model
+    collision_geometry:
+      source: urdf_model
+      fidelity: serial_with_collision
+      collision_backend_hint: capsule
+      metadata:
+        source: urdf_model
+        has_collision: true
+      links:
+      - name: base
+        radius: 0.05
+        points_local: null
+        visual_primitives: []
+        collision_primitives: []
+        metadata:
+          source: urdf_model
+      - name: tip
+        radius: 0.05
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: sphere
+          params:
+            radius: '0.1'
+          local_transform: null
+        metadata:
+          source: urdf_model
+    metadata:
+      importer_id: urdf_model
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+  source_model_summary:
+    source_format: urdf
+    source_family: urdf_tree
+    runtime_family: articulated_serial_tree
+    import_semantics: serial_model
+    joint_count: 1
+    link_count: 2
+    dynamic_joint_count_total: 1
+    has_visual: true
+    has_collision: true
+    root_link: base
+    selected_joint_names:
+    - j1
+    graph_link_names:
+    - base
+    - tip
+    graph_edge_pairs:
+    - - base
+      - tip
+    branching_link_names: []
+    downgrade_records: []
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    fidelity_roadmap:
+      roadmap_level: serial_with_collision
+      source_model_state: structured_source
+      runtime_state: runtime_executable
+      geometry_state: geometry_recoverable
+  asset_resolution_manifest:
+    geometry_bundle_ref: bundle.geometry
+    collision_bundle_ref: bundle.collision_geometry
+    has_visual_geometry: true
+    has_collision_geometry: true
+  fidelity_breakdown:
+    roadmap_level: serial_with_collision
+    source_recovered: true
+    runtime_executable: true
+    geometry_recoverable: true
+    graph_recovered: true
+    source_model_state: structured_source
+    runtime_state: runtime_executable
+    geometry_state: geometry_recoverable
+    graph_state: articulated_graph_ready
+    execution_adapter_state: adapter_ready
+    execution_adapter: canonical_articulated_chain
+    branched_tree_supported: true
+    branching_detected: false
+    pruned_dynamic_joint_names: []
+    mesh_assets_recoverable: true
+    selected_joint_names:
+    - j1
+    degradation_reasons: []
+    downgrade_records: []
+  fidelity: serial_with_collision
+  warnings: []
+  metadata:
+    source_format: urdf
+    import_semantics: serial_model
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    downgrade_records: []
+    articulated_source_model:
+      name: mini
+      root_link: base
+      dof: 1
+      joint_names:
+      - j1
+      link_names:
+      - base
+      - tip
+      semantic_family: articulated_serial_tree
+      source_surface: urdf_source_graph
+      source_format: urdf
+      fidelity: serial_with_collision
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:urdf_source_graph
+      - source_format:urdf
+      - fidelity:serial_with_collision
+      - dof:1
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - j1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 0
+        edge_pairs:
+        - - base
+          - tip
+        branching_joint_names: []
+        joint_count: 1
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_closed_loop_execution: false
+      joints:
+      - name: j1
+        parent_link: base
+        child_link: tip
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -1.0
+          upper: 1.0
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source: urdf_model
+          raw_type: revolute
+          graph_preserved: true
+      metadata:
+        graph_contract_version: v1
+        graph_edge_pairs:
+        - - base
+          - tip
+        root_candidates:
+        - base
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        dynamic_joint_count_total: 1
+        fixed_joint_count_total: 0
+        graph_preserved: true
+    graph_summary:
+      graph_contract_version: v1
+      root_link: base
+      root_candidates:
+      - base
+      link_names:
+      - base
+      - tip
+      edge_pairs:
+      - - base
+        - tip
+      dynamic_joint_names:
+      - j1
+      fixed_joint_names: []
+      branching_link_names: []
+      dynamic_joint_count_total: 1
+      fixed_joint_count_total: 0
+      supports_branched_tree_projection: true
+      supports_branched_tree_execution: true
+      supports_closed_loop_execution: false
+      supports_mobile_base_execution: false
+      semantic_family: articulated_serial_tree
+imported_package_summary:
+  package_id: mini
+  importer_id: urdf_model
+  source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+  fidelity: serial_with_collision
+  warnings: []
+  runtime_model:
+    name: mini
+    dof: 1
+    joint_names:
+    - j1
+    link_names:
+    - base
+    - tip
+    execution_adapter: canonical_articulated_chain
+    primary_execution_surface: articulated_model
+    source_surface: canonical_model
+    source_format: urdf
+    fidelity: serial_with_collision
+    semantic_family: articulated_serial_tree
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: urdf
+        fidelity: serial_with_collision
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        row_count: 1
+    execution_row_count: 1
+    joint_limit_count: 1
+    execution_rows:
+    - a: 0.0
+      alpha: 0.0
+      d: 1.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -1.0
+      q_max: 1.0
+    joint_limits:
+    - lower: -1.0
+      upper: 1.0
+      velocity: null
+      effort: null
+    has_base_transform: true
+    has_tool_transform: true
+    home_q_norm: 0.0
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    capability_badges:
+    - execution_adapter:canonical_articulated_chain
+    - source_surface:canonical_model
+    - fidelity:serial_with_collision
+    - semantic_family:articulated_serial_tree
+    provenance:
+      model_source: urdf_model
+      kinematic_source: urdf_model
+      geometry_bundle_ref: bundle.geometry
+      collision_bundle_ref: bundle.collision_geometry
+      has_structured_model: true
+      has_canonical_model: true
+      geometry_available: true
+      collision_model: structured
+      execution_layers:
+        execution_contract_version: v2
+        source_model:
+          surface: canonical_model
+          format: urdf
+          fidelity: serial_with_collision
+        articulated_graph:
+          surface: articulated_model
+          semantic_family: articulated_serial_tree
+        execution_adapter:
+          surface: serial_execution_rows
+          adapter_id: canonical_articulated_chain
+          row_count: 1
+      articulated_model_payload:
+        name: mini
+        root_link: base
+        dof: 1
+        joint_names:
+        - j1
+        link_names:
+        - base
+        - tip
+        semantic_family: articulated_serial_tree
+        source_surface: canonical_model
+        source_format: urdf
+        fidelity: serial_with_collision
+        capability_badges:
+        - semantic_family:articulated_serial_tree
+        - source_surface:canonical_model
+        - source_format:urdf
+        - fidelity:serial_with_collision
+        - dof:1
+        - execution_adapter:articulated_serial_tree
+        - execution_semantics:serial_tree
+        execution_descriptor:
+          adapter_id: articulated_serial_tree
+          semantic_family: articulated_serial_tree
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          execution_tip_joint_index: 0
+          supports_tree_projection: true
+          supports_active_path_execution: true
+          supports_full_tree_execution: false
+        selected_execution_joint_names:
+        - j1
+        base_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        tool_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        home_q:
+        - 0.0
+        topology:
+          root_joint_indices:
+          - 0
+          leaf_joint_indices:
+          - 0
+          edge_pairs:
+          - - base
+            - tip
+          branching_joint_names: []
+          joint_count: 1
+          root_count: 1
+          leaf_count: 1
+          supports_serial_tree_execution: true
+          supports_branched_tree_projection: true
+          supports_active_path_execution: true
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          execution_tip_joint_index: 0
+          supports_closed_loop_execution: false
+        joints:
+        - name: j1
+          parent_link: base
+          child_link: tip
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -1.0
+            upper: 1.0
+            velocity: null
+            effort: null
+          parent_index: null
+          metadata:
+            source_joint_metadata:
+              chain_index: 0
+            execution_adapter: canonical_articulated_chain
+        metadata:
+          derived_from_canonical_model: true
+          execution_adapter: canonical_articulated_chain
+          importer_id: urdf_model
+          warnings: []
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          runtime_fidelity_contract:
+            contract_version: v4
+            source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+            source_family: urdf_tree
+            runtime_family: articulated_serial_tree
+            execution_surface: canonical_model
+            execution_adapter: canonical_articulated_chain
+            runtime_dispatch:
+              primary_execution_surface: articulated_model
+              primary_execution_adapter: canonical_articulated_chain
+              execution_semantics: serial_tree
+              execution_scope: serial_tree
+            source_model_layer:
+              surface: urdf_tree
+              source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+              selected_root_link: base
+              candidate_root_links:
+              - base
+            articulated_graph_layer:
+              surface: articulated_model
+              semantic_family: articulated_serial_tree
+              root_link: base
+              graph_link_names:
+              - base
+              - tip
+              graph_edge_pairs:
+              - - base
+                - tip
+              graph_dynamic_joint_names:
+              - j1
+              selected_joint_names:
+              - j1
+              branching_link_names: []
+              supports_branched_tree_projection: true
+              supports_branched_tree_execution: true
+              supports_closed_loop_execution: false
+              supports_mobile_base_execution: false
+            execution_adapter_layer:
+              surface: serial_execution_rows
+              adapter_id: canonical_articulated_chain
+              selected_dynamic_joint_count: 1
+              pruned_dynamic_joint_names: []
+              adapter_scope: solver_kinematics_baseline
+              execution_semantics: serial_tree
+              execution_scope: serial_tree
+              supports_active_path_execution: true
+              supports_full_tree_execution: false
+              selected_tip_joint_name: j1
+            kinematic_convention: dh_approximate_from_urdf
+            root_link: base
+            selected_root_link: base
+            selected_joint_names:
+            - j1
+            pruned_dynamic_joint_names: []
+            dynamic_joint_count_total: 1
+            selected_dynamic_joint_count: 1
+            branched_tree_supported: true
+            branched_tree_execution_mode: serial_tree
+            closed_loop_supported: false
+            mobile_base_supported: false
+            has_visual: true
+            has_collision: true
+            fidelity: serial_with_collision
+            downgrade_records: []
+            capability_badges:
+            - source_family:urdf_tree
+            - runtime_family:articulated_serial_tree
+            - primary_execution_surface:articulated_model
+            - execution_surface:canonical_model
+            - execution_adapter:canonical_articulated_chain
+            - graph_preserved:full_source_tree
+            - execution_scope:serial_tree
+            - fidelity:serial_with_collision
+          downgrade_records: []
+          canonical_model_contract_version: v1
+          canonical_model_layer: urdf_serial_intermediate
+          runtime_projection: true
+    articulated_model_summary:
+      name: mini
+      root_link: base
+      dof: 1
+      joint_names:
+      - j1
+      link_names:
+      - base
+      - tip
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: urdf
+      fidelity: serial_with_collision
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:urdf
+      - fidelity:serial_with_collision
+      - dof:1
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - j1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 0
+        edge_pairs:
+        - - base
+          - tip
+        branching_joint_names: []
+        joint_count: 1
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_closed_loop_execution: false
+      joints:
+      - name: j1
+        parent_link: base
+        child_link: tip
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -1.0
+          upper: 1.0
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            chain_index: 0
+          execution_adapter: canonical_articulated_chain
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_articulated_chain
+        importer_id: urdf_model
+        warnings: []
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        runtime_fidelity_contract:
+          contract_version: v4
+          source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+          source_family: urdf_tree
+          runtime_family: articulated_serial_tree
+          execution_surface: canonical_model
+          execution_adapter: canonical_articulated_chain
+          runtime_dispatch:
+            primary_execution_surface: articulated_model
+            primary_execution_adapter: canonical_articulated_chain
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+          source_model_layer:
+            surface: urdf_tree
+            source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+            selected_root_link: base
+            candidate_root_links:
+            - base
+          articulated_graph_layer:
+            surface: articulated_model
+            semantic_family: articulated_serial_tree
+            root_link: base
+            graph_link_names:
+            - base
+            - tip
+            graph_edge_pairs:
+            - - base
+              - tip
+            graph_dynamic_joint_names:
+            - j1
+            selected_joint_names:
+            - j1
+            branching_link_names: []
+            supports_branched_tree_projection: true
+            supports_branched_tree_execution: true
+            supports_closed_loop_execution: false
+            supports_mobile_base_execution: false
+          execution_adapter_layer:
+            surface: serial_execution_rows
+            adapter_id: canonical_articulated_chain
+            selected_dynamic_joint_count: 1
+            pruned_dynamic_joint_names: []
+            adapter_scope: solver_kinematics_baseline
+            execution_semantics: serial_tree
+            execution_scope: serial_tree
+            supports_active_path_execution: true
+            supports_full_tree_execution: false
+            selected_tip_joint_name: j1
+          kinematic_convention: dh_approximate_from_urdf
+          root_link: base
+          selected_root_link: base
+          selected_joint_names:
+          - j1
+          pruned_dynamic_joint_names: []
+          dynamic_joint_count_total: 1
+          selected_dynamic_joint_count: 1
+          branched_tree_supported: true
+          branched_tree_execution_mode: serial_tree
+          closed_loop_supported: false
+          mobile_base_supported: false
+          has_visual: true
+          has_collision: true
+          fidelity: serial_with_collision
+          downgrade_records: []
+          capability_badges:
+          - source_family:urdf_tree
+          - runtime_family:articulated_serial_tree
+          - primary_execution_surface:articulated_model
+          - execution_surface:canonical_model
+          - execution_adapter:canonical_articulated_chain
+          - graph_preserved:full_source_tree
+          - execution_scope:serial_tree
+          - fidelity:serial_with_collision
+        downgrade_records: []
+        canonical_model_contract_version: v1
+        canonical_model_layer: urdf_serial_intermediate
+        runtime_projection: true
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+  articulated_model:
+    name: mini
+    root_link: base
+    dof: 1
+    joint_names:
+    - j1
+    link_names:
+    - base
+    - tip
+    semantic_family: articulated_serial_tree
+    source_surface: urdf_source_graph
+    source_format: urdf
+    fidelity: serial_with_collision
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:urdf_source_graph
+    - source_format:urdf
+    - fidelity:serial_with_collision
+    - dof:1
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - j1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 0
+      edge_pairs:
+      - - base
+        - tip
+      branching_joint_names: []
+      joint_count: 1
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      execution_tip_joint_index: 0
+      supports_closed_loop_execution: false
+    joints:
+    - name: j1
+      parent_link: base
+      child_link: tip
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -1.0
+        upper: 1.0
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source: urdf_model
+        raw_type: revolute
+        graph_preserved: true
+    metadata:
+      graph_contract_version: v1
+      graph_edge_pairs:
+      - - base
+        - tip
+      root_candidates:
+      - base
+      branching_link_names: []
+      supports_branched_tree_projection: true
+      dynamic_joint_count_total: 1
+      fixed_joint_count_total: 0
+      graph_preserved: true
+  geometry_model:
+    geometry_contract: split_visual_collision
+    has_visual_geometry: true
+    has_collision_geometry: true
+    visual_geometry:
+      source: urdf_model
+      fidelity: serial_with_visual
+      collision_backend_hint: capsule
+      link_count: 2
+      metadata:
+        source: urdf_model
+        has_visual: true
+    collision_geometry:
+      source: urdf_model
+      fidelity: serial_with_collision
+      collision_backend_hint: capsule
+      link_count: 2
+      metadata:
+        source: urdf_model
+        has_collision: true
+    metadata:
+      importer_id: urdf_model
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+  source_model_summary:
+    source_format: urdf
+    source_family: urdf_tree
+    runtime_family: articulated_serial_tree
+    import_semantics: serial_model
+    joint_count: 1
+    link_count: 2
+    dynamic_joint_count_total: 1
+    has_visual: true
+    has_collision: true
+    root_link: base
+    selected_joint_names:
+    - j1
+    graph_link_names:
+    - base
+    - tip
+    graph_edge_pairs:
+    - - base
+      - tip
+    branching_link_names: []
+    downgrade_records: []
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    fidelity_roadmap:
+      roadmap_level: serial_with_collision
+      source_model_state: structured_source
+      runtime_state: runtime_executable
+      geometry_state: geometry_recoverable
+  asset_resolution_manifest:
+    geometry_bundle_ref: bundle.geometry
+    collision_bundle_ref: bundle.collision_geometry
+    has_visual_geometry: true
+    has_collision_geometry: true
+  fidelity_breakdown:
+    roadmap_level: serial_with_collision
+    source_recovered: true
+    runtime_executable: true
+    geometry_recoverable: true
+    graph_recovered: true
+    source_model_state: structured_source
+    runtime_state: runtime_executable
+    geometry_state: geometry_recoverable
+    graph_state: articulated_graph_ready
+    execution_adapter_state: adapter_ready
+    execution_adapter: canonical_articulated_chain
+    branched_tree_supported: true
+    branching_detected: false
+    pruned_dynamic_joint_names: []
+    mesh_assets_recoverable: true
+    selected_joint_names:
+    - j1
+    degradation_reasons: []
+    downgrade_records: []
+  metadata:
+    source_format: urdf
+    import_semantics: serial_model
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    downgrade_records: []
+    articulated_source_model:
+      name: mini
+      root_link: base
+      dof: 1
+      joint_names:
+      - j1
+      link_names:
+      - base
+      - tip
+      semantic_family: articulated_serial_tree
+      source_surface: urdf_source_graph
+      source_format: urdf
+      fidelity: serial_with_collision
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:urdf_source_graph
+      - source_format:urdf
+      - fidelity:serial_with_collision
+      - dof:1
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - j1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 0
+        edge_pairs:
+        - - base
+          - tip
+        branching_joint_names: []
+        joint_count: 1
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        execution_tip_joint_index: 0
+        supports_closed_loop_execution: false
+      joints:
+      - name: j1
+        parent_link: base
+        child_link: tip
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -1.0
+          upper: 1.0
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source: urdf_model
+          raw_type: revolute
+          graph_preserved: true
+      metadata:
+        graph_contract_version: v1
+        graph_edge_pairs:
+        - - base
+          - tip
+        root_candidates:
+        - base
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        dynamic_joint_count_total: 1
+        fixed_joint_count_total: 0
+        graph_preserved: true
+    graph_summary:
+      graph_contract_version: v1
+      root_link: base
+      root_candidates:
+      - base
+      link_names:
+      - base
+      - tip
+      edge_pairs:
+      - - base
+        - tip
+      dynamic_joint_names:
+      - j1
+      fixed_joint_names: []
+      branching_link_names: []
+      dynamic_joint_count_total: 1
+      fixed_joint_count_total: 0
+      supports_branched_tree_projection: true
+      supports_branched_tree_execution: true
+      supports_closed_loop_execution: false
+      supports_mobile_base_execution: false
+      semantic_family: articulated_serial_tree
+geometry_model:
+  geometry_contract: split_visual_collision
+  visual_geometry:
+    source: urdf_model
+    fidelity: serial_with_visual
+    collision_backend_hint: capsule
+    metadata:
+      source: urdf_model
+      has_visual: true
+    links:
+    - name: base
+      radius: 0.05
+      points_local: null
+      visual_primitives:
+      - kind: box
+        params:
+          size: 1 1 1
+        local_transform: null
+      collision_primitives: []
+      metadata:
+        source: urdf_model
+    - name: tip
+      radius: 0.05
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: sphere
+        params:
+          radius: '0.1'
+        local_transform: null
+      metadata:
+        source: urdf_model
+  collision_geometry:
+    source: urdf_model
+    fidelity: serial_with_collision
+    collision_backend_hint: capsule
+    metadata:
+      source: urdf_model
+      has_collision: true
+    links:
+    - name: base
+      radius: 0.05
+      points_local: null
+      visual_primitives: []
+      collision_primitives: []
+      metadata:
+        source: urdf_model
+    - name: tip
+      radius: 0.05
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: sphere
+        params:
+          radius: '0.1'
+        local_transform: null
+      metadata:
+        source: urdf_model
+  metadata:
+    importer_id: urdf_model
+    source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+geometry_model_summary:
+  geometry_contract: split_visual_collision
+  has_visual_geometry: true
+  has_collision_geometry: true
+  visual_geometry:
+    source: urdf_model
+    fidelity: serial_with_visual
+    collision_backend_hint: capsule
+    link_count: 2
+    metadata:
+      source: urdf_model
+      has_visual: true
+  collision_geometry:
+    source: urdf_model
+    fidelity: serial_with_collision
+    collision_backend_hint: capsule
+    link_count: 2
+    metadata:
+      source: urdf_model
+      has_collision: true
+  metadata:
+    importer_id: urdf_model
+    source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+articulated_model_summary:
+  name: mini
+  root_link: base
+  dof: 1
+  joint_names:
+  - j1
+  link_names:
+  - base
+  - tip
+  semantic_family: articulated_serial_tree
+  source_surface: urdf_source_graph
+  source_format: urdf
+  fidelity: serial_with_collision
+  capability_badges:
+  - semantic_family:articulated_serial_tree
+  - source_surface:urdf_source_graph
+  - source_format:urdf
+  - fidelity:serial_with_collision
+  - dof:1
+  - execution_adapter:articulated_serial_tree
+  - execution_semantics:serial_tree
+  execution_descriptor:
+    adapter_id: articulated_serial_tree
+    semantic_family: articulated_serial_tree
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    execution_tip_joint_index: 0
+    supports_tree_projection: true
+    supports_active_path_execution: true
+    supports_full_tree_execution: false
+  selected_execution_joint_names:
+  - j1
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 0
+    edge_pairs:
+    - - base
+      - tip
+    branching_joint_names: []
+    joint_count: 1
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    execution_tip_joint_index: 0
+    supports_closed_loop_execution: false
+  joints:
+  - name: j1
+    parent_link: base
+    child_link: tip
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -1.0
+      upper: 1.0
+      velocity: null
+      effort: null
+    parent_index: null
+    metadata:
+      source: urdf_model
+      raw_type: revolute
+      graph_preserved: true
+  metadata:
+    graph_contract_version: v1
+    graph_edge_pairs:
+    - - base
+      - tip
+    root_candidates:
+    - base
+    branching_link_names: []
+    supports_branched_tree_projection: true
+    dynamic_joint_count_total: 1
+    fixed_joint_count_total: 0
+    graph_preserved: true
+canonical_model:
+  name: mini
+  root_link: base
+  source_format: urdf
+  execution_adapter: canonical_articulated_chain
+  execution_rows:
+  - a: 0.0
+    alpha: 0.0
+    d: 1.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -1.0
+    q_max: 1.0
+  fidelity: serial_with_collision
+  metadata:
+    importer_id: urdf_model
+    warnings: []
+    source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+    runtime_fidelity_contract:
+      contract_version: v4
+      source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+      source_family: urdf_tree
+      runtime_family: articulated_serial_tree
+      execution_surface: canonical_model
+      execution_adapter: canonical_articulated_chain
+      runtime_dispatch:
+        primary_execution_surface: articulated_model
+        primary_execution_adapter: canonical_articulated_chain
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+      source_model_layer:
+        surface: urdf_tree
+        source_path: /tmp/pytest-of-root/pytest-131/test_imported_geometry_round_t0/structured_roundtrip.urdf
+        selected_root_link: base
+        candidate_root_links:
+        - base
+      articulated_graph_layer:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+        root_link: base
+        graph_link_names:
+        - base
+        - tip
+        graph_edge_pairs:
+        - - base
+          - tip
+        graph_dynamic_joint_names:
+        - j1
+        selected_joint_names:
+        - j1
+        branching_link_names: []
+        supports_branched_tree_projection: true
+        supports_branched_tree_execution: true
+        supports_closed_loop_execution: false
+        supports_mobile_base_execution: false
+      execution_adapter_layer:
+        surface: serial_execution_rows
+        adapter_id: canonical_articulated_chain
+        selected_dynamic_joint_count: 1
+        pruned_dynamic_joint_names: []
+        adapter_scope: solver_kinematics_baseline
+        execution_semantics: serial_tree
+        execution_scope: serial_tree
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+        selected_tip_joint_name: j1
+      kinematic_convention: dh_approximate_from_urdf
+      root_link: base
+      selected_root_link: base
+      selected_joint_names:
+      - j1
+      pruned_dynamic_joint_names: []
+      dynamic_joint_count_total: 1
+      selected_dynamic_joint_count: 1
+      branched_tree_supported: true
+      branched_tree_execution_mode: serial_tree
+      closed_loop_supported: false
+      mobile_base_supported: false
+      has_visual: true
+      has_collision: true
+      fidelity: serial_with_collision
+      downgrade_records: []
+      capability_badges:
+      - source_family:urdf_tree
+      - runtime_family:articulated_serial_tree
+      - primary_execution_surface:articulated_model
+      - execution_surface:canonical_model
+      - execution_adapter:canonical_articulated_chain
+      - graph_preserved:full_source_tree
+      - execution_scope:serial_tree
+      - fidelity:serial_with_collision
+    downgrade_records: []
+    canonical_model_contract_version: v1
+    canonical_model_layer: urdf_serial_intermediate
+  joints:
+  - name: j1
+    parent_link: base
+    child_link: tip
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    limit:
+      lower: -1.0
+      upper: 1.0
+      velocity: null
+      effort: null
+    origin_translation:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    metadata:
+      chain_index: 0
+  links:
+  - name: base
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: true
+    has_collision: false
+    metadata:
+      source: urdf
+  - name: tip
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: true
+    metadata:
+      source: urdf

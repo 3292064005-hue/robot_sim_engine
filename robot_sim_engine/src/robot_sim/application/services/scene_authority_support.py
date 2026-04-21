@@ -7,12 +7,35 @@ import numpy as np
 SUPPORTED_SCENE_SHAPES = {'box', 'sphere', 'cylinder'}
 
 
-def coerce_int(value: object) -> int:
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, (int, float, str)):
-        return int(value or 0)
-    return 0
+def coerce_int(value: object, *, default: int = 0, minimum: int | None = None, maximum: int | None = None) -> int:
+    """Normalize an arbitrary scalar-like value into an int with optional clamps.
+
+    Args:
+        value: Raw scalar-like value.
+        default: Fallback value when conversion fails or the input is empty.
+        minimum: Optional inclusive lower bound applied after conversion.
+        maximum: Optional inclusive upper bound applied after conversion.
+
+    Returns:
+        int: Normalized integer value.
+
+    Raises:
+        None: Defensive coercion helper.
+    """
+    try:
+        if isinstance(value, bool):
+            normalized = int(value)
+        elif isinstance(value, (int, float, str)):
+            normalized = int(value if value not in ('', None) else default)
+        else:
+            normalized = int(default)
+    except (TypeError, ValueError):
+        normalized = int(default)
+    if minimum is not None and normalized < int(minimum):
+        normalized = int(minimum)
+    if maximum is not None and normalized > int(maximum):
+        normalized = int(maximum)
+    return normalized
 
 
 def normalize_vector(value, *, field_name: str) -> tuple[float, float, float]:

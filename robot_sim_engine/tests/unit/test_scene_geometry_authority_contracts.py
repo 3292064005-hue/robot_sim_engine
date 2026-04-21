@@ -23,9 +23,11 @@ def test_scene_authority_summary_exposes_three_geometry_layers() -> None:
     assert record['declaration_geometry']['kind'] == 'cylinder'
     assert record['validation_geometry']['kind'] == 'aabb'
     assert record['render_geometry']['kind'] == 'cylinder'
-    # compatibility aliases stay available
-    assert record['declared_geometry']['kind'] == 'cylinder'
-    assert record['resolved_geometry']['kind'] == 'aabb'
+    assert record['validation_projection']['projection_degraded'] is True
+    assert summary['validation_projection']['record_count'] == 1
+    assert summary['validation_projection']['degraded_record_count'] == 1
+    assert record['declaration_geometry']['kind'] == 'cylinder'
+    assert record['validation_geometry']['kind'] == 'aabb'
 
 
 def test_runtime_asset_service_projects_three_layer_scene_authority(planar_spec):

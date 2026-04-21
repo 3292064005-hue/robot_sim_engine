@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import numpy as np
 
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.model.pose import Pose
 from robot_sim.model.robot_spec import RobotSpec
 
 
 def rough_reach_radius(spec: RobotSpec) -> float:
-    articulated = spec.articulated_model
-    articulated.require_serial_tree_execution()
-    return float(articulated.rough_reach_radius())
+    adapter = resolve_execution_adapter(spec)
+    adapter.require_active_path_execution()
+    return float(adapter.rough_reach_radius())
 
 
 def target_is_certainly_outside_workspace(spec: RobotSpec, target: Pose, *, margin: float = 1.05) -> bool:

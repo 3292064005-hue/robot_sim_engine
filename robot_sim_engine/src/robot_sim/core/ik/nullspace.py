@@ -1,15 +1,16 @@
 from __future__ import annotations
 import numpy as np
+from robot_sim.core.kinematics.execution_adapter import resolve_execution_adapter
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.domain.types import FloatArray
 from robot_sim.core.kinematics.jacobian_solver import JacobianSolver
 
 
 def joint_limit_gradient(spec: RobotSpec, q: FloatArray) -> FloatArray:
-    articulated = spec.articulated_model
-    articulated.require_serial_tree_execution()
+    adapter = resolve_execution_adapter(spec)
+    adapter.require_active_path_execution()
     grad = np.zeros_like(q, dtype=float)
-    for i, joint in enumerate(articulated.joint_models):
+    for i, joint in enumerate(adapter.joint_models):
         q_mid = 0.5 * (joint.limit.lower + joint.limit.upper)
         half_range = max(1.0e-9, 0.5 * (joint.limit.upper - joint.limit.lower))
         grad[i] = -2.0 * (q[i] - q_mid) / (half_range ** 2)

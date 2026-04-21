@@ -24,12 +24,12 @@ class MainWindowTaskMixin:
 
     def on_run_ik(self: 'MainWindowTaskView') -> None:
         """Entry point wired to the IK run button."""
-        self.ik_task_coordinator.run()
+        self.task_orchestration.ik_task_coordinator.run()
 
 
     def on_cancel_ik(self: 'MainWindowTaskView') -> None:
         """Request cooperative cancellation for the active IK task."""
-        self.threader.cancel()
+        self.task_orchestration.threader.cancel()
         self.status_panel.append('正在请求取消 IK')
 
     def on_ik_progress(self: 'MainWindowTaskView', log) -> None:
@@ -48,7 +48,7 @@ class MainWindowTaskMixin:
 
     def on_ik_finished(self: 'MainWindowTaskView', result) -> None:
         """Handle the terminal IK result through the canonical coordinator path."""
-        self.ik_task_coordinator.handle_finished(result)
+        self.task_orchestration.ik_task_coordinator.handle_finished(result)
 
     def _build_trajectory_request(self: 'MainWindowTaskView'):
         """Build the current trajectory request from visible UI state."""
@@ -63,30 +63,30 @@ class MainWindowTaskMixin:
 
     def on_plan(self: 'MainWindowTaskView') -> None:
         """Entry point wired to the trajectory-planning button."""
-        self.trajectory_task_coordinator.run()
+        self.task_orchestration.trajectory_task_coordinator.run()
 
 
     def on_trajectory_finished(self: 'MainWindowTaskView', traj) -> None:
         """Handle the terminal trajectory result through the canonical coordinator path."""
-        self.trajectory_task_coordinator.handle_finished(traj)
+        self.task_orchestration.trajectory_task_coordinator.handle_finished(traj)
 
     def on_run_benchmark(self: 'MainWindowTaskView') -> None:
         """Entry point wired to the benchmark button."""
-        self.benchmark_task_coordinator.run()
+        self.task_orchestration.benchmark_task_coordinator.run()
 
 
     def on_benchmark_finished(self: 'MainWindowTaskView', report) -> None:
         """Handle the terminal benchmark result through the canonical coordinator path."""
-        self.benchmark_task_coordinator.handle_finished(report)
+        self.task_orchestration.benchmark_task_coordinator.handle_finished(report)
 
     def _on_task_state_changed(self: 'MainWindowTaskView', snapshot) -> None:
         """Route structured task snapshots through the status coordinator."""
-        self.status_coordinator.apply_task_snapshot(snapshot)
+        self.task_orchestration.status_coordinator.apply_task_snapshot(snapshot)
 
     def on_worker_failed(self: 'MainWindowTaskView', failure) -> None:
         """Route worker failures through the canonical status coordinator path."""
         self._set_busy(False)
-        self.status_coordinator.handle_worker_failure(failure)
+        self.task_orchestration.status_coordinator.handle_worker_failure(failure)
 
     def on_worker_cancelled(self: 'MainWindowTaskView') -> None:
         """Project cooperative task cancellation into the UI state."""

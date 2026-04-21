@@ -57,13 +57,15 @@ class DummyWindow:
             update_fk_projection=lambda fk, target=None: setattr(self, 'fk_updated', True),
             set_trajectory_from_fk_samples=lambda points: setattr(self, 'traj_points', np.asarray(points)),
         )
-        self.solver_facade = SimpleNamespace(apply_ik_result=lambda req, result: None)
-        self.trajectory_facade = SimpleNamespace(apply_trajectory=lambda traj: None)
+        self.motion_workflow = SimpleNamespace(
+            apply_ik_result=lambda req, result: None,
+            apply_trajectory=lambda traj: None,
+            build_benchmark_config=lambda **kwargs: kwargs,
+        )
         self.runtime_facade = SimpleNamespace(
             state=SimpleNamespace(trajectory=None),
             state_store=SimpleNamespace(patch=lambda **kwargs: setattr(self, 'patched', kwargs)),
         )
-        self.benchmark_facade = SimpleNamespace()
         self.controller = SimpleNamespace(
             state=SimpleNamespace(fk_result=SimpleNamespace(), target_pose=None),
             apply_ik_result=lambda req, result: None,
@@ -131,7 +133,7 @@ class DummyWindow:
 def test_task_coordinator_finish_handlers_update_window_state():
     window = DummyWindow()
     ik_result = SimpleNamespace(success=True, q_sol=np.array([0.1, 0.2]), message='ok', logs=[SimpleNamespace(attempt_idx=0, iter_idx=0, pos_err_norm=1e-3, ori_err_norm=2e-3, cond_number=10.0, manipulability=0.1, dq_norm=0.2)])
-    ik_coordinator = IKTaskCoordinator(window, solver=window.solver_facade, threader=window.threader)
+    ik_coordinator = IKTaskCoordinator(window, solver=window.motion_workflow, threader=window.threader)
     ik_coordinator.remember_request(object())
     ik_coordinator.handle_finished(ik_result)
     traj = SimpleNamespace(
@@ -142,11 +144,11 @@ def test_task_coordinator_finish_handlers_update_window_state():
         ee_positions=np.array([[0,0,0],[1,0,0]]),
         is_playback_ready=True,
     )
-    traj_coordinator = TrajectoryTaskCoordinator(window, trajectory=window.trajectory_facade, threader=window.threader)
+    traj_coordinator = TrajectoryTaskCoordinator(window, trajectory=window.motion_workflow, threader=window.threader)
     traj_coordinator.remember_request(object())
     traj_coordinator.handle_finished(traj)
     report = SimpleNamespace(num_cases=2, success_rate=1.0, cases=[{'name': 'a'}])
-    BenchmarkTaskCoordinator(window, runtime=window.runtime_facade, benchmark=window.benchmark_facade, threader=window.threader).handle_finished(report)
+    BenchmarkTaskCoordinator(window, runtime=window.runtime_facade, benchmark=window.motion_workflow, threader=window.threader).handle_finished(report)
     assert window.status_panel.messages == ['ok', '轨迹已生成：2 个采样点', 'Benchmark 运行完成']
     assert window.total_frames == 2
     assert window.frame == (0, 2)

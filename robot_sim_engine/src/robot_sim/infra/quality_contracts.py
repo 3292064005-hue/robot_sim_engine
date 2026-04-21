@@ -6,10 +6,21 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
+GENERATED_DOC_NAMES: tuple[str, ...] = (
+    'quality_gates.md',
+    'module_status.md',
+    'capability_matrix.md',
+    'exception_catch_matrix.md',
+    'quality_evidence.md',
+)
+
+
 from robot_sim.application.services.capability_service import CapabilityService
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.application.services.runtime_feature_service import RuntimeFeaturePolicy
 from robot_sim.infra.exception_policy import render_exception_catch_matrix_markdown, verify_exception_catch_matrix
+from robot_sim.infra.docs_information_architecture import verify_docs_information_architecture
+from robot_sim.infra.docs_manifest import render_entry_pages
 
 
 def _build_runtime_truth_quality_service(project_root: Path) -> "QualityContractService":
@@ -39,7 +50,6 @@ def _build_runtime_truth_quality_service(project_root: Path) -> "QualityContract
     config_service = ConfigService(
         runtime_paths.config_root,
         profile=ConfigService.DEFAULT_PROFILE,
-        allow_legacy_local_override=False,
     )
     runtime_feature_policy = RuntimeFeatureService(config_service).load_policy()
     plugin_loader = PluginLoader(config_service.plugin_manifest_paths(), policy=runtime_feature_policy)
@@ -69,16 +79,67 @@ def _build_runtime_truth_quality_service(project_root: Path) -> "QualityContract
 
 
 QUALITY_GATE_LINES: tuple[str, ...] = (
-    '- runtime contracts: `python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs` + `python scripts/verify_compatibility_retirement.py` + `python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline` + `python scripts/verify_perf_budget_config.py` + `pytest tests/performance/test_ik_smoke.py -q`',
-    '- governance evidence: `python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json` + `python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json` + `python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --release-manifest-out artifacts/release_manifest.json --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json runtime_contracts compatibility_budget performance_smoke`; the aggregated manifest now derives `artifact_ready`, `environment_ready`, and `release_ready` separately and always evaluates the checked-in release/gui environment contracts',
+    '- release blockers: `python scripts/verify_release_blockers.py` => quick_quality + compatibility_budget + unit_and_regression + gui_smoke',
+    '- runtime contracts: `python scripts/verify_runtime_gate_layer.py` => runtime_contracts + performance_smoke + headless_runtime_baseline + planning_scene_regression + collision_validation_matrix + scene_capture_baseline',
+    '- runtime contract gate: `python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs` + `python scripts/verify_compatibility_retirement.py` + `python scripts/verify_perf_budget_config.py`',
+    '- runtime baseline/details: `python scripts/verify_runtime_baseline.py --mode headless` + `pytest tests/unit/test_planning_scene_v2.py tests/unit/test_scene_authority_service.py -q` + `pytest tests/unit/test_planning_scene_validation.py tests/unit/test_scene_capability_surface.py -q` + `pytest tests/unit/test_scene_capture_support.py tests/unit/test_scene_render_contracts.py -q` + `pytest tests/performance/test_ik_smoke.py -q`',
+    '- governance evidence: `python scripts/verify_governance_gate_layer.py` => governance_evidence + docs_sync',
+    '- governance evidence detail: `python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json` + `python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json` + `python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --release-manifest-out artifacts/release_manifest.json --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json runtime_contracts compatibility_budget performance_smoke`; the aggregated manifest now derives `artifact_ready`, `environment_ready`, and `release_ready` separately and always evaluates the checked-in release/gui environment contracts',
     '- aggregated quality evidence rejects governance/benchmark artifacts that were not generated with their required `--execute-gates` execution contract.',
     '- aggregated quality evidence rejects artifacts whose source-tree fingerprint or tracked release-file count does not match the current repository checkout; the original repo_root is retained as provenance metadata but is not treated as a transport-stability requirement.',
     '- unit/regression: `pytest tests/unit tests/regression -q`',
     '- shipped behavior contracts: repo profiles must remain differentiable, coordinators must stay on explicit dependency injection paths, export/screenshot coordinators must stay on worker lifecycle routes, render degradation state must stay projected in SessionState.render_runtime through a typed status-panel subscription flow, clean bootstrap/headless mainline paths must stay within the configured compatibility budget, public plugin SDK examples must remain loader-compatible, render telemetry must remain recorded as bounded structured state transitions + operation spans + sampling counters + backend-specific performance telemetry, diagnostics widgets must consume structured telemetry log sections, scene authority summaries must expose declaration/validation/render geometry layers, and screenshot/importer fidelity baselines must stay reproducible from checked-in fixtures',
     '- full validation: `pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q` with `fail_under = 80` + `python scripts/verify_partition_coverage.py --coverage-json coverage.json`',
     '- gui smoke: `python scripts/verify_gui_smoke.py`; the gate prefers real `PySide6` and falls back to the repository-local Qt test shim only inside the verification process so deterministic offscreen smoke remains executable in constrained environments. Evidence must retain `runtime_kind`, `gui_real_runtime_ok`, and `gui_shim_runtime_ok` so release review can distinguish shim smoke from a real GUI baseline',
-    '- contract regeneration: `python scripts/regenerate_quality_contracts.py` + `git diff --exit-code -- docs`',
+    '- clean source bundle: `python scripts/package_release.py --output dist/source-release.zip --top-level-dir robot_sim_engine`; packaging now stages a writable clean-source mirror, regenerates checked-in contract docs inside the stage, re-verifies the staged tree, and refuses to ship stale contract surfaces from the caller working copy.',
+    '- contract regeneration: `python scripts/regenerate_quality_contracts.py` + `python scripts/verify_docs_information_architecture.py` + `git diff --exit-code -- docs`; docs gate now enforces full explanatory-doc semantic coverage through doc-class policies plus file-specific semantic contracts',
 )
+
+
+def _front_matter(**values: str) -> str:
+    lines = ['---']
+    lines.extend(f'{key}: {value}' for key, value in values.items())
+    lines.append('---')
+    lines.append('')
+    return '\n'.join(lines)
+
+
+def _generated_doc(text: str, *, title: str) -> str:
+    metadata = _front_matter(
+        owner='quality',
+        audience='maintainer',
+        status='generated',
+        source_of_truth='regenerated',
+        generated_by='scripts/regenerate_quality_contracts.py',
+        last_reviewed='2026-04-18',
+    )
+    return metadata + text
+
+
+def _generated_entry_page(name: str) -> str:
+    title = name[:-3].replace('_', ' ').title()
+    canonical = f'docs/generated/{name}'
+    metadata = _front_matter(
+        owner='docs',
+        audience='all',
+        status='entry-page',
+        source_of_truth='entry-point',
+        canonical_target=canonical,
+        last_reviewed='2026-04-18',
+    )
+    body = '\n'.join((
+        f'# {title}',
+        '',
+        '本文件是稳定入口页。',
+        '',
+        f'- canonical generated doc: `{canonical}`',
+        '- regeneration source: `python scripts/regenerate_quality_contracts.py`',
+        '- editing policy: 请优先修改运行时真源，再执行 regeneration；不要直接把契约内容手写回入口页。',
+        '',
+        f'请跳转阅读：[`{canonical}`](generated/{name})',
+        '',
+    ))
+    return metadata + body
 
 
 @dataclass(frozen=True)
@@ -133,7 +194,7 @@ class QualityContractService:
         lines = [
             '# Quality Evidence',
             '',
-            '- contract docs (`docs/*.md`) remain deterministic checked-in specifications.',
+            '- generated contract docs now live under `docs/generated/*.md`; root-level `docs/*.md` files remain stable entry pages.',
             '- executed quality evidence is written as JSON artifacts through `scripts/collect_quality_evidence.py`, `scripts/verify_module_governance.py --evidence-out`, and `scripts/verify_benchmark_matrix.py --evidence-out`.',
             '- `artifacts/release_manifest.json` is the canonical aggregated release-readiness summary; release review must evaluate `artifact_ready`, `environment_ready`, and `release_ready` together rather than treating executed artifacts alone as a sufficient release signal.',
             '- evidence artifacts must include a runtime fingerprint (python / platform / machine) so perf and governance results stay attributable to the environment that produced them.',
@@ -142,14 +203,14 @@ class QualityContractService:
             '- promotion and benchmark decisions should prefer executed evidence artifacts over static governance summaries whenever both are available.',
             '',
         ]
-        return '\n'.join(lines)
+        return _generated_doc('\n'.join(lines), title='Quality Evidence')
 
     def render_quality_gates_markdown(self) -> str:
         """Render the quality-gates markdown document."""
         lines = ['# Quality Gates', '']
         lines.extend(QUALITY_GATE_LINES)
         lines.append('')
-        return '\n'.join(lines)
+        return _generated_doc('\n'.join(lines), title='Quality Gates')
 
 
 
@@ -168,15 +229,30 @@ def _class_function_names(module_ast: ast.AST, class_name: str) -> set[str]:
                     names.add(item.name)
     return names
 
-def _expected_docs(root: Path, snapshot: QualityContractSnapshot) -> dict[Path, str]:
-    docs_dir = root / 'docs'
+def _generated_doc_paths(root: Path) -> dict[str, Path]:
+    docs_generated_dir = root / 'docs' / 'generated'
+    return {name: docs_generated_dir / name for name in GENERATED_DOC_NAMES}
+
+
+def _generated_docs(snapshot: QualityContractSnapshot) -> dict[str, str]:
     return {
-        docs_dir / 'quality_gates.md': snapshot.quality_gates_markdown,
-        docs_dir / 'module_status.md': snapshot.module_status_markdown,
-        docs_dir / 'capability_matrix.md': snapshot.capability_matrix_markdown,
-        docs_dir / 'exception_catch_matrix.md': snapshot.exception_catch_matrix_markdown,
-        docs_dir / 'quality_evidence.md': snapshot.quality_evidence_markdown,
+        'quality_gates.md': snapshot.quality_gates_markdown,
+        'module_status.md': _generated_doc(snapshot.module_status_markdown, title='Module Status'),
+        'capability_matrix.md': _generated_doc(snapshot.capability_matrix_markdown, title='Capability Matrix'),
+        'exception_catch_matrix.md': _generated_doc(snapshot.exception_catch_matrix_markdown, title='Exception Catch Matrix'),
+        'quality_evidence.md': snapshot.quality_evidence_markdown,
     }
+
+
+def _legacy_entry_docs(root: Path) -> dict[Path, str]:
+    return {root / rel_path: content for rel_path, content in render_entry_pages().items()}
+
+
+def _expected_docs(root: Path, snapshot: QualityContractSnapshot) -> dict[Path, str]:
+    generated_paths = _generated_doc_paths(root)
+    expected = {generated_paths[name]: content for name, content in _generated_docs(snapshot).items()}
+    expected.update(_legacy_entry_docs(root))
+    return expected
 
 
 
@@ -201,7 +277,7 @@ def verify_behavior_contracts(project_root: str | Path) -> list[str]:
         'research': {'title': 'Robot Sim Engine [research]', 'max_points': 8000, 'retry_count': 3, 'dt': 0.01},
     }
     for profile, expected in checks.items():
-        service = ConfigService(root / 'configs', profile=profile, allow_legacy_local_override=False)
+        service = ConfigService(root / 'configs', profile=profile)
         app_cfg = service.load_app_config()
         solver_cfg = service.load_solver_config()
         observed = {
@@ -282,7 +358,7 @@ def verify_behavior_contracts(project_root: str | Path) -> list[str]:
         errors.append('main window no longer builds through presentation assembly composition root')
     main_window_ast = _module_ast(main_window_path)
     main_window_functions = _class_function_names(main_window_ast, 'MainWindow')
-    for required_property in ('runtime_services', 'workflow_facades', 'task_orchestration'):
+    for required_property in ('runtime_services', 'workflow_services', 'task_orchestration'):
         if required_property not in main_window_functions:
             errors.append(f'main window runtime bundle contract missing property: {required_property}')
     if '_install_window_runtime_aliases' in main_window_functions:
@@ -395,6 +471,7 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
 
     errors.extend(verify_exception_catch_matrix(root))
     errors.extend(verify_behavior_contracts(root))
+    errors.extend(verify_docs_information_architecture(root))
 
     workflow_path = root / '.github' / 'workflows' / 'ci.yml'
     workflow = ''
@@ -420,6 +497,7 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             'pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q',
             'python scripts/verify_partition_coverage.py --coverage-json coverage.json',
             'pytest tests/gui -q',
+            'python scripts/package_release.py --output dist/source-release.zip --top-level-dir robot_sim_engine',
         )
         for marker in required_markers:
             if marker not in workflow:
@@ -433,6 +511,8 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
         readme = readme_path.read_text(encoding='utf-8')
         readme_markers = (
             '当前测试基线：**以 CI / pytest 实际收集结果为准**',
+            'release blockers',
+            'release blockers',
             'runtime contracts',
             'governance evidence',
             'unit/regression',
@@ -440,10 +520,14 @@ def verify_quality_contract_files(project_root: str | Path) -> list[str]:
             'gui smoke',
             'shipped behavior contracts',
             'python scripts/regenerate_importer_fidelity_baseline.py',
+            'verify_release_blockers.py',
+            'verify_runtime_gate_layer.py',
+            'verify_governance_gate_layer.py',
             'verify_runtime_contracts.py --mode headless --check-packaged-configs',
             'verify_compatibility_budget.py --scenario clean_headless_mainline',
             'verify_gui_smoke.py',
             'regenerate_quality_contracts.py',
+            'package_release.py --output dist/source-release.zip --top-level-dir robot_sim_engine',
             'research.yaml',
         )
         for marker in readme_markers:

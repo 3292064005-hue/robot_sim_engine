@@ -15,7 +15,7 @@ class DummyThreader:
 class DummyWindow:
     def __init__(self):
         self.runtime_facade = SimpleNamespace(state=SimpleNamespace(trajectory=SimpleNamespace()))
-        self.export_facade = SimpleNamespace(
+        self.export_workflow = SimpleNamespace(
             export_trajectory_bundle=lambda _name='trajectory_bundle.npz': 'trajectory_bundle.npz',
             export_trajectory=lambda _name='trajectory_bundle.npz': 'trajectory_bundle.npz',
             export_trajectory_metrics=lambda _name, _metrics: 'trajectory_metrics.json',
@@ -38,8 +38,8 @@ class DummyWindow:
 
 def test_export_task_coordinator_routes_exports_through_background_tasks():
     window = DummyWindow()
-    coord = ExportTaskCoordinator(window, runtime=window.runtime_facade, export=window.export_facade, threader=window.threader, metrics_service=window.metrics_service)
-    coord.export_trajectory()
+    coord = ExportTaskCoordinator(window, runtime=window.runtime_facade, export=window.export_workflow, threader=window.threader, metrics_service=window.metrics_service)
+    coord.export_trajectory_bundle()
     coord.export_session()
     coord.export_package()
     coord.export_benchmark()

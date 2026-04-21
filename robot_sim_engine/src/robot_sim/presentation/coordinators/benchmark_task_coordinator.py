@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from robot_sim.application.workers.benchmark_worker import BenchmarkWorker
 from robot_sim.presentation.coordinators._helpers import require_dependency, require_view, run_presented
+from robot_sim.presentation.state_events import BenchmarkReportProjectedEvent
 
 
 class BenchmarkTaskCoordinator:
@@ -39,7 +40,13 @@ class BenchmarkTaskCoordinator:
         require_view(self.window, 'project_busy_state', False, '')
 
         def action() -> None:
-            self.runtime.state_store.patch(benchmark_report=report)
+            state_store = require_dependency(getattr(self.runtime, 'state_store', None), 'runtime_facade.state_store')
+            dispatch = getattr(state_store, 'dispatch', None)
+            if callable(dispatch):
+                dispatch(BenchmarkReportProjectedEvent(benchmark_report=report))
+            else:
+                patch = require_dependency(getattr(state_store, 'patch', None), 'runtime_facade.state_store.patch')
+                patch(benchmark_report=report)
             summary = self.window.metrics_service.summarize_benchmark(report)
             require_view(self.window, 'project_benchmark_result', report, summary)
 

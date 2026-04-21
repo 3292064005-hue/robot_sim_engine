@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from robot_sim.application.workers.legacy_lifecycle import LegacyWorkerLifecycleAdapter
 from robot_sim.application.workers.task_events import (
     WorkerCancelledEvent,
     WorkerFailedEvent,
@@ -20,19 +19,16 @@ __all__ = ['BaseWorker', 'Slot']
 
 
 class BaseWorker(QObject):
-    """Qt worker base class with structured lifecycle events.
+    """Qt worker base class exposing structured lifecycle events only.
 
     Structured worker events are the canonical lifecycle contract used by the
-    orchestrator and diagnostics pipeline. Legacy Qt signals remain available for
-    backward compatibility, but they are now mirrored through a dedicated adapter
-    so payload translation no longer leaks into each worker implementation.
+    orchestrator, diagnostics pipeline, and UI bindings. The shipped mainline
+    no longer mirrors legacy lifecycle Qt signals; downstream integrations must
+    consume the structured ``*_event`` surfaces or derived callbacks projected
+    by the binding service.
     """
 
     started = Signal()
-    progress = Signal(object)
-    finished = Signal(object)
-    failed = Signal(str)
-    cancelled = Signal()
     state_changed = Signal(str)
     progress_event = Signal(object)
     finished_event = Signal(object)
@@ -56,7 +52,6 @@ class BaseWorker(QObject):
         super().__init__()
         self._cancel_requested = False
         self._state = TaskState.IDLE.value
-        self._legacy_signal_adapter = LegacyWorkerLifecycleAdapter()
         self.task_kind = str(task_kind)
         self.task_id = str(task_id or uuid4())
         self.correlation_id = str(correlation_id or self.task_id)
@@ -103,7 +98,11 @@ class BaseWorker(QObject):
         return self._cancel_requested
 
     def is_cancelled(self) -> bool:
-        """Backward-compatible alias for :meth:`is_cancel_requested`."""
+        """Return whether cooperative cancellation has been requested.
+
+        This method retains the canonical worker API used by the shipped runtime;
+        it is the canonical structured lifecycle channel for progress updates.
+        """
         return self.is_cancel_requested()
 
     def emit_started(self) -> None:
@@ -112,13 +111,22 @@ class BaseWorker(QObject):
         self.started.emit()
 
     def emit_progress(self, stage: str = '', percent: float = 0.0, message: str = '', payload: dict[str, object] | None = None) -> None:
-        """Emit structured and legacy progress notifications.
+        """Emit a structured progress event.
 
         Args:
             stage: Progress stage name.
             percent: Progress percentage in the ``[0, 100]`` range.
             message: User-facing progress message.
             payload: Optional structured payload.
+
+        Returns:
+            None: Emits a :class:`WorkerProgressEvent` on ``progress_event``.
+
+        Raises:
+            None: Emission is side-effect only.
+
+        Boundary behavior:
+            Missing ``payload`` values are normalized to an empty dictionary.
         """
         event = WorkerProgressEvent(
             task_id=self.task_id,
@@ -130,15 +138,23 @@ class BaseWorker(QObject):
             payload=dict(payload or {}),
         )
         self.progress_event.emit(event)
-        self._legacy_signal_adapter.emit_progress(self, event)
 
     def emit_finished(self, payload: object, stop_reason: str = 'completed', *, metadata: Mapping[str, object] | None = None) -> None:
-        """Emit structured and legacy success notifications.
+        """Emit a structured success event.
 
         Args:
             payload: Task result payload.
             stop_reason: Terminal stop reason.
             metadata: Optional structured metadata associated with the result.
+
+        Returns:
+            None: Emits a :class:`WorkerFinishedEvent` on ``finished_event``.
+
+        Raises:
+            None: Emission is side-effect only.
+
+        Boundary behavior:
+            ``metadata`` is normalized to an empty dictionary when absent.
         """
         self._set_state(TaskState.SUCCEEDED.value)
         event = WorkerFinishedEvent(
@@ -151,7 +167,6 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.finished_event.emit(event)
-        self._legacy_signal_adapter.emit_finished(self, event)
 
     def emit_failed(
         self,
@@ -162,7 +177,7 @@ class BaseWorker(QObject):
         metadata: Mapping[str, object] | None = None,
         severity: str | None = None,
     ) -> None:
-        """Emit structured and legacy failure notifications.
+        """Emit a structured failure event.
 
         Args:
             exc: Exception instance or fallback failure message.
@@ -170,6 +185,16 @@ class BaseWorker(QObject):
             stop_reason: Terminal stop reason.
             metadata: Optional structured metadata to project downstream.
             severity: Optional severity override for UI projection.
+
+        Returns:
+            None: Emits a :class:`WorkerFailedEvent` on ``failed_event``.
+
+        Raises:
+            None: Emission is side-effect only.
+
+        Boundary behavior:
+            :class:`RobotSimError` instances contribute canonical error metadata,
+            error code, and remediation hints to the emitted event.
         """
         self._set_state(TaskState.FAILED.value)
         resolved_code = str(code or '')
@@ -198,15 +223,23 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.failed_event.emit(event)
-        self._legacy_signal_adapter.emit_failed(self, event)
 
     def emit_cancelled(self, stop_reason: str = 'cancelled', *, message: str = 'cancelled', metadata: Mapping[str, object] | None = None) -> None:
-        """Emit structured and legacy cancellation notifications.
+        """Emit a structured cancellation event.
 
         Args:
             stop_reason: Terminal cancellation reason such as ``cancelled`` or ``timeout``.
             message: User-facing cancellation message.
             metadata: Optional structured metadata for diagnostics.
+
+        Returns:
+            None: Emits a :class:`WorkerCancelledEvent` on ``cancelled_event``.
+
+        Raises:
+            None: Emission is side-effect only.
+
+        Boundary behavior:
+            ``metadata`` is normalized to an empty dictionary when absent.
         """
         self._set_state(TaskState.CANCELLED.value)
         event = WorkerCancelledEvent(
@@ -219,4 +252,3 @@ class BaseWorker(QObject):
             finished_at=datetime.now(timezone.utc),
         )
         self.cancelled_event.emit(event)
-        self._legacy_signal_adapter.emit_cancelled(self, event)

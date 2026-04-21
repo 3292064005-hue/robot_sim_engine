@@ -26,10 +26,6 @@ class CaptureSceneUseCase:
         self._screenshot_service = screenshot_service
 
     def execute(self, scene_widget: Any, path: str | Path):
-        """Compatibility entry point for widget capture used by legacy tests."""
-        return self.execute_widget(scene_widget, path)
-
-    def execute_widget(self, scene_widget: Any, path: str | Path):
         """Capture a live scene widget to disk.
 
         Args:

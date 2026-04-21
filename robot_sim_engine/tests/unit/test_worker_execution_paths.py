@@ -55,7 +55,6 @@ class _FailingUseCase:
         raise RuntimeError('boom')
 
 
-
 class _StructuredTrajectoryUseCase:
     def __init__(self):
         self.progress_events = []
@@ -76,20 +75,20 @@ class _CancelledIKUseCase:
 def test_fk_worker_uses_structured_emit(planar_spec):
     worker = FKWorker(FKRequest(planar_spec, np.zeros(2, dtype=float)), _FKUseCase())
     finished = []
-    worker.finished.connect(finished.append)
+    worker.finished_event.connect(finished.append)
     worker.run()
     assert worker.state == 'succeeded'
-    assert finished[0] == {'q': [0.0, 0.0]}
+    assert finished[0].payload == {'q': [0.0, 0.0]}
 
 
 def test_ik_worker_emits_progress_and_finishes(planar_spec):
     target = Pose(p=np.array([1.0, 0.0, 0.0]), R=np.eye(3))
     worker = IKWorker(IKRequest(planar_spec, target, np.zeros(2, dtype=float), IKConfig()), _IKUseCase())
     progress = []
-    worker.progress.connect(progress.append)
+    worker.progress_event.connect(progress.append)
     worker.run()
     assert worker.state == 'succeeded'
-    assert progress and progress[0] == {'iter': 1}
+    assert progress and progress[0].payload == {'iter': 1}
 
 
 def test_trajectory_worker_finishes_with_trajectory(planar_spec):
@@ -97,19 +96,19 @@ def test_trajectory_worker_finishes_with_trajectory(planar_spec):
     request = TrajectoryRequest(q_start=np.zeros(2), q_goal=np.ones(2), duration=1.0, dt=0.1, spec=planar_spec)
     worker = TrajectoryWorker(request, _TrajectoryUseCase(traj))
     finished = []
-    worker.finished.connect(finished.append)
+    worker.finished_event.connect(finished.append)
     worker.run()
     assert worker.state == 'succeeded'
-    assert finished[0] is traj
+    assert finished[0].payload is traj
 
 
 def test_benchmark_worker_happy_path(planar_spec):
     worker = BenchmarkWorker(planar_spec, {'runs': 1}, _BenchmarkUseCase())
     finished = []
-    worker.finished.connect(finished.append)
+    worker.finished_event.connect(finished.append)
     worker.run()
     assert worker.state == 'succeeded'
-    assert finished[0]['config'] == {'runs': 1}
+    assert finished[0].payload['config'] == {'runs': 1}
 
 
 def test_playback_worker_emits_frames_until_completion():
@@ -119,27 +118,27 @@ def test_playback_worker_emits_frames_until_completion():
     worker = PlaybackWorker(traj, state, service, frame_interval_ms=1)
     frames = []
     finished = []
-    worker.progress.connect(frames.append)
-    worker.finished.connect(finished.append)
+    worker.progress_event.connect(frames.append)
+    worker.finished_event.connect(finished.append)
     worker.run()
     assert worker.state == 'succeeded'
-    assert [frame.frame_idx for frame in frames] == [0, 1, 2]
-    assert finished[0].frame_idx == 2
+    assert [frame.payload['value'].frame_idx for frame in frames] == [0, 1, 2]
+    assert finished[0].payload.frame_idx == 2
 
 
 def test_export_and_screenshot_workers_finish():
-    export_worker = ExportWorker(lambda: 'archive.zip')
-    screenshot_worker = ScreenshotWorker(lambda: 'shot.png')
+    export_worker = ExportWorker(lambda *, progress_cb=None, cancel_flag=None, correlation_id='': 'archive.zip')
+    screenshot_worker = ScreenshotWorker(lambda *, progress_cb=None, cancel_flag=None, correlation_id='': 'shot.png')
     export_finished = []
     screenshot_finished = []
-    export_worker.finished.connect(export_finished.append)
-    screenshot_worker.finished.connect(screenshot_finished.append)
+    export_worker.finished_event.connect(export_finished.append)
+    screenshot_worker.finished_event.connect(screenshot_finished.append)
     export_worker.run()
     screenshot_worker.run()
     assert export_worker.state == 'succeeded'
     assert screenshot_worker.state == 'succeeded'
-    assert export_finished == ['archive.zip']
-    assert screenshot_finished == ['shot.png']
+    assert [event.payload for event in export_finished] == ['archive.zip']
+    assert [event.payload for event in screenshot_finished] == ['shot.png']
 
 
 def test_workers_surface_failures(planar_spec):
@@ -150,12 +149,11 @@ def test_workers_surface_failures(planar_spec):
     )
     benchmark_worker = BenchmarkWorker(planar_spec, {}, _FailingUseCase())
     for worker in (fk_worker, trajectory_worker, benchmark_worker):
-        messages = []
-        worker.failed.connect(messages.append)
+        failures = []
+        worker.failed_event.connect(failures.append)
         worker.run()
         assert worker.state == 'failed'
-        assert messages == ['boom']
-
+        assert [event.message for event in failures] == ['boom']
 
 
 def test_workers_forward_control_contract_and_normalize_cancelled_result(planar_spec):
@@ -164,11 +162,11 @@ def test_workers_forward_control_contract_and_normalize_cancelled_result(planar_
     trajectory_worker = TrajectoryWorker(request, traj_use_case)
     trajectory_worker.correlation_id = 'corr-123'
     progress = []
-    trajectory_worker.progress.connect(progress.append)
+    trajectory_worker.progress_event.connect(progress.append)
     trajectory_worker.run()
     assert trajectory_worker.state == 'succeeded'
     assert traj_use_case.correlation_id == 'corr-123'
-    assert progress == [{'planner': 'joint_quintic'}]
+    assert [event.payload for event in progress] == [{'value': {'planner': 'joint_quintic'}}]
 
     target = Pose(p=np.array([1.0, 0.0, 0.0]), R=np.eye(3))
     ik_worker = IKWorker(IKRequest(planar_spec, target, np.zeros(2, dtype=float), IKConfig()), _CancelledIKUseCase())

@@ -3,18 +3,27 @@ from __future__ import annotations
 import numpy as np
 
 from robot_sim.application.dto import FKRequest, IKRequest
+from robot_sim.application.request_builders import build_execution_graph_descriptor, build_ik_request
 from robot_sim.application.use_cases.run_fk import RunFKUseCase
 from robot_sim.application.use_cases.run_ik import RunIKUseCase
 from robot_sim.core.math.so3 import exp_so3
 from robot_sim.core.math.transforms import rot_x, rot_y, rot_z
-from robot_sim.domain.enums import AppExecutionState, IKSolverMode
+from robot_sim.domain.enums import IKSolverMode
 from robot_sim.model.pose import Pose
 from robot_sim.model.solver_config import IKConfig
+from robot_sim.presentation.state_events import IKResultAppliedEvent
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.presentation.validators.input_validator import InputValidator
 
 
 class IKController:
+    """Frozen compatibility IK controller.
+
+    Canonical motion execution must flow through workflow/application services. This wrapper is
+    retained only for narrow downstream adapters and compatibility tests.
+    """
+
+    LEGACY_SURFACE_ID = 'compatibility.ik_controller.v1'
     def _parse_mode(self, value):
         value = str(value)
         try:
@@ -71,21 +80,20 @@ class IKController:
             orientation_relaxation_pos_multiplier=float(self._solver_defaults.get('orientation_relaxation_pos_multiplier', 5.0) if kwargs.get('orientation_relaxation_pos_multiplier') is None else kwargs['orientation_relaxation_pos_multiplier']),
             orientation_relaxation_ori_multiplier=float(self._solver_defaults.get('orientation_relaxation_ori_multiplier', 25.0) if kwargs.get('orientation_relaxation_ori_multiplier') is None else kwargs['orientation_relaxation_ori_multiplier']),
         )
-        return IKRequest(spec, target, q0.copy(), config)
+        execution_graph = build_execution_graph_descriptor(spec, kwargs.get('execution_graph'))
+        return build_ik_request(spec=spec, q0=q0.copy(), target=target, config=config, execution_graph=execution_graph)
 
     def apply_ik_result(self, req: IKRequest, result) -> None:
         q_current = result.q_sol.copy() if result.success else (result.best_q.copy() if result.best_q is not None else req.q0.copy())
-        self._state_store.patch(
-            target_pose=req.target,
-            ik_result=result,
-            q_current=q_current,
-            last_error='' if result.success else result.message,
-            last_warning='' if result.success else result.message,
-            app_state=AppExecutionState.ROBOT_READY if result.success else AppExecutionState.ERROR,
-        )
-        self._state_store.patch(
-            fk_result=self._fk_uc.execute(FKRequest(req.spec, self._state_store.state.q_current)),
-            scene_revision=self._state_store.state.scene_revision + 1,
+        fk_result = self._fk_uc.execute(FKRequest(req.spec, q_current))
+        self._state_store.dispatch(
+            IKResultAppliedEvent(
+                target_pose=req.target,
+                ik_result=result,
+                q_current=q_current,
+                fk_result=fk_result,
+                scene_revision=self._state_store.state.scene_revision + 1,
+            )
         )
 
     def run_ik(self, values6, **kwargs):

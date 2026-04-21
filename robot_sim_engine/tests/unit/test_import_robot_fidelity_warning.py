@@ -38,7 +38,6 @@ def test_import_robot_use_case_records_structured_urdf_summary(project_root, tmp
     contract = spec.source_model_summary['runtime_fidelity_contract']
     assert contract['execution_adapter'] == 'canonical_articulated_chain'
     assert contract['runtime_dispatch']['primary_execution_adapter'] == 'canonical_articulated_chain'
-    assert contract['runtime_dispatch']['compatibility_execution_adapters'] == ['canonical_dh_chain']
     assert contract['selected_dynamic_joint_count'] == 1
 
 

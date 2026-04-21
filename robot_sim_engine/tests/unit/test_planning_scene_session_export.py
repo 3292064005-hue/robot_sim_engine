@@ -28,4 +28,6 @@ def test_session_export_includes_planning_scene(tmp_path):
     assert payload['planning_scene']['allowed_collision_pairs'] == [['fixture', 'link_1']]
     assert payload['planning_scene']['geometry_source'] == 'bundle'
     assert 'summary' not in payload['planning_scene']
-    assert payload['scene_runtime_summary'] == {}
+    assert payload['scene_runtime_summary']['environment_contract']['version'] == 'v2'
+    assert payload['scene_runtime_summary']['log_policy']['supports_replay'] is True
+    assert payload['scene_runtime_summary']['diff_replication']['change_count'] >= 0

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Iterable
 
 from robot_sim.core.ik.analytic_6r import Analytic6RSphericalWristIKSolver
@@ -12,7 +12,7 @@ from robot_sim.domain.enums import IKSolverMode
 
 @dataclass(frozen=True)
 class SolverDescriptor:
-    """Metadata describing a registered IK solver."""
+    """Metadata describing one registered IK solver."""
 
     solver_id: str
     aliases: tuple[str, ...] = ()
@@ -40,12 +40,12 @@ class SolverRegistry:
         replace: bool = False,
         source: str = 'runtime',
     ) -> None:
-        """Register an IK solver implementation.
+        """Register one solver implementation.
 
         Args:
             solver_id: Canonical solver identifier.
             solver: Solver implementation instance.
-            metadata: Optional descriptor metadata.
+            metadata: Optional metadata exposed by capability snapshots.
             aliases: Optional alias identifiers.
             replace: Whether to replace an existing registration explicitly.
             source: Registration source identifier.
@@ -80,9 +80,37 @@ class SolverRegistry:
         for alias in alias_tuple:
             self._aliases[alias] = canonical_id
 
-    def get(self, solver_id: str):
+    def register_alias(self, alias: str, canonical_id: str) -> None:
+        """Register one compatibility alias for an existing canonical solver.
+
+        Args:
+            alias: Compatibility identifier accepted by ``get``.
+            canonical_id: Existing canonical solver identifier.
+
+        Raises:
+            KeyError: If ``canonical_id`` is unknown.
+            ValueError: If ``alias`` is already owned by another canonical solver.
+        """
+        normalized_alias = str(alias)
+        canonical = str(canonical_id)
+        if canonical not in self._solvers:
+            raise KeyError(f'unknown IK solver canonical id: {canonical}')
+        if normalized_alias == canonical:
+            return
+        owner = self._aliases.get(normalized_alias)
+        if owner is not None and owner != canonical:
+            raise ValueError(f'duplicate IK solver alias: {normalized_alias}')
+        self._aliases[normalized_alias] = canonical
+        descriptor = self._metadata[canonical]
+        alias_tuple = tuple(dict.fromkeys((*descriptor.aliases, normalized_alias)))
+        self._metadata[canonical] = replace(descriptor, aliases=alias_tuple)
+
+    def resolve_id(self, solver_id: str) -> str:
         key = str(solver_id)
-        canonical = self._aliases.get(key, key)
+        return self._aliases.get(key, key)
+
+    def get(self, solver_id: str):
+        canonical = self.resolve_id(solver_id)
         if canonical not in self._solvers:
             raise KeyError(f'unknown IK solver: {solver_id}')
         return self._solvers[canonical]

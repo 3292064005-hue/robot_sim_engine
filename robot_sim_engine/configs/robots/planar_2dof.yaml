@@ -1,7 +1,2704 @@
-name: "Planar 2DOF"
-base_T: [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-tool_T: [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-home_q: [0.0, 0.0]
+id: planar_2dof
+name: Planar 2DOF
+metadata:
+  importer_requested: yaml
+  importer_resolved: yaml
+  import_fidelity: native
+  geometry_available: true
+  geometry_ref: spec.imported_package.geometry_model.visual_geometry
+  collision_geometry_ref: spec.imported_package.geometry_model.collision_geometry
+  import_family: config
+  source_model_summary:
+    source_format: yaml
+    joint_count: 2
+    link_count: 3
+    has_visual: false
+    has_collision: false
+  canonical_model_summary:
+    name: planar_2dof
+    root_link: link_0
+    source_format: yaml
+    execution_adapter: canonical_dh_chain
+    execution_surface: canonical_model
+    execution_row_count: 2
+    fidelity: native
+    joint_count: 2
+    link_count: 3
+    has_visual: false
+    has_collision: false
+  execution_adapter: canonical_dh_chain
+  execution_surface: canonical_model
+  execution_row_count: 2
+  execution_summary:
+    execution_adapter: canonical_dh_chain
+    execution_surface: canonical_model
+    primary_execution_surface: articulated_model
+    execution_row_count: 2
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: yaml
+        fidelity: native
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_dh_chain
+        row_count: 2
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+    runtime_semantic_family: articulated_serial_tree
+    runtime_source_format: yaml
+    runtime_fidelity: native
+  runtime_semantic_family: articulated_serial_tree
+  runtime_package_family: source_runtime_geometry_split
+  runtime_model_ref: spec.runtime_model
+  articulated_model_ref: spec.articulated_model
+  geometry_model_ref: spec.imported_package.geometry_model
+  imported_package_ref: spec.imported_package
 dh_rows:
-  - {a: 1.0, alpha: 0.0, d: 0.0, theta_offset: 0.0, joint_type: "revolute", q_min: -3.14, q_max: 3.14}
-  - {a: 1.0, alpha: 0.0, d: 0.0, theta_offset: 0.0, joint_type: "revolute", q_min: -3.14, q_max: 3.14}
+- a: 1.0
+  alpha: 0.0
+  d: 0.0
+  theta_offset: 0.0
+  joint_type: revolute
+  q_min: -3.14
+  q_max: 3.14
+- a: 1.0
+  alpha: 0.0
+  d: 0.0
+  theta_offset: 0.0
+  joint_type: revolute
+  q_min: -3.14
+  q_max: 3.14
+base_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+tool_T:
+- - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+- - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+home_q:
+- 0.0
+- 0.0
+geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+source_model_summary:
+  source_format: yaml
+  joint_count: 2
+  link_count: 3
+  has_visual: true
+  has_collision: true
+runtime_model:
+  name: planar_2dof
+  dof: 2
+  joint_names:
+  - joint_0
+  - joint_1
+  link_names:
+  - link_0
+  - link_1
+  - link_2
+  execution_adapter: canonical_dh_chain
+  primary_execution_surface: articulated_model
+  source_surface: canonical_model
+  source_format: yaml
+  fidelity: native
+  semantic_family: articulated_serial_tree
+  execution_contract_version: v2
+  execution_layers:
+    execution_contract_version: v2
+    source_model:
+      surface: canonical_model
+      format: yaml
+      fidelity: native
+    articulated_graph:
+      surface: articulated_model
+      semantic_family: articulated_serial_tree
+    execution_adapter:
+      surface: serial_execution_rows
+      adapter_id: canonical_dh_chain
+      row_count: 2
+  execution_row_count: 2
+  joint_limit_count: 2
+  execution_rows:
+  - a: 1.0
+    alpha: 0.0
+    d: 0.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -3.14
+    q_max: 3.14
+  - a: 1.0
+    alpha: 0.0
+    d: 0.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -3.14
+    q_max: 3.14
+  joint_limits:
+  - lower: -3.14
+    upper: 3.14
+    velocity: null
+    effort: null
+  - lower: -3.14
+    upper: 3.14
+    velocity: null
+    effort: null
+  has_base_transform: true
+  has_tool_transform: true
+  home_q_norm: 0.0
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  - 0.0
+  capability_badges:
+  - execution_adapter:canonical_dh_chain
+  - source_surface:canonical_model
+  - fidelity:native
+  - semantic_family:articulated_serial_tree
+  provenance:
+    model_source: dh_config
+    kinematic_source: ''
+    geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+    collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+    has_structured_model: true
+    has_canonical_model: true
+    geometry_available: true
+    collision_model: structured
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: yaml
+        fidelity: native
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_dh_chain
+        row_count: 2
+    articulated_model_payload:
+      name: planar_2dof
+      root_link: link_0
+      dof: 2
+      joint_names:
+      - joint_0
+      - joint_1
+      link_names:
+      - link_0
+      - link_1
+      - link_2
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: yaml
+      fidelity: native
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:yaml
+      - fidelity:native
+      - dof:2
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - joint_0
+      - joint_1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 1
+        edge_pairs:
+        - - link_0
+          - link_1
+        - - link_1
+          - link_2
+        branching_joint_names: []
+        joint_count: 2
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_closed_loop_execution: false
+      joints:
+      - name: joint_0
+        parent_link: link_0
+        child_link: link_1
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      - name: joint_1
+        parent_link: link_1
+        child_link: link_2
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: 0
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_dh_chain
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        runtime_projection: true
+  articulated_model_summary:
+    name: planar_2dof
+    root_link: link_0
+    dof: 2
+    joint_names:
+    - joint_0
+    - joint_1
+    link_names:
+    - link_0
+    - link_1
+    - link_2
+    semantic_family: articulated_serial_tree
+    source_surface: canonical_model
+    source_format: yaml
+    fidelity: native
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:canonical_model
+    - source_format:yaml
+    - fidelity:native
+    - dof:2
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - joint_0
+    - joint_1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+    joints:
+    - name: joint_0
+      parent_link: link_0
+      child_link: link_1
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    - name: joint_1
+      parent_link: link_1
+      child_link: link_2
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: 0
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    metadata:
+      derived_from_canonical_model: true
+      execution_adapter: canonical_dh_chain
+      generated_from: robot_registry
+      execution_surface: canonical_model
+      runtime_projection: true
+  articulated_topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 1
+    edge_pairs:
+    - - link_0
+      - link_1
+    - - link_1
+      - link_2
+    branching_joint_names: []
+    joint_count: 2
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    - 1
+    execution_tip_joint_index: 1
+    supports_closed_loop_execution: false
+articulated_model:
+  name: planar_2dof
+  root_link: link_0
+  dof: 2
+  joint_names:
+  - joint_0
+  - joint_1
+  link_names:
+  - link_0
+  - link_1
+  - link_2
+  semantic_family: articulated_serial_tree
+  source_surface: canonical_model
+  source_format: yaml
+  fidelity: native
+  capability_badges:
+  - semantic_family:articulated_serial_tree
+  - source_surface:canonical_model
+  - source_format:yaml
+  - fidelity:native
+  - dof:2
+  - execution_adapter:articulated_serial_tree
+  - execution_semantics:serial_tree
+  execution_descriptor:
+    adapter_id: articulated_serial_tree
+    semantic_family: articulated_serial_tree
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    - 1
+    execution_tip_joint_index: 1
+    supports_tree_projection: true
+    supports_active_path_execution: true
+    supports_full_tree_execution: false
+  selected_execution_joint_names:
+  - joint_0
+  - joint_1
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  - 0.0
+  topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 1
+    edge_pairs:
+    - - link_0
+      - link_1
+    - - link_1
+      - link_2
+    branching_joint_names: []
+    joint_count: 2
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    - 1
+    execution_tip_joint_index: 1
+    supports_closed_loop_execution: false
+  joints:
+  - name: joint_0
+    parent_link: link_0
+    child_link: link_1
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    parent_index: null
+    metadata:
+      source_joint_metadata:
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        source_projection: dh_rows
+      execution_adapter: canonical_dh_chain
+      execution_convention: dh_row
+      dh_row:
+        a: 1.0
+        alpha: 0.0
+        d: 0.0
+        theta_offset: 0.0
+        joint_type: revolute
+        q_min: -3.14
+        q_max: 3.14
+  - name: joint_1
+    parent_link: link_1
+    child_link: link_2
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    parent_index: 0
+    metadata:
+      source_joint_metadata:
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        source_projection: dh_rows
+      execution_adapter: canonical_dh_chain
+      execution_convention: dh_row
+      dh_row:
+        a: 1.0
+        alpha: 0.0
+        d: 0.0
+        theta_offset: 0.0
+        joint_type: revolute
+        q_min: -3.14
+        q_max: 3.14
+  metadata:
+    derived_from_canonical_model: true
+    execution_adapter: canonical_dh_chain
+    generated_from: robot_registry
+    execution_surface: canonical_model
+    robot_spec_name: planar_2dof
+imported_package:
+  package_id: planar_2dof
+  importer_id: yaml
+  source_path: configs/robots/planar_2dof.yaml
+  runtime_model:
+    name: planar_2dof
+    dof: 2
+    joint_names:
+    - joint_0
+    - joint_1
+    link_names:
+    - link_0
+    - link_1
+    - link_2
+    execution_adapter: canonical_dh_chain
+    primary_execution_surface: articulated_model
+    source_surface: canonical_model
+    source_format: yaml
+    fidelity: native
+    semantic_family: articulated_serial_tree
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: yaml
+        fidelity: native
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_dh_chain
+        row_count: 2
+    execution_row_count: 2
+    joint_limit_count: 2
+    execution_rows:
+    - a: 1.0
+      alpha: 0.0
+      d: 0.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -3.14
+      q_max: 3.14
+    - a: 1.0
+      alpha: 0.0
+      d: 0.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -3.14
+      q_max: 3.14
+    joint_limits:
+    - lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    - lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    has_base_transform: true
+    has_tool_transform: true
+    home_q_norm: 0.0
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    - 0.0
+    capability_badges:
+    - execution_adapter:canonical_dh_chain
+    - source_surface:canonical_model
+    - fidelity:native
+    - semantic_family:articulated_serial_tree
+    provenance:
+      model_source: dh_config
+      kinematic_source: ''
+      geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+      collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+      has_structured_model: true
+      has_canonical_model: true
+      geometry_available: true
+      collision_model: structured
+      execution_layers:
+        execution_contract_version: v2
+        source_model:
+          surface: canonical_model
+          format: yaml
+          fidelity: native
+        articulated_graph:
+          surface: articulated_model
+          semantic_family: articulated_serial_tree
+        execution_adapter:
+          surface: serial_execution_rows
+          adapter_id: canonical_dh_chain
+          row_count: 2
+      articulated_model_payload:
+        name: planar_2dof
+        root_link: link_0
+        dof: 2
+        joint_names:
+        - joint_0
+        - joint_1
+        link_names:
+        - link_0
+        - link_1
+        - link_2
+        semantic_family: articulated_serial_tree
+        source_surface: canonical_model
+        source_format: yaml
+        fidelity: native
+        capability_badges:
+        - semantic_family:articulated_serial_tree
+        - source_surface:canonical_model
+        - source_format:yaml
+        - fidelity:native
+        - dof:2
+        - execution_adapter:articulated_serial_tree
+        - execution_semantics:serial_tree
+        execution_descriptor:
+          adapter_id: articulated_serial_tree
+          semantic_family: articulated_serial_tree
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          - 1
+          execution_tip_joint_index: 1
+          supports_tree_projection: true
+          supports_active_path_execution: true
+          supports_full_tree_execution: false
+        selected_execution_joint_names:
+        - joint_0
+        - joint_1
+        base_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        tool_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        home_q:
+        - 0.0
+        - 0.0
+        topology:
+          root_joint_indices:
+          - 0
+          leaf_joint_indices:
+          - 1
+          edge_pairs:
+          - - link_0
+            - link_1
+          - - link_1
+            - link_2
+          branching_joint_names: []
+          joint_count: 2
+          root_count: 1
+          leaf_count: 1
+          supports_serial_tree_execution: true
+          supports_branched_tree_projection: true
+          supports_active_path_execution: true
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          - 1
+          execution_tip_joint_index: 1
+          supports_closed_loop_execution: false
+        joints:
+        - name: joint_0
+          parent_link: link_0
+          child_link: link_1
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 1.0
+          - 0.0
+          - 0.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -3.14
+            upper: 3.14
+            velocity: null
+            effort: null
+          parent_index: null
+          metadata:
+            source_joint_metadata:
+              generated_from: robot_registry
+              execution_surface: canonical_model
+              source_projection: dh_rows
+            execution_adapter: canonical_dh_chain
+            execution_convention: dh_row
+            dh_row:
+              a: 1.0
+              alpha: 0.0
+              d: 0.0
+              theta_offset: 0.0
+              joint_type: revolute
+              q_min: -3.14
+              q_max: 3.14
+        - name: joint_1
+          parent_link: link_1
+          child_link: link_2
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 1.0
+          - 0.0
+          - 0.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -3.14
+            upper: 3.14
+            velocity: null
+            effort: null
+          parent_index: 0
+          metadata:
+            source_joint_metadata:
+              generated_from: robot_registry
+              execution_surface: canonical_model
+              source_projection: dh_rows
+            execution_adapter: canonical_dh_chain
+            execution_convention: dh_row
+            dh_row:
+              a: 1.0
+              alpha: 0.0
+              d: 0.0
+              theta_offset: 0.0
+              joint_type: revolute
+              q_min: -3.14
+              q_max: 3.14
+        metadata:
+          derived_from_canonical_model: true
+          execution_adapter: canonical_dh_chain
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          runtime_projection: true
+    articulated_model_summary:
+      name: planar_2dof
+      root_link: link_0
+      dof: 2
+      joint_names:
+      - joint_0
+      - joint_1
+      link_names:
+      - link_0
+      - link_1
+      - link_2
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: yaml
+      fidelity: native
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:yaml
+      - fidelity:native
+      - dof:2
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - joint_0
+      - joint_1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 1
+        edge_pairs:
+        - - link_0
+          - link_1
+        - - link_1
+          - link_2
+        branching_joint_names: []
+        joint_count: 2
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_closed_loop_execution: false
+      joints:
+      - name: joint_0
+        parent_link: link_0
+        child_link: link_1
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      - name: joint_1
+        parent_link: link_1
+        child_link: link_2
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: 0
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_dh_chain
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        runtime_projection: true
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+  articulated_model:
+    name: planar_2dof
+    root_link: link_0
+    dof: 2
+    joint_names:
+    - joint_0
+    - joint_1
+    link_names:
+    - link_0
+    - link_1
+    - link_2
+    semantic_family: articulated_serial_tree
+    source_surface: canonical_model
+    source_format: yaml
+    fidelity: native
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:canonical_model
+    - source_format:yaml
+    - fidelity:native
+    - dof:2
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - joint_0
+    - joint_1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+    joints:
+    - name: joint_0
+      parent_link: link_0
+      child_link: link_1
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    - name: joint_1
+      parent_link: link_1
+      child_link: link_2
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: 0
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    metadata:
+      derived_from_canonical_model: true
+      execution_adapter: canonical_dh_chain
+      generated_from: robot_registry
+      execution_surface: canonical_model
+      robot_spec_name: planar_2dof
+  geometry_model:
+    geometry_contract: split_visual_collision
+    visual_geometry:
+      source: generated
+      fidelity: approximate
+      collision_backend_hint: capsule
+      metadata:
+        generator: simple_capsules
+      links:
+      - name: link_0
+        radius: 0.03
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: capsule
+          params:
+            radius: 0.03
+          local_transform: null
+        metadata:
+          generator: simple_capsules
+      - name: link_1
+        radius: 0.03
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: capsule
+          params:
+            radius: 0.03
+          local_transform: null
+        metadata:
+          generator: simple_capsules
+    collision_geometry:
+      source: generated
+      fidelity: approximate
+      collision_backend_hint: capsule
+      metadata:
+        generator: simple_capsules
+      links:
+      - name: link_0
+        radius: 0.03
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: capsule
+          params:
+            radius: 0.03
+          local_transform: null
+        metadata:
+          generator: simple_capsules
+      - name: link_1
+        radius: 0.03
+        points_local: null
+        visual_primitives: []
+        collision_primitives:
+        - kind: capsule
+          params:
+            radius: 0.03
+          local_transform: null
+        metadata:
+          generator: simple_capsules
+    metadata:
+      importer_id: yaml
+      source_path: configs/robots/planar_2dof.yaml
+  source_model_summary:
+    source_format: yaml
+    joint_count: 2
+    link_count: 3
+    has_visual: true
+    has_collision: true
+  asset_resolution_manifest:
+    geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+    collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+    has_visual_geometry: true
+    has_collision_geometry: true
+  fidelity_breakdown:
+    roadmap_level: native
+    source_recovered: true
+    runtime_executable: true
+    geometry_recoverable: true
+    graph_recovered: false
+    source_model_state: structured_source
+    runtime_state: runtime_executable
+    geometry_state: geometry_recoverable
+    graph_state: serial_projection_only
+    execution_adapter_state: legacy_runtime_rows
+    execution_adapter: ''
+    branched_tree_supported: false
+    branching_detected: false
+    pruned_dynamic_joint_names: []
+    mesh_assets_recoverable: true
+    selected_joint_names: []
+    degradation_reasons: []
+    downgrade_records: []
+  fidelity: native
+  warnings: []
+  metadata:
+    source_format: yaml
+imported_package_summary:
+  package_id: planar_2dof
+  importer_id: yaml
+  source_path: configs/robots/planar_2dof.yaml
+  fidelity: native
+  warnings: []
+  runtime_model:
+    name: planar_2dof
+    dof: 2
+    joint_names:
+    - joint_0
+    - joint_1
+    link_names:
+    - link_0
+    - link_1
+    - link_2
+    execution_adapter: canonical_dh_chain
+    primary_execution_surface: articulated_model
+    source_surface: canonical_model
+    source_format: yaml
+    fidelity: native
+    semantic_family: articulated_serial_tree
+    execution_contract_version: v2
+    execution_layers:
+      execution_contract_version: v2
+      source_model:
+        surface: canonical_model
+        format: yaml
+        fidelity: native
+      articulated_graph:
+        surface: articulated_model
+        semantic_family: articulated_serial_tree
+      execution_adapter:
+        surface: serial_execution_rows
+        adapter_id: canonical_dh_chain
+        row_count: 2
+    execution_row_count: 2
+    joint_limit_count: 2
+    execution_rows:
+    - a: 1.0
+      alpha: 0.0
+      d: 0.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -3.14
+      q_max: 3.14
+    - a: 1.0
+      alpha: 0.0
+      d: 0.0
+      theta_offset: 0.0
+      joint_type: revolute
+      q_min: -3.14
+      q_max: 3.14
+    joint_limits:
+    - lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    - lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    has_base_transform: true
+    has_tool_transform: true
+    home_q_norm: 0.0
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    - 0.0
+    capability_badges:
+    - execution_adapter:canonical_dh_chain
+    - source_surface:canonical_model
+    - fidelity:native
+    - semantic_family:articulated_serial_tree
+    provenance:
+      model_source: dh_config
+      kinematic_source: ''
+      geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+      collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+      has_structured_model: true
+      has_canonical_model: true
+      geometry_available: true
+      collision_model: structured
+      execution_layers:
+        execution_contract_version: v2
+        source_model:
+          surface: canonical_model
+          format: yaml
+          fidelity: native
+        articulated_graph:
+          surface: articulated_model
+          semantic_family: articulated_serial_tree
+        execution_adapter:
+          surface: serial_execution_rows
+          adapter_id: canonical_dh_chain
+          row_count: 2
+      articulated_model_payload:
+        name: planar_2dof
+        root_link: link_0
+        dof: 2
+        joint_names:
+        - joint_0
+        - joint_1
+        link_names:
+        - link_0
+        - link_1
+        - link_2
+        semantic_family: articulated_serial_tree
+        source_surface: canonical_model
+        source_format: yaml
+        fidelity: native
+        capability_badges:
+        - semantic_family:articulated_serial_tree
+        - source_surface:canonical_model
+        - source_format:yaml
+        - fidelity:native
+        - dof:2
+        - execution_adapter:articulated_serial_tree
+        - execution_semantics:serial_tree
+        execution_descriptor:
+          adapter_id: articulated_serial_tree
+          semantic_family: articulated_serial_tree
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          - 1
+          execution_tip_joint_index: 1
+          supports_tree_projection: true
+          supports_active_path_execution: true
+          supports_full_tree_execution: false
+        selected_execution_joint_names:
+        - joint_0
+        - joint_1
+        base_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        tool_T:
+        - - 1.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 1.0
+          - 0.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 1.0
+          - 0.0
+        - - 0.0
+          - 0.0
+          - 0.0
+          - 1.0
+        home_q:
+        - 0.0
+        - 0.0
+        topology:
+          root_joint_indices:
+          - 0
+          leaf_joint_indices:
+          - 1
+          edge_pairs:
+          - - link_0
+            - link_1
+          - - link_1
+            - link_2
+          branching_joint_names: []
+          joint_count: 2
+          root_count: 1
+          leaf_count: 1
+          supports_serial_tree_execution: true
+          supports_branched_tree_projection: true
+          supports_active_path_execution: true
+          execution_semantics: serial_tree
+          execution_joint_indices:
+          - 0
+          - 1
+          execution_tip_joint_index: 1
+          supports_closed_loop_execution: false
+        joints:
+        - name: joint_0
+          parent_link: link_0
+          child_link: link_1
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 1.0
+          - 0.0
+          - 0.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -3.14
+            upper: 3.14
+            velocity: null
+            effort: null
+          parent_index: null
+          metadata:
+            source_joint_metadata:
+              generated_from: robot_registry
+              execution_surface: canonical_model
+              source_projection: dh_rows
+            execution_adapter: canonical_dh_chain
+            execution_convention: dh_row
+            dh_row:
+              a: 1.0
+              alpha: 0.0
+              d: 0.0
+              theta_offset: 0.0
+              joint_type: revolute
+              q_min: -3.14
+              q_max: 3.14
+        - name: joint_1
+          parent_link: link_1
+          child_link: link_2
+          joint_type: revolute
+          axis:
+          - 0.0
+          - 0.0
+          - 1.0
+          origin_translation:
+          - 1.0
+          - 0.0
+          - 0.0
+          origin_rpy:
+          - 0.0
+          - 0.0
+          - 0.0
+          limit:
+            lower: -3.14
+            upper: 3.14
+            velocity: null
+            effort: null
+          parent_index: 0
+          metadata:
+            source_joint_metadata:
+              generated_from: robot_registry
+              execution_surface: canonical_model
+              source_projection: dh_rows
+            execution_adapter: canonical_dh_chain
+            execution_convention: dh_row
+            dh_row:
+              a: 1.0
+              alpha: 0.0
+              d: 0.0
+              theta_offset: 0.0
+              joint_type: revolute
+              q_min: -3.14
+              q_max: 3.14
+        metadata:
+          derived_from_canonical_model: true
+          execution_adapter: canonical_dh_chain
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          runtime_projection: true
+    articulated_model_summary:
+      name: planar_2dof
+      root_link: link_0
+      dof: 2
+      joint_names:
+      - joint_0
+      - joint_1
+      link_names:
+      - link_0
+      - link_1
+      - link_2
+      semantic_family: articulated_serial_tree
+      source_surface: canonical_model
+      source_format: yaml
+      fidelity: native
+      capability_badges:
+      - semantic_family:articulated_serial_tree
+      - source_surface:canonical_model
+      - source_format:yaml
+      - fidelity:native
+      - dof:2
+      - execution_adapter:articulated_serial_tree
+      - execution_semantics:serial_tree
+      execution_descriptor:
+        adapter_id: articulated_serial_tree
+        semantic_family: articulated_serial_tree
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_tree_projection: true
+        supports_active_path_execution: true
+        supports_full_tree_execution: false
+      selected_execution_joint_names:
+      - joint_0
+      - joint_1
+      base_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      tool_T:
+      - - 1.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 1.0
+        - 0.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 1.0
+        - 0.0
+      - - 0.0
+        - 0.0
+        - 0.0
+        - 1.0
+      home_q:
+      - 0.0
+      - 0.0
+      topology:
+        root_joint_indices:
+        - 0
+        leaf_joint_indices:
+        - 1
+        edge_pairs:
+        - - link_0
+          - link_1
+        - - link_1
+          - link_2
+        branching_joint_names: []
+        joint_count: 2
+        root_count: 1
+        leaf_count: 1
+        supports_serial_tree_execution: true
+        supports_branched_tree_projection: true
+        supports_active_path_execution: true
+        execution_semantics: serial_tree
+        execution_joint_indices:
+        - 0
+        - 1
+        execution_tip_joint_index: 1
+        supports_closed_loop_execution: false
+      joints:
+      - name: joint_0
+        parent_link: link_0
+        child_link: link_1
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: null
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      - name: joint_1
+        parent_link: link_1
+        child_link: link_2
+        joint_type: revolute
+        axis:
+        - 0.0
+        - 0.0
+        - 1.0
+        origin_translation:
+        - 1.0
+        - 0.0
+        - 0.0
+        origin_rpy:
+        - 0.0
+        - 0.0
+        - 0.0
+        limit:
+          lower: -3.14
+          upper: 3.14
+          velocity: null
+          effort: null
+        parent_index: 0
+        metadata:
+          source_joint_metadata:
+            generated_from: robot_registry
+            execution_surface: canonical_model
+            source_projection: dh_rows
+          execution_adapter: canonical_dh_chain
+          execution_convention: dh_row
+          dh_row:
+            a: 1.0
+            alpha: 0.0
+            d: 0.0
+            theta_offset: 0.0
+            joint_type: revolute
+            q_min: -3.14
+            q_max: 3.14
+      metadata:
+        derived_from_canonical_model: true
+        execution_adapter: canonical_dh_chain
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        runtime_projection: true
+    articulated_topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+  articulated_model:
+    name: planar_2dof
+    root_link: link_0
+    dof: 2
+    joint_names:
+    - joint_0
+    - joint_1
+    link_names:
+    - link_0
+    - link_1
+    - link_2
+    semantic_family: articulated_serial_tree
+    source_surface: canonical_model
+    source_format: yaml
+    fidelity: native
+    capability_badges:
+    - semantic_family:articulated_serial_tree
+    - source_surface:canonical_model
+    - source_format:yaml
+    - fidelity:native
+    - dof:2
+    - execution_adapter:articulated_serial_tree
+    - execution_semantics:serial_tree
+    execution_descriptor:
+      adapter_id: articulated_serial_tree
+      semantic_family: articulated_serial_tree
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_tree_projection: true
+      supports_active_path_execution: true
+      supports_full_tree_execution: false
+    selected_execution_joint_names:
+    - joint_0
+    - joint_1
+    base_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    tool_T:
+    - - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+    - - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+    home_q:
+    - 0.0
+    - 0.0
+    topology:
+      root_joint_indices:
+      - 0
+      leaf_joint_indices:
+      - 1
+      edge_pairs:
+      - - link_0
+        - link_1
+      - - link_1
+        - link_2
+      branching_joint_names: []
+      joint_count: 2
+      root_count: 1
+      leaf_count: 1
+      supports_serial_tree_execution: true
+      supports_branched_tree_projection: true
+      supports_active_path_execution: true
+      execution_semantics: serial_tree
+      execution_joint_indices:
+      - 0
+      - 1
+      execution_tip_joint_index: 1
+      supports_closed_loop_execution: false
+    joints:
+    - name: joint_0
+      parent_link: link_0
+      child_link: link_1
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: null
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    - name: joint_1
+      parent_link: link_1
+      child_link: link_2
+      joint_type: revolute
+      axis:
+      - 0.0
+      - 0.0
+      - 1.0
+      origin_translation:
+      - 1.0
+      - 0.0
+      - 0.0
+      origin_rpy:
+      - 0.0
+      - 0.0
+      - 0.0
+      limit:
+        lower: -3.14
+        upper: 3.14
+        velocity: null
+        effort: null
+      parent_index: 0
+      metadata:
+        source_joint_metadata:
+          generated_from: robot_registry
+          execution_surface: canonical_model
+          source_projection: dh_rows
+        execution_adapter: canonical_dh_chain
+        execution_convention: dh_row
+        dh_row:
+          a: 1.0
+          alpha: 0.0
+          d: 0.0
+          theta_offset: 0.0
+          joint_type: revolute
+          q_min: -3.14
+          q_max: 3.14
+    metadata:
+      derived_from_canonical_model: true
+      execution_adapter: canonical_dh_chain
+      generated_from: robot_registry
+      execution_surface: canonical_model
+      robot_spec_name: planar_2dof
+  geometry_model:
+    geometry_contract: split_visual_collision
+    has_visual_geometry: true
+    has_collision_geometry: true
+    visual_geometry:
+      source: generated
+      fidelity: approximate
+      collision_backend_hint: capsule
+      link_count: 2
+      metadata:
+        generator: simple_capsules
+    collision_geometry:
+      source: generated
+      fidelity: approximate
+      collision_backend_hint: capsule
+      link_count: 2
+      metadata:
+        generator: simple_capsules
+    metadata:
+      importer_id: yaml
+      source_path: configs/robots/planar_2dof.yaml
+  source_model_summary:
+    source_format: yaml
+    joint_count: 2
+    link_count: 3
+    has_visual: true
+    has_collision: true
+  asset_resolution_manifest:
+    geometry_bundle_ref: spec.imported_package.geometry_model.visual_geometry
+    collision_bundle_ref: spec.imported_package.geometry_model.collision_geometry
+    has_visual_geometry: true
+    has_collision_geometry: true
+  fidelity_breakdown:
+    roadmap_level: native
+    source_recovered: true
+    runtime_executable: true
+    geometry_recoverable: true
+    graph_recovered: false
+    source_model_state: structured_source
+    runtime_state: runtime_executable
+    geometry_state: geometry_recoverable
+    graph_state: serial_projection_only
+    execution_adapter_state: legacy_runtime_rows
+    execution_adapter: ''
+    branched_tree_supported: false
+    branching_detected: false
+    pruned_dynamic_joint_names: []
+    mesh_assets_recoverable: true
+    selected_joint_names: []
+    degradation_reasons: []
+    downgrade_records: []
+  metadata:
+    source_format: yaml
+geometry_model:
+  geometry_contract: split_visual_collision
+  visual_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    metadata:
+      generator: simple_capsules
+    links:
+    - name: link_0
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+    - name: link_1
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+  collision_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    metadata:
+      generator: simple_capsules
+    links:
+    - name: link_0
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+    - name: link_1
+      radius: 0.03
+      points_local: null
+      visual_primitives: []
+      collision_primitives:
+      - kind: capsule
+        params:
+          radius: 0.03
+        local_transform: null
+      metadata:
+        generator: simple_capsules
+  metadata:
+    importer_id: yaml
+    source_path: configs/robots/planar_2dof.yaml
+geometry_model_summary:
+  geometry_contract: split_visual_collision
+  has_visual_geometry: true
+  has_collision_geometry: true
+  visual_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    link_count: 2
+    metadata:
+      generator: simple_capsules
+  collision_geometry:
+    source: generated
+    fidelity: approximate
+    collision_backend_hint: capsule
+    link_count: 2
+    metadata:
+      generator: simple_capsules
+  metadata:
+    importer_id: yaml
+    source_path: configs/robots/planar_2dof.yaml
+articulated_model_summary:
+  name: planar_2dof
+  root_link: link_0
+  dof: 2
+  joint_names:
+  - joint_0
+  - joint_1
+  link_names:
+  - link_0
+  - link_1
+  - link_2
+  semantic_family: articulated_serial_tree
+  source_surface: canonical_model
+  source_format: yaml
+  fidelity: native
+  capability_badges:
+  - semantic_family:articulated_serial_tree
+  - source_surface:canonical_model
+  - source_format:yaml
+  - fidelity:native
+  - dof:2
+  - execution_adapter:articulated_serial_tree
+  - execution_semantics:serial_tree
+  execution_descriptor:
+    adapter_id: articulated_serial_tree
+    semantic_family: articulated_serial_tree
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    - 1
+    execution_tip_joint_index: 1
+    supports_tree_projection: true
+    supports_active_path_execution: true
+    supports_full_tree_execution: false
+  selected_execution_joint_names:
+  - joint_0
+  - joint_1
+  base_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  tool_T:
+  - - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+  - - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  home_q:
+  - 0.0
+  - 0.0
+  topology:
+    root_joint_indices:
+    - 0
+    leaf_joint_indices:
+    - 1
+    edge_pairs:
+    - - link_0
+      - link_1
+    - - link_1
+      - link_2
+    branching_joint_names: []
+    joint_count: 2
+    root_count: 1
+    leaf_count: 1
+    supports_serial_tree_execution: true
+    supports_branched_tree_projection: true
+    supports_active_path_execution: true
+    execution_semantics: serial_tree
+    execution_joint_indices:
+    - 0
+    - 1
+    execution_tip_joint_index: 1
+    supports_closed_loop_execution: false
+  joints:
+  - name: joint_0
+    parent_link: link_0
+    child_link: link_1
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    parent_index: null
+    metadata:
+      source_joint_metadata:
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        source_projection: dh_rows
+      execution_adapter: canonical_dh_chain
+      execution_convention: dh_row
+      dh_row:
+        a: 1.0
+        alpha: 0.0
+        d: 0.0
+        theta_offset: 0.0
+        joint_type: revolute
+        q_min: -3.14
+        q_max: 3.14
+  - name: joint_1
+    parent_link: link_1
+    child_link: link_2
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    parent_index: 0
+    metadata:
+      source_joint_metadata:
+        generated_from: robot_registry
+        execution_surface: canonical_model
+        source_projection: dh_rows
+      execution_adapter: canonical_dh_chain
+      execution_convention: dh_row
+      dh_row:
+        a: 1.0
+        alpha: 0.0
+        d: 0.0
+        theta_offset: 0.0
+        joint_type: revolute
+        q_min: -3.14
+        q_max: 3.14
+  metadata:
+    derived_from_canonical_model: true
+    execution_adapter: canonical_dh_chain
+    generated_from: robot_registry
+    execution_surface: canonical_model
+    robot_spec_name: planar_2dof
+canonical_model:
+  name: planar_2dof
+  root_link: link_0
+  source_format: yaml
+  execution_adapter: canonical_dh_chain
+  execution_rows:
+  - a: 1.0
+    alpha: 0.0
+    d: 0.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -3.14
+    q_max: 3.14
+  - a: 1.0
+    alpha: 0.0
+    d: 0.0
+    theta_offset: 0.0
+    joint_type: revolute
+    q_min: -3.14
+    q_max: 3.14
+  fidelity: native
+  metadata:
+    generated_from: robot_registry
+    execution_surface: canonical_model
+  joints:
+  - name: joint_0
+    parent_link: link_0
+    child_link: link_1
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    metadata:
+      generated_from: robot_registry
+      execution_surface: canonical_model
+      source_projection: dh_rows
+  - name: joint_1
+    parent_link: link_1
+    child_link: link_2
+    joint_type: revolute
+    axis:
+    - 0.0
+    - 0.0
+    - 1.0
+    limit:
+      lower: -3.14
+      upper: 3.14
+      velocity: null
+      effort: null
+    origin_translation:
+    - 1.0
+    - 0.0
+    - 0.0
+    origin_rpy:
+    - 0.0
+    - 0.0
+    - 0.0
+    metadata:
+      generated_from: robot_registry
+      execution_surface: canonical_model
+      source_projection: dh_rows
+  links:
+  - name: link_0
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: false
+    metadata:
+      generated_from: robot_registry
+  - name: link_1
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: false
+    metadata:
+      generated_from: robot_registry
+  - name: link_2
+    parent_joint: null
+    inertial_mass: null
+    inertial_origin: null
+    has_visual: false
+    has_collision: false
+    metadata:
+      generated_from: robot_registry

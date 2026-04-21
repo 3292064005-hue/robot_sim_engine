@@ -8,6 +8,10 @@ from robot_sim.application.registries.solver_registry import SolverRegistry
 from robot_sim.application.services.benchmark_service import BenchmarkService
 from robot_sim.application.services.export_service import ExportService
 from robot_sim.application.services.package_service import PackageService
+from robot_sim.application.pipelines.trajectory_pipeline_registry import (
+    TrajectoryPipelineRegistry,
+    build_default_trajectory_pipeline_registry,
+)
 from robot_sim.application.services.playback_service import PlaybackService
 from robot_sim.application.use_cases.export_package import ExportPackageUseCase
 from robot_sim.application.use_cases.export_report import ExportReportUseCase
@@ -18,6 +22,7 @@ from robot_sim.application.use_cases.run_fk import RunFKUseCase
 from robot_sim.application.use_cases.run_ik import RunIKUseCase
 from robot_sim.application.use_cases.save_session import SaveSessionUseCase
 from robot_sim.application.use_cases.step_playback import StepPlaybackUseCase
+from robot_sim.application.use_cases.validate_trajectory import ValidateTrajectoryUseCase
 
 
 @dataclass(frozen=True)
@@ -43,6 +48,7 @@ def build_use_case_bundle(
     package_service: PackageService,
     playback_service: PlaybackService,
     ik_uc: RunIKUseCase | None = None,
+    trajectory_pipeline_registry: TrajectoryPipelineRegistry | None = None,
 ) -> UseCaseBundle:
     """Build the canonical application use-case bundle.
 
@@ -56,6 +62,8 @@ def build_use_case_bundle(
         playback_service: Playback service consumed by playback stepping.
         ik_uc: Optional shared IK use case. When supplied, planner, benchmark, and runtime
             IK execution share one authority object.
+        trajectory_pipeline_registry: Optional named pipeline registry resolved from solver
+            config. When omitted the shipped default registry is used.
 
     Returns:
         UseCaseBundle: Fully wired use-case bundle.
@@ -65,7 +73,13 @@ def build_use_case_bundle(
     """
     fk_uc = RunFKUseCase()
     shared_ik_uc = ik_uc or RunIKUseCase(solver_registry)
-    traj_uc = PlanTrajectoryUseCase(planner_registry)
+    validate_traj_uc = ValidateTrajectoryUseCase()
+    trajectory_pipeline_registry = trajectory_pipeline_registry or build_default_trajectory_pipeline_registry()
+    traj_uc = PlanTrajectoryUseCase(
+        planner_registry,
+        validate_uc=validate_traj_uc,
+        pipeline_registry=trajectory_pipeline_registry,
+    )
     benchmark_uc = RunBenchmarkUseCase(benchmark_service)
     save_session_uc = SaveSessionUseCase(export_service)
     playback_uc = StepPlaybackUseCase(playback_service)

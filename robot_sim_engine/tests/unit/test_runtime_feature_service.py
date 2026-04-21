@@ -34,9 +34,9 @@ def test_runtime_feature_policy_and_services_follow_profile_flags(tmp_path: Path
     assert policy.plugin_status_allowlist == ('stable', 'beta', 'experimental', 'internal', 'deprecated')
 
     module_statuses = ModuleStatusService(runtime_feature_policy=policy).snapshot_details()
-    assert module_statuses['presentation.widgets.collision_panel']['enabled'] is True
+    assert module_statuses['presentation.experimental.widgets.collision_panel']['enabled'] is True
 
     capability_service = CapabilityService(runtime_feature_policy=policy)
     scene_features = {descriptor.key: descriptor for descriptor in capability_service._scene_features()}
-    assert scene_features['collision_backend_capsule'].status is ModuleStatus.EXPERIMENTAL
+    assert scene_features['collision_backend_capsule'].status is ModuleStatus.STABLE
     assert scene_features['collision_backend_capsule'].metadata['availability'] == 'enabled'

@@ -26,43 +26,23 @@ class BenchmarkTargetContract:
 
 
 BENCHMARK_TARGET_CONTRACTS: dict[str, BenchmarkTargetContract] = {
-    'tests/integration/test_ik_planar.py::test_dls_ik_planar_reachable': BenchmarkTargetContract(
-        selector='tests/integration/test_ik_planar.py::test_dls_ik_planar_reachable',
+    'runtime_case:yaml_like.clean_scene.ik_planar_smoke.snapshot_capture': BenchmarkTargetContract(
+        selector='runtime_case:yaml_like.clean_scene.ik_planar_smoke.snapshot_capture',
         runtime_surface='headless_runtime', importer_variant='yaml_like', scene_variant='clean_scene',
         solver_suite='ik_planar_smoke', capture_mode='snapshot_capture', execution_environment='headless',
     ),
-    'tests/performance/test_ik_smoke.py::test_ik_smoke_produces_stable_elapsed_statistics': BenchmarkTargetContract(
-        selector='tests/performance/test_ik_smoke.py::test_ik_smoke_produces_stable_elapsed_statistics',
-        runtime_surface='headless_runtime', importer_variant='yaml_like', scene_variant='clean_scene',
-        solver_suite='ik_planar_smoke', capture_mode='snapshot_capture', execution_environment='headless',
-    ),
-    'tests/unit/test_importer_fidelity_levels.py::test_yaml_and_urdf_importers_expose_fidelity': BenchmarkTargetContract(
-        selector='tests/unit/test_importer_fidelity_levels.py::test_yaml_and_urdf_importers_expose_fidelity',
+    'runtime_case:urdf_skeleton.obstacle_single_box.ik_planar_default_suite.snapshot_capture': BenchmarkTargetContract(
+        selector='runtime_case:urdf_skeleton.obstacle_single_box.ik_planar_default_suite.snapshot_capture',
         runtime_surface='headless_runtime', importer_variant='urdf_skeleton', scene_variant='obstacle_single_box',
         solver_suite='ik_planar_default_suite', capture_mode='snapshot_capture', execution_environment='headless',
     ),
-    'tests/unit/test_scene_authority_service.py::test_scene_authority_service_applies_obstacle_and_allowed_pairs': BenchmarkTargetContract(
-        selector='tests/unit/test_scene_authority_service.py::test_scene_authority_service_applies_obstacle_and_allowed_pairs',
-        runtime_surface='headless_runtime', importer_variant='urdf_skeleton', scene_variant='obstacle_single_box',
-        solver_suite='ik_planar_default_suite', capture_mode='snapshot_capture', execution_environment='headless',
-    ),
-    'tests/integration/test_import_robot_into_scene_pipeline.py::test_imported_robot_bundle_can_seed_planning_scene': BenchmarkTargetContract(
-        selector='tests/integration/test_import_robot_into_scene_pipeline.py::test_imported_robot_bundle_can_seed_planning_scene',
+    'runtime_case:urdf_model.obstacle_dense.trajectory_plan_smoke.snapshot_capture': BenchmarkTargetContract(
+        selector='runtime_case:urdf_model.obstacle_dense.trajectory_plan_smoke.snapshot_capture',
         runtime_surface='headless_runtime', importer_variant='urdf_model', scene_variant='obstacle_dense',
         solver_suite='trajectory_plan_smoke', capture_mode='snapshot_capture', execution_environment='headless',
     ),
-    'tests/integration/test_trajectory_pipeline_lifecycle.py::test_trajectory_pipeline_runs_joint_quintic_end_to_end': BenchmarkTargetContract(
-        selector='tests/integration/test_trajectory_pipeline_lifecycle.py::test_trajectory_pipeline_runs_joint_quintic_end_to_end',
-        runtime_surface='headless_runtime', importer_variant='urdf_model', scene_variant='obstacle_dense',
-        solver_suite='trajectory_plan_smoke', capture_mode='snapshot_capture', execution_environment='headless',
-    ),
-    'tests/unit/test_scene_render_contracts.py::test_scene_widget_snapshot_tracks_scene_fields': BenchmarkTargetContract(
-        selector='tests/unit/test_scene_render_contracts.py::test_scene_widget_snapshot_tracks_scene_fields',
-        runtime_surface='gui_offscreen', importer_variant='urdf_model', scene_variant='clean_scene',
-        solver_suite='ik_planar_smoke', capture_mode='live_capture_capability_probe', execution_environment='gui',
-    ),
-    'tests/unit/test_scene_render_contracts.py::test_scene_widget_exposes_render_runtime_snapshot': BenchmarkTargetContract(
-        selector='tests/unit/test_scene_render_contracts.py::test_scene_widget_exposes_render_runtime_snapshot',
+    'runtime_case:gui_offscreen.urdf_model.clean_scene.live_capture_capability_probe': BenchmarkTargetContract(
+        selector='runtime_case:gui_offscreen.urdf_model.clean_scene.live_capture_capability_probe',
         runtime_surface='gui_offscreen', importer_variant='urdf_model', scene_variant='clean_scene',
         solver_suite='ik_planar_smoke', capture_mode='live_capture_capability_probe', execution_environment='gui',
     ),

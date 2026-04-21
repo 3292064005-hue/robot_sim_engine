@@ -38,6 +38,13 @@ class RuntimeFeaturePolicy:
             'scene_validation_capability_matrix:v1',
             'collision_backend_contract:v1',
             'capability_matrix:v1',
+            'capability_ontology:v2',
+            'environment_contract:v2',
+            'scene_clone',
+            'scene_replay',
+            'scene_diff_replication',
+            'multi_planner_snapshots',
+            'trajectory_stage_provider:v1',
             'plugin_kind:scene_backend',
             'plugin_kind:collision_backend',
         ]

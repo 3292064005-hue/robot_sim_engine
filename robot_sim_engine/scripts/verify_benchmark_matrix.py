@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
@@ -15,23 +14,40 @@ def _configure_path() -> None:
 
 _configure_path()
 
+from robot_sim.application.services.benchmark_execution_harness import BenchmarkExecutionHarness  # noqa: E402
 from robot_sim.application.services.benchmark_matrix_service import BenchmarkMatrixService  # noqa: E402
 from robot_sim.infra.quality_evidence import QualityEvidenceRecord, runtime_environment_fingerprint, write_quality_evidence  # noqa: E402
 from robot_sim.infra.quality_gate_runner import execute_quality_gates  # noqa: E402
 
 
-def build_benchmark_evidence_details(*, matrix, executed_gate_results: dict[str, dict[str, object]], execute_gates_requested: bool, execute_requested: bool, gate_ok: bool, target_ok: bool | None, executed_pytest_command: list[str]) -> dict[str, object]:
-    executed_pytest = bool(execute_requested and gate_ok)
-    pytest_targets_status = 'not_requested'
-    pytest_targets_failure_kind = 'none'
+def build_benchmark_evidence_details(
+    *,
+    matrix,
+    executed_gate_results: dict[str, dict[str, object]],
+    execute_gates_requested: bool,
+    execute_requested: bool,
+    gate_ok: bool,
+    target_ok: bool | None,
+    executed_target_commands: list[list[str]] | None = None,
+    executed_target_results: list[dict[str, object]] | None = None,
+    executed_target_command: list[str] | None = None,
+) -> dict[str, object]:
+    target_ids = list(matrix.target_ids)
+    if executed_target_commands is None:
+        executed_target_commands = [list(executed_target_command or [])] if executed_target_command else []
+    if executed_target_results is None:
+        executed_target_results = []
+    executed_targets = bool(execute_requested and gate_ok)
+    target_status = 'not_requested'
+    target_failure_kind = 'none'
     if execute_requested:
         if gate_ok:
-            pytest_targets_status = 'passed' if target_ok else 'failed'
-            pytest_targets_failure_kind = 'none' if target_ok else 'command_failure'
+            target_status = 'passed' if target_ok else 'failed'
+            target_failure_kind = 'none' if target_ok else 'command_failure'
         else:
-            pytest_targets_status = 'skipped_due_to_failed_gates'
-            pytest_targets_failure_kind = 'gates_failed'
-    return {
+            target_status = 'skipped_due_to_failed_gates'
+            target_failure_kind = 'gates_failed'
+    details = {
         'matrix_id': matrix.matrix_id,
         'execute_gates_requested': bool(execute_gates_requested),
         'execute_requested': bool(execute_requested),
@@ -42,27 +58,27 @@ def build_benchmark_evidence_details(*, matrix, executed_gate_results: dict[str,
         'environment_failures': [gate_id for gate_id, result in executed_gate_results.items() if result.get('failure_kind') == 'environment_mismatch'],
         'tooling_failures': [gate_id for gate_id, result in executed_gate_results.items() if result.get('failure_kind') == 'tooling_missing'],
         'command_failures': [gate_id for gate_id, result in executed_gate_results.items() if result.get('failure_kind') == 'command_failure'],
-        'pytest_targets': list(matrix.pytest_targets),
-        'pytest_targets_executed': executed_pytest,
-        'pytest_targets_command': executed_pytest_command,
-        'pytest_targets_status': pytest_targets_status,
-        'pytest_targets_ok': target_ok if executed_pytest else None,
-        'pytest_targets_failure_kind': pytest_targets_failure_kind,
+        'target_ids': target_ids,
+        'executed_targets': executed_targets,
+        'target_command_list': executed_target_commands,
+        'executed_target_results': executed_target_results,
+        'target_status': target_status,
+        'target_ok': target_ok if executed_targets else None,
+        'target_failure_kind': target_failure_kind,
     }
+    return details
 
 
-def _execute_pytest_targets(repo_root: Path, targets: tuple[str, ...]) -> tuple[bool, list[str]]:
-    if not targets:
-        return True, []
-    command = [sys.executable, '-m', 'pytest', '-q', *targets]
-    completed = subprocess.run(command, cwd=repo_root, check=False)
-    return completed.returncode == 0, command
+def _execute_targets(repo_root: Path, matrix) -> tuple[bool, list[list[str]], list[dict[str, object]]]:
+    harness = BenchmarkExecutionHarness()
+    run = harness.execute(matrix, repo_root=repo_root)
+    return bool(run.ok), run.command_list, [target.summary() for target in run.targets]
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Verify the benchmark execution matrix and optionally execute its required targets.')
-    parser.add_argument('--execute', action='store_true', help='Execute the unique pytest targets declared by the matrix.')
-    parser.add_argument('--execute-gates', action='store_true', help='Execute the matrix-level quality gates before running pytest targets.')
+    parser.add_argument('--execute', action='store_true', help='Execute the unique matrix targets declared by the benchmark matrix.')
+    parser.add_argument('--execute-gates', action='store_true', help='Execute the matrix-level quality gates before running benchmark targets.')
     parser.add_argument('--evidence-out', type=Path, default=None, help='Optional JSON path used to persist structured benchmark evidence records.')
     args = parser.parse_args()
     repo_root = Path(__file__).resolve().parents[1]
@@ -81,9 +97,10 @@ if __name__ == '__main__':
                     print(f"benchmark matrix quality gate failed: {gate_id} ({result.get('failure_kind', 'command_failure')})")
 
     target_ok: bool | None = None
-    executed_pytest_command: list[str] = []
+    executed_commands: list[list[str]] = []
+    executed_target_results: list[dict[str, object]] = []
     if args.execute and gate_ok:
-        target_ok, executed_pytest_command = _execute_pytest_targets(repo_root, matrix.pytest_targets)
+        target_ok, executed_commands, executed_target_results = _execute_targets(repo_root, matrix)
 
     overall_ok = bool(gate_ok and (target_ok is not False))
     if args.evidence_out is not None:
@@ -100,11 +117,12 @@ if __name__ == '__main__':
                     execute_requested=bool(args.execute),
                     gate_ok=gate_ok,
                     target_ok=target_ok,
-                    executed_pytest_command=executed_pytest_command,
+                    executed_target_commands=executed_commands,
+                    executed_target_results=executed_target_results,
                 ),
             )
         ]
         write_quality_evidence(args.evidence_out, records)
     if not overall_ok:
         raise SystemExit(1)
-    print(f'benchmark matrix verified: {matrix.matrix_id} pairs={len(matrix.required_pairs)} targets={len(matrix.pytest_targets)}')
+    print(f'benchmark matrix verified: {matrix.matrix_id} pairs={len(matrix.required_pairs)} targets={len(matrix.target_ids)}')

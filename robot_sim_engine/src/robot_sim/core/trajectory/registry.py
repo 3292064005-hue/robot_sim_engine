@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Iterable
 
 
@@ -61,9 +61,28 @@ class TrajectoryPlannerRegistry:
         for alias in alias_tuple:
             self._aliases[alias] = canonical_id
 
-    def get(self, planner_id: str):
+    def register_alias(self, alias: str, canonical_id: str) -> None:
+        """Register one compatibility alias for an existing canonical planner."""
+        normalized_alias = str(alias)
+        canonical = str(canonical_id)
+        if canonical not in self._planners:
+            raise KeyError(f'unknown trajectory planner canonical id: {canonical}')
+        if normalized_alias == canonical:
+            return
+        owner = self._aliases.get(normalized_alias)
+        if owner is not None and owner != canonical:
+            raise ValueError(f'duplicate trajectory planner alias: {normalized_alias}')
+        self._aliases[normalized_alias] = canonical
+        descriptor = self._metadata[canonical]
+        alias_tuple = tuple(dict.fromkeys((*descriptor.aliases, normalized_alias)))
+        self._metadata[canonical] = replace(descriptor, aliases=alias_tuple)
+
+    def resolve_id(self, planner_id: str) -> str:
         key = str(planner_id)
-        canonical = self._aliases.get(key, key)
+        return self._aliases.get(key, key)
+
+    def get(self, planner_id: str):
+        canonical = self.resolve_id(planner_id)
         if canonical not in self._planners:
             raise KeyError(f'unknown trajectory planner: {planner_id}')
         return self._planners[canonical]

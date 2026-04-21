@@ -1,0 +1,135 @@
+---
+owner: quality
+audience: maintainer
+status: generated
+source_of_truth: regenerated
+generated_by: scripts/regenerate_quality_contracts.py
+last_reviewed: 2026-04-18
+---
+# Exception Catch Matrix
+
+## runtime_boundaries
+- `src/robot_sim/app/bootstrap.py`
+  - allowed_count: `1`
+  - lines: `113`
+  - reason: `process bootstrap defensive logging boundary`
+- `src/robot_sim/app/main.py`
+  - allowed_count: `1`
+  - lines: `74`
+  - reason: `process entry defensive logging boundary`
+- `src/robot_sim/application/workers/benchmark_worker.py`
+  - allowed_count: `1`
+  - lines: `72`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/export_worker.py`
+  - allowed_count: `1`
+  - lines: `57`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/fk_worker.py`
+  - allowed_count: `1`
+  - lines: `20`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/ik_worker.py`
+  - allowed_count: `1`
+  - lines: `69`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/playback_worker.py`
+  - allowed_count: `1`
+  - lines: `42`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/screenshot_worker.py`
+  - allowed_count: `1`
+  - lines: `113`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/application/workers/trajectory_worker.py`
+  - allowed_count: `1`
+  - lines: `70`
+  - reason: `worker error projection boundary`
+- `src/robot_sim/presentation/coordinators/_helpers.py`
+  - allowed_count: `1`
+  - lines: `20`
+  - reason: `centralized coordinator presentation boundary`
+- `src/robot_sim/presentation/error_boundary.py`
+  - allowed_count: `2`
+  - lines: `86, 105`
+  - reason: `centralized GUI presentation boundary`
+- `src/robot_sim/presentation/threading/worker_binding.py`
+  - allowed_count: `1`
+  - lines: `208`
+  - reason: `worker thread cleanup defensive boundary`
+
+## import_guards
+- `src/robot_sim/presentation/experimental/widgets/collision_panel.py`
+  - lines: `4`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/experimental/widgets/export_panel.py`
+  - lines: `4`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/experimental/widgets/scene_options_panel.py`
+  - lines: `5`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/main_window.py`
+  - lines: `15`
+  - reason: `GUI entry import gate`
+- `src/robot_sim/presentation/main_window_ui.py`
+  - lines: `-`
+  - reason: `GUI widget import gate`
+- `src/robot_sim/presentation/widgets/benchmark_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/collision_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/diagnostics_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/export_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/playback_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/plots_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/robot_config_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/scene_options_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/scene_toolbar.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/solver_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/status_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/presentation/widgets/target_pose_panel.py`
+  - lines: `-`
+  - reason: `optional Qt widgets`
+- `src/robot_sim/render/plots_manager.py`
+  - lines: `-`
+  - reason: `optional plotting backend`
+- `src/robot_sim/render/scene_3d_widget.py`
+  - lines: `-`
+  - reason: `optional 3D backend`
+
+## specific_type_boundaries
+- `src/robot_sim/render/actor_manager.py`
+  - line `42`: `AttributeError, RuntimeError, TypeError, ValueError` (ActorManager.remove)
+- `src/robot_sim/render/plots_manager.py`
+  - line `11`: `ImportError` (<module>)
+  - line `46`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager._configure_widgets)
+  - line `60`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.clear)
+  - line `76`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.ensure_curve)
+  - line `113`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.set_curve)
+  - line `163`: `AttributeError, RuntimeError, TypeError, ValueError` (PlotsManager.set_cursor)
+- `src/robot_sim/render/scene_3d_widget.py`
+  - line `101`: `ImportError` (Scene3DWidget._initialize_plotter_shell)
+  - line `143`: `AttributeError, RuntimeError, TypeError, ValueError, OSError` (Scene3DWidget._initialize_plotter_shell)
+  - line `178`: `TypeError` (Scene3DWidget._set_plotter_overlay_text)
+  - line `180`: `AttributeError, RuntimeError, ValueError` (Scene3DWidget._set_plotter_overlay_text)
+  - line `284`: `TypeError, ValueError` (Scene3DWidget._render_scene_objects)

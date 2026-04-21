@@ -34,9 +34,6 @@ class ExportTaskCoordinator:
             on_finished=self._project_export_messages,
         )
 
-    def export_trajectory(self) -> None:
-        """Compatibility alias for :meth:`export_trajectory_bundle`."""
-        self.export_trajectory_bundle()
 
     def export_session(self) -> None:
         """Queue session export through the shared worker runtime."""

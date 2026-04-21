@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from robot_sim.app.workflow_facade import ApplicationWorkflowFacade
+
 import numpy as np
 
 from robot_sim.app.container import build_container
@@ -10,6 +12,17 @@ from robot_sim.presentation.controllers.robot_controller import RobotController
 from robot_sim.application.dto import FKRequest
 from robot_sim.presentation.state_store import StateStore
 
+
+
+
+def _workflow_facade_with_registry(container, registry):
+    return ApplicationWorkflowFacade(
+        registries=replace(container.registry_bundle, robot_registry=registry),
+        services=container.service_bundle,
+        workflows=container.workflow_bundle,
+        runtime_context=dict(container.runtime_context or {}),
+        startup_summary=dict(container.startup_summary or {}),
+    )
 
 def _build_structured_spec(project_root, tmp_path):
     urdf = tmp_path / 'structured.urdf'
@@ -29,7 +42,9 @@ def _build_structured_spec(project_root, tmp_path):
 
 def test_build_robot_from_editor_invalidates_structured_source_after_dh_edit(project_root, tmp_path):
     structured_spec = _build_structured_spec(project_root, tmp_path)
-    controller = RobotController(StateStore(), RobotRegistry(tmp_path), build_container(project_root).fk_uc)
+    container = build_container(project_root)
+    registry = RobotRegistry(tmp_path)
+    controller = RobotController(StateStore(), registry, container.fk_uc, application_workflow=_workflow_facade_with_registry(container, registry))
 
     edited_rows = list(structured_spec.dh_rows)
     edited_rows[0] = replace(edited_rows[0], a=float(edited_rows[0].a) + 0.05)
@@ -46,7 +61,9 @@ def test_build_robot_from_editor_invalidates_structured_source_after_dh_edit(pro
 
 def test_build_robot_from_editor_preserves_structured_source_when_only_home_changes(project_root, tmp_path):
     structured_spec = _build_structured_spec(project_root, tmp_path)
-    controller = RobotController(StateStore(), RobotRegistry(tmp_path), build_container(project_root).fk_uc)
+    container = build_container(project_root)
+    registry = RobotRegistry(tmp_path)
+    controller = RobotController(StateStore(), registry, container.fk_uc, application_workflow=_workflow_facade_with_registry(container, registry))
 
     edited = controller.build_robot_from_editor(
         structured_spec,
@@ -63,7 +80,7 @@ def test_build_robot_from_editor_preserves_structured_source_when_only_home_chan
 def test_save_current_robot_recomputes_runtime_fk_after_editor_change(project_root, tmp_path):
     container = build_container(project_root)
     registry = RobotRegistry(tmp_path, readonly_roots=(project_root / 'configs' / 'robots',))
-    controller = RobotController(StateStore(), registry, container.fk_uc)
+    controller = RobotController(StateStore(), registry, container.fk_uc, application_workflow=_workflow_facade_with_registry(container, registry))
 
     controller.load_robot('planar_2dof')
     loaded_spec = controller._state_store.state.robot_spec
@@ -94,7 +111,7 @@ def test_imported_geometry_round_trips_through_registry_load(project_root, tmp_p
     )
     container = build_container(project_root)
     registry = RobotRegistry(tmp_path)
-    controller = RobotController(StateStore(), registry, container.fk_uc, import_robot_uc=container.import_robot_uc)
+    controller = RobotController(StateStore(), registry, container.fk_uc, import_robot_uc=container.import_robot_uc, application_workflow=_workflow_facade_with_registry(container, registry))
 
     result = controller.import_robot(str(urdf), importer_id='urdf')
 
@@ -111,7 +128,7 @@ def test_imported_geometry_round_trips_through_registry_load(project_root, tmp_p
 def test_save_current_robot_save_as_updates_runtime_identity(project_root, tmp_path):
     container = build_container(project_root)
     registry = RobotRegistry(tmp_path, readonly_roots=(project_root / 'configs' / 'robots',))
-    controller = RobotController(StateStore(), registry, container.fk_uc)
+    controller = RobotController(StateStore(), registry, container.fk_uc, application_workflow=_workflow_facade_with_registry(container, registry))
 
     controller.load_robot('planar_2dof')
     path = controller.save_current_robot(name='planar_2dof_copy')

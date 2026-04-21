@@ -17,8 +17,8 @@ def test_planning_scene_revision_and_object_ids_regression():
     assert summary['attached_object_ids'] == ['tool']
     assert summary['obstacle_count'] == 1
     assert summary['attached_object_count'] == 1
-    assert summary['obstacles'][0]['resolved_geometry']['kind'] == 'aabb'
-    assert summary['attached_objects'][0]['declared_geometry']['kind'] == 'aabb'
+    assert summary['obstacles'][0]['validation_geometry']['kind'] == 'aabb'
+    assert summary['attached_objects'][0]['declaration_geometry']['kind'] == 'aabb'
 
 
 def test_allowed_collision_matrix_regression():

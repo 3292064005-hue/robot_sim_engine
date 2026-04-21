@@ -1,18 +1,23 @@
-# Importer fidelity
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/architecture/importer-model.md
+last_reviewed: 2026-04-18
+---
+# Importer Fidelity
 
-- `yaml` importer is native/high-fidelity for this project.
-- `urdf_model` preserves a serial URDF link/joint model, joint axes/limits, and visual/collision availability；运行时现优先投影到 `ArticulatedRobotModel` 作为 FK/Jacobian/数值 IK 的执行面，`RuntimeRobotModel.execution_rows` 仅保留给 legacy analytic / compatibility adapter。
-- `urdf_skeleton` remains available as a compatibility fallback that collapses URDF joint origins into an approximate DH-like serial chain.
-- 运行时 FK / IK / trajectory / benchmark 现在统一优先消费 `RobotSpec.runtime_model`；`runtime_model.execution_rows` 仍保留 serial execution adapter 兼容面，但求解内核不再直接绑定 `RobotSpec.runtime_model` / `spec.dh_rows`。
+> Legacy entry page. Canonical architecture doc now lives in `docs/architecture/importer-model.md`.
 
-- 导入后的 visual/collision geometry 现在优先保存在 `ImportedRobotPackage.geometry_model` typed object 中，并在后续 load/save/runtime scene 流程中保持可恢复；metadata 仅保留轻量引用，不再承载重型 geometry payload。
-- live 3D scene 现在会消费 `RobotGeometry`，对 box / cylinder / sphere / capsule primitive 做稳定渲染；mesh primitive 会优先读取可恢复文件，失败时退化为 capsule proxy。
-- 若用户在编辑器中改写导入模型的 DH 行，系统会显式降级为 `edited_runtime_dh` 语义，并清理原 structured/source-model fidelity 声明。
-- `tests/regression/baselines/importer_fidelity_baseline.json` + `scripts/regenerate_importer_fidelity_baseline.py` 现在作为 importer fidelity 黄金基线；YAML 原生模型与 structured URDF 导入摘要必须保持稳定。
+本入口页只保留 importer fidelity 摘要与跳转，不再重复维护完整 runtime contract 字段。
+当前主结论：
+- `yaml` importer 仍是本项目的 native / high-fidelity 路径。
+- `urdf_model` 现在以 `articulated_model` 作为主语义面，并保留 branched-tree graph projection。
+- 当前 execution adapter 已升级为 `active-path-over-tree`；graph preservation 已支持，branched tree 可沿活动执行链进入求解主线，但这仍不等于 full-tree simultaneous execution 已支持。
+- `urdf_skeleton` 仍是 bounded-fidelity approximate importer，用于 demo / tests / constrained serial benchmarks。
 
-- `runtime_model_summary` / `articulated_model_summary` 仍会进入 runtime planning-scene metadata 与 session export，但 importer/registry 持久化主链现优先保存 typed object（`ImportedRobotPackage` / `CanonicalRobotModel` / `RobotGeometryModel`），不再把 metadata 当成唯一 authority。
-- `urdf_model` 现在会显式生成 `runtime_fidelity_contract` 与 `downgrade_records`，把多 root、branch prune、fixed-joint collapse、visual/collision proxy 等降级点结构化写入 source summary / canonical metadata / imported package metadata。
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
 
-- importer 主链现在会生成 `ImportedRobotPackage`，其中显式拆分 `source model / runtime model / articulated model / geometry model`。`RobotRegistry`、`RuntimeAssetService` 与 `ExportService` 优先消费这份 package typed object，再向 session/export/runtime scene 投影摘要。
-
-- `ImportedRobotPackage.summary()` 现在还会输出 `fidelity_breakdown`，把 `source_recovered / runtime_executable / geometry_recoverable / roadmap_level / downgrade_records` 显式结构化。`downgrade_records` 会保持结构化 dict 记录，`degradation_reasons` 只作为简化索引，不再把降级记录整体字符串化。session/export 主链会直接投影这份 breakdown，而不是再退回 metadata 中心化语义。
+请跳转阅读：[`docs/architecture/importer-model.md`](architecture/importer-model.md)

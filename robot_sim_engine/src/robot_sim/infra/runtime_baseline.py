@@ -108,7 +108,7 @@ def evaluate_runtime_baseline(
     """Evaluate whether the current runtime satisfies a named validation baseline.
 
     Modes:
-        - ``headless``: Linux + Python >= 3.10. Python 3.10 remains preferred.
+        - ``headless``: Linux + Python >= 3.10.
         - ``gui``: Ubuntu 22.04 + Python 3.10 + PySide6 >= 6.5.
         - ``release``: Linux + Python >= 3.10 + ``build`` module installed.
     """
@@ -130,7 +130,6 @@ def evaluate_runtime_baseline(
     if not _is_python_at_least(current_version, major=3, minor=10):
         errors.append(f'{normalized_mode} baseline requires Python >= 3.10, got {_version_string(current_version)}')
 
-    preferred_python_warning = f'preferred validation interpreter is Python 3.10, got {_version_string(current_version)}'
     if normalized_mode == 'gui':
         if current_os.get('ID') != 'ubuntu' or current_os.get('VERSION_ID') != '22.04':
             errors.append(
@@ -142,10 +141,6 @@ def evaluate_runtime_baseline(
             errors.append('gui baseline requires PySide6 >= 6.5, but PySide6 is unavailable')
         elif not _is_version_at_least(qt_version, major=6, minor=5):
             errors.append(f'gui baseline requires PySide6 >= 6.5, got {qt_version}')
-    else:
-        if not _is_exact_python(current_version, major=3, minor=10):
-            warnings.append(preferred_python_warning)
-
     if normalized_mode == 'release' and not has_build:
         errors.append('release baseline requires the build module (python -m build)')
 

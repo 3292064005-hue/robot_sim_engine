@@ -9,15 +9,6 @@ from robot_sim.domain.enums import TaskState
 class ThreadOrchestratorStateMixin:
     """Lifecycle/state transition helpers for the stable thread orchestrator."""
 
-    @staticmethod
-    def _coerce_legacy_progress(event):
-        payload = getattr(event, 'payload', None)
-        if isinstance(payload, dict) and 'value' in payload and len(payload) == 1:
-            return payload['value']
-        if payload is not None:
-            return payload
-        return event
-
     def _on_progress_event(self, event) -> None:
         self._set_state(
             TaskState.RUNNING,
@@ -31,11 +22,6 @@ class ThreadOrchestratorStateMixin:
             return
         self._set_state(TaskState(state), message=state)
 
-    def _handle_failed(self, message: str) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.FAILED, message=str(message), stop_reason='exception', finished=True)
-
     def _handle_failed_event(self, event: WorkerFailedEvent) -> None:
         if self._lifecycle.is_terminal_locked():
             return
@@ -45,11 +31,6 @@ class ThreadOrchestratorStateMixin:
             stop_reason=str(getattr(event, 'stop_reason', '') or 'exception'),
             finished=True,
         )
-
-    def _handle_finished(self, _payload) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.SUCCEEDED, message='completed', stop_reason='completed', finished=True)
 
     def _handle_finished_event(self, event: WorkerFinishedEvent) -> None:
         if self._lifecycle.is_terminal_locked():
@@ -61,11 +42,6 @@ class ThreadOrchestratorStateMixin:
             finished=True,
             finished_at=getattr(event, 'finished_at', None),
         )
-
-    def _handle_cancelled(self) -> None:
-        if self._lifecycle.is_terminal_locked():
-            return
-        self._set_state(TaskState.CANCELLED, message='cancelled', stop_reason='cancelled', finished=True)
 
     def _handle_cancelled_event(self, event: WorkerCancelledEvent) -> None:
         if self._lifecycle.is_terminal_locked():

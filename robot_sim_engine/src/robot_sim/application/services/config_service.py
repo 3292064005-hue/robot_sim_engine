@@ -6,23 +6,23 @@ from pathlib import Path
 
 import yaml
 
-from robot_sim.infra.compatibility_usage import record_compatibility_usage
 from robot_sim.infra.schema import ConfigSchema
-from robot_sim.model.app_config import AppConfig, PlotConfig, WindowConfig
+from robot_sim.model.app_config import AppConfig, PlotConfig, RenderAdviceConfig, RenderConfig, WindowConfig
 from robot_sim.model.solver_config import (
     IKConfig,
-    SUPPORTED_TRAJECTORY_VALIDATION_LAYERS,
     SolverSettings,
     TrajectoryConfig,
+    TrajectoryPipelineConfig,
+    TrajectoryStageCatalogEntry,
 )
 
 
 class ConfigService:
     """Load application and solver configuration with profile-aware overrides.
 
-    The shipped repository/profile configuration is the authoritative runtime baseline.
-    Optional local overrides are resolved separately so repository-managed defaults do not
-    silently flatten per-profile differences.
+    The typed dataclass defaults are now the code-level single source of truth. Checked-in
+    profile files only provide profile-scoped overrides, feature flags, and optional extension
+    catalogs.
     """
 
     DEFAULT_PROFILE = 'default'
@@ -35,109 +35,34 @@ class ConfigService:
     LOCAL_OVERRIDE_DIR_ENV = 'ROBOT_SIM_CONFIG_LOCAL_DIR'
     APP_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_APP_CONFIG_OVERRIDE'
     SOLVER_LOCAL_OVERRIDE_ENV = 'ROBOT_SIM_SOLVER_CONFIG_OVERRIDE'
-    ENABLE_LEGACY_OVERRIDE_ENV = 'ROBOT_SIM_ENABLE_LEGACY_LOCAL_OVERRIDE'
     PLUGIN_MANIFEST_NAME = 'plugins.yaml'
     PROFILE_PLUGIN_MANIFEST_SUFFIX = '.plugins.yaml'
-    DEFAULT_APP_CONFIG: dict[str, object] = {
-        'window': {
-            'title': 'Robot Sim Engine',
-            'width': 1680,
-            'height': 980,
-            'splitter_sizes': [420, 820, 360],
-            'vertical_splitter_sizes': [700, 260],
-        },
-        'plots': {
-            'max_points': 5000,
-        },
-    }
-    DEFAULT_SOLVER_CONFIG: dict[str, object] = {
-        'ik': {
-            'mode': 'dls',
-            'max_iters': 150,
-            'pos_tol': 1.0e-4,
-            'ori_tol': 1.0e-4,
-            'damping_lambda': 0.05,
-            'step_scale': 0.5,
-            'enable_nullspace': True,
-            'joint_limit_weight': 0.03,
-            'manipulability_weight': 0.0,
-            'position_only': False,
-            'orientation_weight': 1.0,
-            'max_step_norm': 0.35,
-            'fallback_to_dls_when_singular': True,
-            'reachability_precheck': True,
-            'retry_count': 1,
-            'random_seed': 7,
-            'adaptive_damping': True,
-            'min_damping_lambda': 1.0e-4,
-            'max_damping_lambda': 1.5,
-            'use_weighted_least_squares': True,
-            'clamp_seed_to_joint_limits': True,
-            'normalize_target_rotation': True,
-            'allow_orientation_relaxation': False,
-            'orientation_relaxation_pos_multiplier': 5.0,
-            'orientation_relaxation_ori_multiplier': 25.0,
-        },
-        'trajectory': {
-            'duration': 3.0,
-            'dt': 0.02,
-            'validation_layers': list(SUPPORTED_TRAJECTORY_VALIDATION_LAYERS),
-        },
-    }
+    DEFAULT_APP_CONFIG: dict[str, object] = AppConfig().as_dict()
+    DEFAULT_SOLVER_CONFIG: dict[str, object] = SolverSettings(ik=IKConfig(retry_count=1)).as_dict()
 
     def __init__(
         self,
         config_dir: str | Path,
         *,
         profile: str = DEFAULT_PROFILE,
-        allow_legacy_local_override: bool = True,
         local_override_dir: str | Path | None = None,
     ) -> None:
-        """Create the config service.
-
-        Args:
-            config_dir: Directory containing shipped config resources and profile overlays.
-            profile: Active configuration profile. ``default`` uses only the shared baseline
-                unless a local override source is enabled.
-            allow_legacy_local_override: Whether legacy ``app.yaml`` / ``solver.yaml`` files
-                may still act as runtime overrides. The container disables this for shipped
-                repository configs so checked-in defaults cannot mask profile differences.
-            local_override_dir: Optional explicit directory containing
-                ``app.local.yaml`` / ``solver.local.yaml`` override files.
-
-        Returns:
-            None: Stores configuration paths and profile state.
-
-        Raises:
-            ValueError: If ``profile`` is empty.
-        """
         normalized_profile = str(profile or '').strip()
         if not normalized_profile:
             raise ValueError('ConfigService profile must be a non-empty string')
         self.config_dir = Path(config_dir)
         self.profile = normalized_profile
-        self.allow_legacy_local_override = bool(allow_legacy_local_override)
         self._explicit_local_override_dir = Path(local_override_dir) if local_override_dir is not None else None
 
     @property
     def profile_dir(self) -> Path:
-        """Return the profile-directory path."""
         return self.config_dir / self.PROFILE_DIR_NAME
 
     @property
     def default_local_override_dir(self) -> Path:
-        """Return the default local override directory under the config root."""
         return self.config_dir / self.LOCAL_OVERRIDE_DIR_NAME
 
     def available_profiles(self) -> tuple[str, ...]:
-        """Return the available configuration profile identifiers.
-
-        Returns:
-            tuple[str, ...]: Sorted profile identifiers discovered on disk.
-
-        Raises:
-            None: Missing profile directories simply yield an empty tuple.
-        """
         if not self.profile_dir.exists():
             return ()
         return tuple(
@@ -149,19 +74,10 @@ class ConfigService:
         )
 
     def describe_resolution(self) -> dict[str, object]:
-        """Describe the active configuration resolution chain.
-
-        Returns:
-            dict[str, object]: Stable source summary for diagnostics, docs, and startup logs.
-
-        Raises:
-            None: Pure projection of filesystem and profile state.
-        """
         default_profile_path = self.profile_dir / f'{self.DEFAULT_PROFILE}.yaml'
         active_profile_path = self.profile_dir / f'{self.profile}.yaml'
         local_sources = self._local_override_sources()
-        legacy_sources = self._legacy_override_sources()
-        applied_chain: list[str] = ['code_defaults', 'profiles/default.yaml']
+        applied_chain: list[str] = ['typed_code_defaults', 'profiles/default.yaml']
         if self.profile != self.DEFAULT_PROFILE:
             applied_chain.append(f'profiles/{self.profile}.yaml')
         if local_sources['app'] is not None:
@@ -174,56 +90,24 @@ class ConfigService:
             'resolution_order': tuple(applied_chain),
             'default_profile_path': str(default_profile_path),
             'active_profile_path': str(active_profile_path),
+            'default_truth_source': 'typed_code_defaults',
             'local_override_dir': str(self._resolved_local_override_dir()),
             'local_override_paths': {
                 'app': None if local_sources['app'] is None else str(local_sources['app']),
                 'solver': None if local_sources['solver'] is None else str(local_sources['solver']),
             },
-            'legacy_override_paths': {
-                'app': str(legacy_sources['app']),
-                'solver': str(legacy_sources['solver']),
-            },
-            'legacy_local_override_enabled': self._legacy_override_enabled(),
             'existing_files': {
                 'default_profile': default_profile_path.exists(),
                 'active_profile': active_profile_path.exists(),
                 'local_app_override': local_sources['app'] is not None and local_sources['app'].exists(),
                 'local_solver_override': local_sources['solver'] is not None and local_sources['solver'].exists(),
-                'legacy_app_override': legacy_sources['app'].exists(),
-                'legacy_solver_override': legacy_sources['solver'].exists(),
-            },
-            'ignored_legacy_override_files': {
-                'app': legacy_sources['app'].exists() and not self._legacy_override_enabled(),
-                'solver': legacy_sources['solver'].exists() and not self._legacy_override_enabled(),
             },
         }
 
     def load_yaml(self, name: str) -> dict:
-        """Load a YAML mapping from the config directory.
-
-        Args:
-            name: Relative YAML filename under ``config_dir``.
-
-        Returns:
-            dict: Parsed mapping or an empty mapping when the file is absent.
-
-        Raises:
-            ValueError: If the YAML payload is not a mapping.
-        """
         return self.load_yaml_path(self.config_dir / name)
 
     def load_yaml_path(self, path: str | Path) -> dict:
-        """Load a YAML mapping from an explicit path.
-
-        Args:
-            path: Explicit YAML path.
-
-        Returns:
-            dict: Parsed mapping or an empty mapping when the file is absent.
-
-        Raises:
-            ValueError: If the YAML payload is not a mapping.
-        """
         resolved = Path(path)
         if not resolved.exists():
             return {}
@@ -234,17 +118,6 @@ class ConfigService:
         return data
 
     def load_profile_yaml(self, profile: str | None = None) -> dict:
-        """Load a profile overlay mapping.
-
-        Args:
-            profile: Optional explicit profile name. Defaults to the active profile.
-
-        Returns:
-            dict: Profile mapping or an empty mapping when no overlay is defined.
-
-        Raises:
-            ValueError: If the profile YAML payload is not a mapping.
-        """
         resolved_profile = str(profile or self.profile).strip()
         profile_path = self.profile_dir / f'{resolved_profile}.yaml'
         if not profile_path.exists():
@@ -256,15 +129,6 @@ class ConfigService:
         return data
 
     def describe_effective_snapshot(self) -> dict[str, object]:
-        """Return the effective validated configuration snapshot.
-
-        Returns:
-            dict[str, object]: Stable resolved app/solver configuration together with the
-                resolution chain used to build them.
-
-        Raises:
-            None: Pure projection of validated configuration state.
-        """
         return {
             'profile': self.profile,
             'app': self.load_app_config(),
@@ -273,15 +137,6 @@ class ConfigService:
         }
 
     def plugin_manifest_paths(self) -> tuple[Path, ...]:
-        """Return the canonical plugin-manifest chain for the active profile.
-
-        Returns:
-            tuple[Path, ...]: Ordered manifest paths. The shared manifest is always first;
-                an optional profile-scoped manifest is appended when present.
-
-        Raises:
-            None: Missing manifests are simply skipped from the chain.
-        """
         manifest_paths: list[Path] = []
         shared_manifest = self.config_dir / self.PLUGIN_MANIFEST_NAME
         if shared_manifest.exists():
@@ -292,12 +147,10 @@ class ConfigService:
         return tuple(manifest_paths)
 
     def load_app_config(self) -> dict[str, object]:
-        """Load the validated application UI configuration as a plain mapping."""
-        merged = self._merge_profile_section(self.DEFAULT_APP_CONFIG, section_keys=('window', 'plots'), local_kind='app')
+        merged = self._merge_profile_section(self.DEFAULT_APP_CONFIG, section_keys=('window', 'plots', 'render'), local_kind='app')
         return ConfigSchema.validate_app_config(merged)
 
     def load_solver_config(self) -> dict[str, object]:
-        """Load the validated solver and trajectory configuration as a plain mapping."""
         raw = self._merge_profile_section(self.DEFAULT_SOLVER_CONFIG, section_keys=('ik', 'trajectory'), local_kind='solver')
         normalized = deepcopy(raw)
         ik = normalized.setdefault('ik', {})
@@ -306,17 +159,11 @@ class ConfigService:
         return ConfigSchema.validate_solver_config(normalized)
 
     def load_app_settings(self) -> AppConfig:
-        """Load the application configuration as typed settings objects.
-
-        Returns:
-            AppConfig: Typed application configuration.
-
-        Raises:
-            SchemaError: If the underlying app configuration is invalid.
-        """
         config = self.load_app_config()
         window = dict(config.get('window', {}) or {})
         plots = dict(config.get('plots', {}) or {})
+        render = dict(config.get('render', {}) or {})
+        advice = dict(render.get('advice', {}) or {})
         return AppConfig(
             window=WindowConfig(
                 title=str(window.get('title', WindowConfig.title)),
@@ -325,20 +172,18 @@ class ConfigService:
                 splitter_sizes=tuple(int(v) for v in window.get('splitter_sizes', WindowConfig.splitter_sizes) or WindowConfig.splitter_sizes),
                 vertical_splitter_sizes=tuple(int(v) for v in window.get('vertical_splitter_sizes', WindowConfig.vertical_splitter_sizes) or WindowConfig.vertical_splitter_sizes),
             ),
-            plots=PlotConfig(
-                max_points=int(plots.get('max_points', PlotConfig.max_points)),
+            plots=PlotConfig(max_points=int(plots.get('max_points', PlotConfig.max_points))),
+            render=RenderConfig(
+                advice=RenderAdviceConfig(
+                    high_p95_ms=float(advice.get('high_p95_ms', RenderAdviceConfig.high_p95_ms)),
+                    high_average_ms=float(advice.get('high_average_ms', RenderAdviceConfig.high_average_ms)),
+                    high_failure_ratio=float(advice.get('high_failure_ratio', RenderAdviceConfig.high_failure_ratio)),
+                    high_span_rate_per_sec=float(advice.get('high_span_rate_per_sec', RenderAdviceConfig.high_span_rate_per_sec)),
+                ),
             ),
         )
 
     def load_solver_settings(self) -> SolverSettings:
-        """Load the solver configuration as typed settings objects.
-
-        Returns:
-            SolverSettings: Typed solver and trajectory configuration bundle.
-
-        Raises:
-            SchemaError: If the underlying solver configuration is invalid.
-        """
         config = self.load_solver_config()
         ik = dict(config.get('ik', {}) or {})
         trajectory = dict(config.get('trajectory', {}) or {})
@@ -347,29 +192,55 @@ class ConfigService:
             resolved_layers = TrajectoryConfig.validation_layers
         else:
             resolved_layers = tuple(str(item).strip() for item in validation_layers)
+        raw_pipeline_configs = trajectory.get('pipelines', ()) or ()
+        resolved_pipelines: list[TrajectoryPipelineConfig] = []
+        for item in raw_pipeline_configs:
+            payload = dict(item or {})
+            resolved_pipelines.append(
+                TrajectoryPipelineConfig(
+                    pipeline_id=str(payload.get('id', payload.get('pipeline_id', 'default')) or 'default'),
+                    planner_stage_id=str(payload.get('planner_stage', payload.get('planner_stage_id', 'default_planner')) or 'default_planner'),
+                    retime_stage_id=str(payload.get('retime_stage', payload.get('retime_stage_id', 'builtin_scaling')) or 'builtin_scaling'),
+                    validate_stage_id=str(payload.get('validate_stage', payload.get('validate_stage_id', 'validate_trajectory')) or 'validate_trajectory'),
+                    postprocessor_stage_ids=tuple(payload.get('postprocessors', payload.get('postprocessor_stage_ids', ())) or ()),
+                    aliases=tuple(payload.get('aliases', ()) or ()),
+                    metadata=dict(payload.get('metadata', {}) or {}),
+                )
+            )
+        raw_stage_catalog = trajectory.get('stage_catalog', ()) or ()
+        resolved_stage_catalog: list[TrajectoryStageCatalogEntry] = []
+        for item in raw_stage_catalog:
+            payload = dict(item or {})
+            resolved_stage_catalog.append(
+                TrajectoryStageCatalogEntry(
+                    stage_id=str(payload.get('id', payload.get('stage_id', '')) or ''),
+                    provider_id=str(payload.get('provider_id', payload.get('id', payload.get('stage_id', ''))) or ''),
+                    kind=str(payload.get('kind', '') or ''),
+                    factory=str(payload.get('factory', '') or ''),
+                    aliases=tuple(payload.get('aliases', ()) or ()),
+                    metadata=dict(payload.get('metadata', {}) or {}),
+                    enabled_profiles=tuple(payload.get('enabled_profiles', ()) or ()),
+                    status=str(payload.get('status', 'stable') or 'stable'),
+                    deployment_tier=str(payload.get('deployment_tier', 'production') or 'production'),
+                    required_host_capabilities=tuple(payload.get('required_host_capabilities', ()) or ()),
+                    optional_host_capabilities=tuple(payload.get('optional_host_capabilities', ()) or ()),
+                    fallback_stage_id=str(payload.get('fallback_stage_id', '') or ''),
+                    replace=bool(payload.get('replace', False)),
+                )
+            )
         return SolverSettings(
             ik=IKConfig(**ik),
             trajectory=TrajectoryConfig(
                 duration=float(trajectory.get('duration', TrajectoryConfig.duration)),
                 dt=float(trajectory.get('dt', TrajectoryConfig.dt)),
                 validation_layers=resolved_layers,
+                pipeline_id=str(trajectory.get('pipeline_id', TrajectoryConfig.pipeline_id) or TrajectoryConfig.pipeline_id),
+                pipelines=tuple(resolved_pipelines) if resolved_pipelines else TrajectoryConfig().pipelines,
+                stage_catalog=tuple(resolved_stage_catalog),
             ),
         )
 
     def _merge_profile_section(self, base: dict[str, object], *, section_keys: tuple[str, ...], local_kind: str) -> dict[str, object]:
-        """Merge baseline, profile, and optional local overrides for a logical config section.
-
-        Args:
-            base: Shared in-code defaults.
-            section_keys: Top-level keys owned by the logical section.
-            local_kind: Logical config kind, either ``app`` or ``solver``.
-
-        Returns:
-            dict[str, object]: Deep-merged configuration mapping.
-
-        Raises:
-            ValueError: Propagates malformed YAML mapping errors from profile or local files.
-        """
         merged = deepcopy(base)
         default_overlay = self._filtered_profile_overlay(self.DEFAULT_PROFILE, section_keys)
         if default_overlay:
@@ -390,13 +261,6 @@ class ConfigService:
         return {str(key): deepcopy(value) for key, value in overlay.items() if str(key) in section_keys}
 
     def _resolved_local_override_dir(self) -> Path:
-        """Return the preferred local override directory.
-
-        Resolution order:
-            1. Explicit constructor override.
-            2. ``ROBOT_SIM_CONFIG_LOCAL_DIR`` environment variable.
-            3. ``<config_root>/local``.
-        """
         if self._explicit_local_override_dir is not None:
             return self._explicit_local_override_dir
         env_dir = str(os.environ.get(self.LOCAL_OVERRIDE_DIR_ENV, '') or '').strip()
@@ -405,7 +269,6 @@ class ConfigService:
         return self.default_local_override_dir
 
     def _local_override_sources(self) -> dict[str, Path | None]:
-        """Return resolved local override file paths for app and solver config kinds."""
         override_dir = self._resolved_local_override_dir()
         app_env = str(os.environ.get(self.APP_LOCAL_OVERRIDE_ENV, '') or '').strip()
         solver_env = str(os.environ.get(self.SOLVER_LOCAL_OVERRIDE_ENV, '') or '').strip()
@@ -416,32 +279,7 @@ class ConfigService:
             'solver': solver_path if solver_path.exists() else None,
         }
 
-    def _legacy_override_enabled(self) -> bool:
-        """Return whether legacy repository-level override files are active."""
-        if self.allow_legacy_local_override:
-            return True
-        raw = str(os.environ.get(self.ENABLE_LEGACY_OVERRIDE_ENV, '') or '').strip().lower()
-        return raw in {'1', 'true', 'yes', 'on'}
-
-    def _legacy_override_sources(self) -> dict[str, Path]:
-        """Return legacy repository-level override file paths."""
-        return {
-            'app': self.config_dir / self.APP_CONFIG_NAME,
-            'solver': self.config_dir / self.SOLVER_CONFIG_NAME,
-        }
-
     def _load_local_override(self, local_kind: str) -> dict[str, object]:
-        """Load optional local override YAML for the requested config kind.
-
-        Args:
-            local_kind: ``app`` or ``solver``.
-
-        Returns:
-            dict[str, object]: Override mapping or an empty mapping when no override is active.
-
-        Raises:
-            ValueError: If a discovered local override file is not a mapping.
-        """
         normalized_kind = str(local_kind).strip().lower()
         if normalized_kind not in {'app', 'solver'}:
             raise ValueError(f'unsupported local override kind: {local_kind}')
@@ -449,26 +287,9 @@ class ConfigService:
         preferred = preferred_sources[normalized_kind]
         if preferred is not None:
             return self.load_yaml_path(preferred)
-        if self._legacy_override_enabled():
-            legacy_source = self._legacy_override_sources()[normalized_kind]
-            if legacy_source.exists():
-                record_compatibility_usage('legacy config overrides', detail=f'{normalized_kind}:{legacy_source.name}')
-            return self.load_yaml_path(legacy_source)
         return {}
 
     def _deep_merge(self, base: dict, override: dict) -> dict:
-        """Deep-merge two configuration mappings.
-
-        Args:
-            base: Base configuration mapping.
-            override: Override configuration mapping.
-
-        Returns:
-            dict: Deep-merged mapping.
-
-        Raises:
-            None: The merge operation is structural only.
-        """
         merged = deepcopy(base)
         for key, value in override.items():
             if isinstance(value, dict) and isinstance(merged.get(key), dict):

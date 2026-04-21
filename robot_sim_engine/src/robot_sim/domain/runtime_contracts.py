@@ -11,27 +11,6 @@ from robot_sim.domain.module_governance import governance_for_module
 
 MODULE_STATUSES: dict[str, object] = {
     'core.collision.scene': ModuleStatus.STABLE.value,
-    'presentation.widgets.collision_panel': {
-        'status': ModuleStatus.EXPERIMENTAL.value,
-        'enabled': False,
-        'availability': 'deprecated_compatibility_alias',
-        'compatibility_alias_target': 'presentation.experimental.widgets.collision_panel',
-        'notes': ['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface'],
-    },
-    'presentation.widgets.export_panel': {
-        'status': ModuleStatus.EXPERIMENTAL.value,
-        'enabled': False,
-        'availability': 'deprecated_compatibility_alias',
-        'compatibility_alias_target': 'presentation.experimental.widgets.export_panel',
-        'notes': ['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface'],
-    },
-    'presentation.widgets.scene_options_panel': {
-        'status': ModuleStatus.EXPERIMENTAL.value,
-        'enabled': False,
-        'availability': 'deprecated_compatibility_alias',
-        'compatibility_alias_target': 'presentation.experimental.widgets.scene_options_panel',
-        'notes': ['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface'],
-    },
     'render.picking': ModuleStatus.EXPERIMENTAL.value,
     'render.plot_sync': ModuleStatus.EXPERIMENTAL.value,
     'presentation.experimental.widgets.collision_panel': ModuleStatus.EXPERIMENTAL.value,
@@ -41,7 +20,7 @@ MODULE_STATUSES: dict[str, object] = {
     'render.experimental.plot_sync': ModuleStatus.EXPERIMENTAL.value,
     'application.importers.urdf_model_importer': ModuleStatus.STABLE.value,
     'application.importers.urdf_skeleton_importer': ModuleStatus.STABLE.value,
-    'core.collision.capsule_backend': ModuleStatus.EXPERIMENTAL.value,
+    'core.collision.capsule_backend': ModuleStatus.STABLE.value,
 }
 
 _collision_registry = default_collision_backend_registry()
@@ -93,20 +72,17 @@ def render_module_status_markdown(module_statuses: Mapping[str, object] | None =
             status = str(payload.get('status', 'unknown'))
             enabled = bool(payload.get('enabled', True))
             availability = str(payload.get('availability', '') or '')
-            compatibility_alias_target = str(payload.get('compatibility_alias_target', '') or '')
             entry_notes = tuple(str(item) for item in payload.get('notes', ()) or ())
         else:
             status = str(payload)
             enabled = True
             availability = ''
-            compatibility_alias_target = ''
             entry_notes = ()
         governance = governance_for_module(str(module_id))
         normalized[str(module_id)] = {
             'status': status,
             'enabled': enabled,
             'availability': availability,
-            'compatibility_alias_target': compatibility_alias_target,
             'entry_notes': entry_notes,
             'governance': None if governance is None else governance.summary(),
         }
@@ -149,9 +125,6 @@ def render_module_status_markdown(module_statuses: Mapping[str, object] | None =
                 lines.append(f"  - promotion_ready: `{bool(governance.get('promotion_ready', False))}`")
                 notes = list(tuple(str(item) for item in governance.get('notes', ()) or ()))
                 notes.extend(str(item) for item in detail.get('entry_notes', ()) or ())
-                alias_target = str(detail.get('compatibility_alias_target', '') or '')
-                if alias_target:
-                    lines.append(f"  - compatibility_alias_target: `{alias_target}`")
                 if notes:
                     lines.append(f"  - notes: `{list(dict.fromkeys(notes))}`")
         lines.append('')
@@ -163,8 +136,8 @@ def render_capability_matrix_markdown(descriptors: object | None = None) -> str:
     """Render deterministic capability-matrix markdown from the shared runtime contract.
 
     Args:
-        descriptors: Either a full ``CapabilityMatrix`` instance, a mapping with capability
-            sections, or a legacy tuple of scene descriptors.
+        descriptors: Either a full ``CapabilityMatrix`` instance or an explicit mapping
+            containing capability sections.
 
     Returns:
         str: Deterministic markdown used by docs and regression checks.
@@ -175,20 +148,6 @@ def render_capability_matrix_markdown(descriptors: object | None = None) -> str:
         sections = descriptors.as_dict()
     elif isinstance(descriptors, Mapping):
         sections = dict(descriptors)
-    elif isinstance(descriptors, tuple):
-        sections = {
-            'scene_features': [
-                {
-                    'key': item.key,
-                    'label': item.label,
-                    'enabled': item.enabled,
-                    'status': item.status.value,
-                    'owner_module': item.owner_module,
-                    'metadata': dict(item.metadata),
-                }
-                for item in descriptors
-            ]
-        }
     else:
         raise TypeError(f'unsupported capability-matrix payload: {type(descriptors)!r}')
 

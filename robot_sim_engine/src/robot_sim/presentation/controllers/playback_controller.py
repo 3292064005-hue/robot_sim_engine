@@ -3,6 +3,7 @@ from __future__ import annotations
 from robot_sim.application.services.playback_service import PlaybackFrame, PlaybackService
 from robot_sim.application.use_cases.step_playback import StepPlaybackUseCase
 from robot_sim.model.playback_state import PlaybackState
+from robot_sim.presentation.state_events import PlaybackStateChangedEvent
 from robot_sim.presentation.state_store import StateStore
 
 
@@ -37,13 +38,13 @@ class PlaybackController:
         trajectory = self._trajectory_or_raise(strict=True)
         state = self._state_store.state.playback.with_frame(frame_idx)
         frame = self._playback_service.frame(trajectory, state.frame_idx)
-        self._state_store.patch(playback=state)
+        self._state_store.dispatch(PlaybackStateChangedEvent(playback=state))
         return frame
 
     def next_playback_frame(self) -> PlaybackFrame | None:
         trajectory = self._trajectory_or_raise(strict=True)
         state, frame = self._playback_uc.next(trajectory, self._state_store.state.playback)
-        self._state_store.patch(playback=state)
+        self._state_store.dispatch(PlaybackStateChangedEvent(playback=state))
         return frame
 
     def set_playback_options(self, *, speed_multiplier: float | None = None, loop_enabled: bool | None = None) -> None:
@@ -64,4 +65,4 @@ class PlaybackController:
                 speed_multiplier=playback.speed_multiplier,
                 loop_enabled=bool(loop_enabled),
             )
-        self._state_store.patch(playback=playback)
+        self._state_store.dispatch(PlaybackStateChangedEvent(playback=playback))

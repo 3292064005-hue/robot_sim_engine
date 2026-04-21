@@ -53,3 +53,28 @@ def test_render_runtime_panel_state_exposes_separate_metric_and_detail_views() -
     assert state.metric_payload['scene_3d'].startswith('降级')
     assert state.detail_rows['scene_3d'] == 'pyvistaqt / operation_failed'
     assert state.detail_rows['plots'] == 'pyqtgraph'
+
+
+def test_status_panel_renders_runtime_advice_projection() -> None:
+    _app()
+    panel = StatusPanel()
+    state = build_render_runtime_panel_state(
+        {
+            'scene_3d': {'status': 'available', 'backend': 'pyvistaqt'},
+            'plots': {'status': 'available', 'backend': 'pyqtgraph'},
+            'screenshot': {'status': 'available', 'backend': 'snapshot_renderer'},
+        },
+        {
+            'recommendations': [
+                {
+                    'capability': 'plots',
+                    'backend': 'pyqtgraph',
+                    'action': 'reduce_sampling_rate',
+                    'rationale': 'latency high',
+                }
+            ]
+        },
+    )
+    panel.set_render_runtime(state)
+    assert 'reduce_sampling_rate' in panel.render_advice_summary.text()
+    assert 'reduce_sampling_rate' in panel.render_detail_labels['plots'].text()

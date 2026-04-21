@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from robot_sim.application.services.runtime_asset_service import RobotRuntimeAssetService
 from robot_sim.application.workers.task_events import WorkerCancelledEvent, WorkerFailedEvent
 from robot_sim.domain.errors import CancelledTaskError, ExportRobotError
 from robot_sim.model.pose import Pose
@@ -27,6 +28,7 @@ class DummyRuntimeFacade:
     def __init__(self, state_store: StateStore):
         self.export_root = '.'
         self.state_store = state_store
+        self.runtime_asset_service = RobotRuntimeAssetService()
 
     @property
     def state(self):
@@ -280,21 +282,25 @@ def test_scene_coordinator_records_failed_telemetry_for_invalid_snapshot_payload
 def test_scene_coordinator_adds_and_clears_runtime_obstacles():
     window = DummyWindow()
     coord = SceneCoordinator(window, runtime=window.runtime_facade, threader=window.threader, screenshot_service=FakeScreenshotService())
+    robot_spec = SimpleNamespace(name='planar_runtime')
+    window.runtime_facade.state_store.state.robot_spec = robot_spec
 
     coord.add_obstacle()
     scene = window.runtime_facade.state_store.state.planning_scene
     assert scene is not None
     assert scene.obstacle_ids == ('box',)
     assert window.runtime_facade.state_store.state.scene_summary['obstacle_count'] == 1
+    assert window.runtime_facade.runtime_asset_service.invalidation_log()[-1].reason == 'scene_edit'
 
     coord.clear_obstacles()
     scene = window.runtime_facade.state_store.state.planning_scene
     assert scene is not None
     assert scene.obstacle_ids == ()
     assert window.runtime_facade.state_store.state.scene_summary['obstacle_count'] == 0
+    assert window.runtime_facade.runtime_asset_service.invalidation_log()[-1].reason == 'scene_edit'
 
 
-def test_scene_coordinator_accepts_legacy_capture_use_case_alias():
+def test_scene_coordinator_uses_explicit_capture_use_case_dependency():
     window = DummyWindow()
     capture_uc = object()
     coord = SceneCoordinator(
@@ -302,19 +308,20 @@ def test_scene_coordinator_accepts_legacy_capture_use_case_alias():
         runtime=window.runtime_facade,
         threader=window.threader,
         screenshot_service=FakeScreenshotService(),
-        capture_scene_uc=capture_uc,
+        capture_scene_use_case=capture_uc,
     )
     assert coord.capture_scene_use_case is capture_uc
 
 
-def test_scene_coordinator_rejects_conflicting_capture_use_case_aliases():
+
+
+def test_scene_coordinator_projects_scene_command_log_on_add_obstacle() -> None:
     window = DummyWindow()
-    with pytest.raises(ValueError):
-        SceneCoordinator(
-            window,
-            runtime=window.runtime_facade,
-            threader=window.threader,
-            screenshot_service=FakeScreenshotService(),
-            capture_scene_use_case=object(),
-            capture_scene_uc=object(),
-        )
+    coord = SceneCoordinator(window, runtime=window.runtime_facade, threader=window.threader, screenshot_service=FakeScreenshotService())
+
+    coord.add_obstacle()
+
+    scene = window.runtime_facade.state_store.state.planning_scene
+    assert scene is not None
+    assert scene.summary()['last_scene_command']['command_kind'] == 'upsert_obstacle'
+    assert scene.summary()['scene_command_log_tail'][-1]['source'] == 'scene_toolbar'

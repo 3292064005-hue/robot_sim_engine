@@ -10,10 +10,12 @@ from robot_sim.domain.enums import ImporterFidelity, KinematicConvention
 from robot_sim.application.importers.urdf_model_canonical import build_canonical_serial_model
 from robot_sim.application.importers.urdf_model_parsing import ParsedJoint, ParsedLink, parse_joints, parse_links
 from robot_sim.application.importers.urdf_model_runtime import (
+    build_articulated_source_model,
     build_downgrade_records,
     build_runtime_fidelity_contract,
     build_runtime_geometry,
     resolve_root_link,
+    summarize_articulated_source_graph,
 )
 from robot_sim.model.robot_geometry import RobotGeometry
 from robot_sim.model.robot_model_bundle import RobotModelBundle
@@ -63,9 +65,22 @@ class URDFModelImporter:
         if not has_collision:
             warnings.append('URDF collision geometry missing or unsupported; collision fidelity is reduced to generated serial proxies.')
         stem = robot_name or root.attrib.get('name') or path.stem
-        root_link = self._resolve_root_link(chain, [])
+        graph_summary = summarize_articulated_source_graph(
+            links=link_table,
+            joints=joint_table,
+            selected_root_link=str(resolution.get('selected_root_link', '') or ''),
+            root_candidates=tuple(str(item) for item in resolution.get('root_candidates', ()) or ()),
+        )
+        root_link = str(graph_summary.get('root_link', self._resolve_root_link(chain, [])) or self._resolve_root_link(chain, []))
+        articulated_source_model = build_articulated_source_model(
+            stem=str(stem),
+            joints=joint_table,
+            graph_summary=graph_summary,
+            fidelity=fidelity,
+        )
         downgrade_records = self._build_downgrade_records(
             resolution=resolution,
+            graph_summary=graph_summary,
             has_visual=has_visual,
             has_collision=has_collision,
         )
@@ -75,6 +90,7 @@ class URDFModelImporter:
             chain=chain,
             joint_table=joint_table,
             resolution=resolution,
+            graph_summary=graph_summary,
             has_visual=has_visual,
             has_collision=has_collision,
             fidelity=fidelity,
@@ -95,15 +111,18 @@ class URDFModelImporter:
         source_model_summary = {
             'source_format': 'urdf',
             'source_family': 'urdf_tree',
-            'runtime_family': 'articulated_serial_tree',
+            'runtime_family': str(graph_summary.get('semantic_family', 'articulated_serial_tree')),
             'import_semantics': 'serial_model',
-            'joint_count': len(chain),
-            'link_count': len(canonical_assembly.link_names),
-            'dynamic_joint_count_total': int(sum(1 for item in joint_table.values() if item.is_dynamic)),
+            'joint_count': int(graph_summary.get('dynamic_joint_count_total', len(chain)) or len(chain)),
+            'link_count': int(len(graph_summary.get('link_names', ()) or canonical_assembly.link_names)),
+            'dynamic_joint_count_total': int(graph_summary.get('dynamic_joint_count_total', sum(1 for item in joint_table.values() if item.is_dynamic)) or 0),
             'has_visual': has_visual,
             'has_collision': has_collision,
             'root_link': root_link,
             'selected_joint_names': list(fidelity_contract['selected_joint_names']),
+            'graph_link_names': list(graph_summary.get('link_names', ()) or ()),
+            'graph_edge_pairs': [list(item) for item in graph_summary.get('edge_pairs', ()) or ()],
+            'branching_link_names': list(graph_summary.get('branching_link_names', ()) or ()),
             'downgrade_records': list(fidelity_contract['downgrade_records']),
             'runtime_fidelity_contract': dict(fidelity_contract),
             'fidelity_roadmap': {
@@ -131,10 +150,10 @@ class URDFModelImporter:
                 'collision_model': 'structured' if has_collision else 'generated_proxy',
                 'source': str(path),
                 'warnings': list(dict.fromkeys(warnings)),
-                'notes': 'URDF source semantics are preserved in canonical/articulated payloads; the runtime now dispatches articulated execution as the primary path while retaining bounded DH rows only for legacy analytic compatibility.',
+                'notes': 'URDF source semantics are preserved in canonical/articulated payloads; the runtime now keeps the full articulated source graph for scene/runtime projection while the solver adapter remains a bounded serial projection for execution baselines.',
                 'runtime_fidelity_contract': dict(fidelity_contract),
                 'downgrade_records': list(downgrade_records),
-                'runtime_semantic_family': 'articulated_serial_tree',
+                'runtime_semantic_family': str(graph_summary.get('semantic_family', 'articulated_serial_tree') or 'articulated_serial_tree'),
             },
             joint_names=tuple(canonical_assembly.joint_names),
             link_names=tuple(canonical_assembly.link_names),
@@ -162,6 +181,8 @@ class URDFModelImporter:
                 'import_semantics': 'serial_model',
                 'runtime_fidelity_contract': dict(fidelity_contract),
                 'downgrade_records': list(downgrade_records),
+                'articulated_source_model': articulated_source_model.to_dict(),
+                'graph_summary': dict(graph_summary),
             },
             source_model_summary=source_model_summary,
             canonical_model=canonical_model,
@@ -244,7 +265,7 @@ class URDFModelImporter:
 
         branching_links = sorted({joint.parent_link for joint in full_path if len(parent_to_joints.get(joint.parent_link, [])) > 1})
         for link_name in branching_links:
-            warnings.append(f'URDF branching detected at link {link_name}; importer selected the strongest serial child branch only.')
+            warnings.append(f'URDF branching detected at link {link_name}; articulated source graph is preserved while the solver adapter selects the strongest serial child branch.')
 
         collapsed: list[ParsedJoint] = []
         pending_xyz = np.zeros(3, dtype=float)
@@ -297,12 +318,14 @@ class URDFModelImporter:
         self,
         *,
         resolution: dict[str, object],
+        graph_summary: dict[str, object],
         has_visual: bool,
         has_collision: bool,
     ) -> list[dict[str, object]]:
         """Build typed downgrade records through the runtime-adapter helper layer."""
         return build_downgrade_records(
             resolution=resolution,
+            graph_summary=graph_summary,
             has_visual=has_visual,
             has_collision=has_collision,
         )
@@ -315,6 +338,7 @@ class URDFModelImporter:
         chain: list[ParsedJoint],
         joint_table: dict[str, ParsedJoint],
         resolution: dict[str, object],
+        graph_summary: dict[str, object],
         has_visual: bool,
         has_collision: bool,
         fidelity: str,
@@ -327,6 +351,7 @@ class URDFModelImporter:
             chain=chain,
             joint_table=joint_table,
             resolution=resolution,
+            graph_summary=graph_summary,
             has_visual=has_visual,
             has_collision=has_collision,
             fidelity=fidelity,
@@ -334,7 +359,7 @@ class URDFModelImporter:
         )
 
     def _extract_primitives(self, nodes: list[ET.Element]):
-        """Compatibility shim retained while runtime geometry parsing lives in urdf_model_parsing."""
+        """Extract visual/collision primitives through the shared parsing helper."""
         from robot_sim.application.importers.urdf_model_parsing import extract_primitives
         return extract_primitives(nodes)
 
@@ -343,7 +368,7 @@ class URDFModelImporter:
         return build_runtime_geometry(chain, links)
 
     def _parse_xyz(self, text: str | None, *, default: np.ndarray | None = None) -> np.ndarray:
-        """Compatibility shim retained while vector parsing lives in urdf_model_parsing."""
+        """Parse XYZ vectors through the shared parsing helper."""
         from robot_sim.application.importers.urdf_model_parsing import parse_xyz
         return parse_xyz(text, default=default)
 

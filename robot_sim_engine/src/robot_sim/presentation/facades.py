@@ -9,22 +9,14 @@ from robot_sim.application.services.capability_service import CapabilityService
 from robot_sim.application.services.metrics_service import MetricsService
 from robot_sim.application.services.module_status_service import ModuleStatusService
 from robot_sim.domain.error_projection import TaskErrorMapper
-from robot_sim.infra.compatibility_usage import record_compatibility_usage
 from robot_sim.model.app_config import AppConfig
 from robot_sim.model.solver_config import SolverSettings
 from robot_sim.presentation.state_store import StateStore
+from robot_sim.model.runtime_snapshots import RuntimeContextSnapshot, StartupSummarySnapshot
 
-_COMPATIBILITY_SURFACE = 'presentation facade alias adapters'
+class _WorkflowAdapter:
+    """Thin typed façade over a canonical workflow service."""
 
-
-def _record_facade_usage(adapter: str, operation: str) -> None:
-    record_compatibility_usage(_COMPATIBILITY_SURFACE, detail=f'{adapter}:{operation}')
-
-
-class _CompatibilityWorkflowAdapter:
-    """Adapter-only compatibility shell over a canonical workflow service."""
-
-    _adapter_name = 'facade'
 
     def __init__(self, workflow: Any) -> None:
         self._workflow = workflow
@@ -34,13 +26,11 @@ class _CompatibilityWorkflowAdapter:
         return self._workflow
 
     def _delegate(self, operation: str, *args, **kwargs):
-        _record_facade_usage(self._adapter_name, operation)
         return getattr(self._workflow, operation)(*args, **kwargs)
 
     def __getattr__(self, name: str):
         if name.startswith('_'):
             raise AttributeError(name)
-        _record_facade_usage(self._adapter_name, f'attr:{name}')
         return getattr(self._workflow, name)
 
 
@@ -56,8 +46,8 @@ class RuntimeFacade:
     app_settings: AppConfig
     solver_config: Mapping[str, object]
     solver_settings: SolverSettings
-    runtime_context: Mapping[str, object] | None
-    startup_summary: Mapping[str, object] | None
+    runtime_context: RuntimeContextSnapshot | None
+    startup_summary: StartupSummarySnapshot | None
     state_store: StateStore
     metrics_service: MetricsService
     task_error_mapper: TaskErrorMapper
@@ -70,8 +60,7 @@ class RuntimeFacade:
         return self.state_store.state
 
 
-class RobotFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'robot_facade'
+class RobotFacade(_WorkflowAdapter):
 
     def robot_names(self) -> list[str]:
         return self._delegate('robot_names')
@@ -104,8 +93,7 @@ class RobotFacade(_CompatibilityWorkflowAdapter):
         return self._delegate('sample_ee_positions', q_samples)
 
 
-class SolverFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'solver_facade'
+class SolverFacade(_WorkflowAdapter):
 
     def solver_defaults(self) -> dict[str, object]:
         return self._delegate('solver_defaults')
@@ -123,8 +111,7 @@ class SolverFacade(_CompatibilityWorkflowAdapter):
         return self._delegate('run_ik', values6, **kwargs)
 
 
-class TrajectoryFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'trajectory_facade'
+class TrajectoryFacade(_WorkflowAdapter):
 
     def trajectory_defaults(self) -> dict[str, object]:
         return self._delegate('trajectory_defaults')
@@ -142,8 +129,7 @@ class TrajectoryFacade(_CompatibilityWorkflowAdapter):
         self._delegate('apply_trajectory', traj)
 
 
-class PlaybackFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'playback_facade'
+class PlaybackFacade(_WorkflowAdapter):
 
     def current_playback_frame(self):
         return self._delegate('current_playback_frame')
@@ -161,24 +147,20 @@ class PlaybackFacade(_CompatibilityWorkflowAdapter):
         self._delegate('ensure_playback_ready', strict=strict)
 
 
-class BenchmarkFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'benchmark_facade'
+class BenchmarkFacade(_WorkflowAdapter):
 
     def build_benchmark_config(self, **kwargs):
         return self._delegate('build_benchmark_config', **kwargs)
 
-    def run_benchmark(self, config=None):
-        return self._delegate('run_benchmark', config=config)
+    def run_benchmark(self, config=None, *, execution_graph=None):
+        return self._delegate('run_benchmark', config=config, execution_graph=execution_graph)
 
 
-class ExportFacade(_CompatibilityWorkflowAdapter):
-    _adapter_name = 'export_facade'
+class ExportFacade(_WorkflowAdapter):
 
     def export_trajectory_bundle(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_bundle_name):
         return self._delegate('export_trajectory_bundle', name=name)
 
-    def export_trajectory(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_bundle_name):
-        return self._delegate('export_trajectory', name=name)
 
     def export_trajectory_metrics(self, name: str = DEFAULT_EXPORT_ARTIFACTS.trajectory_metrics_name, metrics: dict[str, object] | None = None):
         return self._delegate('export_trajectory_metrics', name=name, metrics=metrics)

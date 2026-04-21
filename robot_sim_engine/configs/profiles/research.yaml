@@ -1,15 +1,56 @@
 window:
-  title: "Robot Sim Engine [research]"
+  title: Robot Sim Engine [research]
 plots:
   max_points: 8000
 ik:
   retry_count: 3
 trajectory:
-  validation_layers: [timing, path_metrics, goal_metrics, collision, limits]
+  validation_layers:
+  - timing
+  - path_metrics
+  - goal_metrics
+  - collision
+  - limits
   dt: 0.01
+  pipeline_id: research_fast_path
+  pipelines:
+  - id: default
+    planner_stage: default_planner
+    retime_stage: builtin_scaling
+    validate_stage: validate_trajectory
+    aliases:
+    - legacy_default_pipeline
+    metadata:
+      path_stage: planner
+      retimer_id: builtin_scaling
+      validation_stage: validate_trajectory
+      compatibility_surface: stable_default_pipeline
+  - id: research_fast_path
+    planner_stage: default_planner
+    retime_stage: no_retime
+    validate_stage: validate_goal_only
+    postprocessors:
+    - noop_postprocessor
+    metadata:
+      path_stage: planner
+      retimer_id: no_retime
+      validation_stage: validate_goal_only
+      compatibility_surface: config_driven_pipeline
+      profile_scope: research
 features:
   experimental_modules_enabled: true
   experimental_backends_enabled: true
   plugin_discovery_enabled: true
   contract_doc_autogen_enabled: true
-  plugin_status_allowlist: [stable, beta, experimental, internal, deprecated]
+  plugin_status_allowlist:
+  - stable
+  - beta
+  - experimental
+  - internal
+  - deprecated
+render:
+  advice:
+    high_p95_ms: 33.0
+    high_average_ms: 20.0
+    high_failure_ratio: 0.2
+    high_span_rate_per_sec: 24.0

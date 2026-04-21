@@ -96,7 +96,7 @@ def test_release_manifest_marks_environment_and_tooling_failures(tmp_path: Path)
 
 def test_benchmark_evidence_skipped_targets_do_not_report_success() -> None:
     mod = _load_script_module('verify_benchmark_matrix_mod', 'scripts/verify_benchmark_matrix.py')
-    matrix = SimpleNamespace(matrix_id='bench', required_quality_gates=('gui_smoke',), pytest_targets=('tests/unit',), required_pairs=())
+    matrix = SimpleNamespace(matrix_id='bench', required_quality_gates=('gui_smoke',), target_ids=('runtime_case:bench.case',), required_pairs=())
     details = mod.build_benchmark_evidence_details(
         matrix=matrix,
         executed_gate_results={'gui_smoke': {'ok': False, 'failure_kind': 'environment_mismatch'}},
@@ -104,12 +104,12 @@ def test_benchmark_evidence_skipped_targets_do_not_report_success() -> None:
         execute_requested=True,
         gate_ok=False,
         target_ok=None,
-        executed_pytest_command=[],
+        executed_target_command=[],
     )
-    assert details['pytest_targets_executed'] is False
-    assert details['pytest_targets_status'] == 'skipped_due_to_failed_gates'
-    assert details['pytest_targets_ok'] is None
-    assert details['pytest_targets_failure_kind'] == 'gates_failed'
+    assert details['executed_targets'] is False
+    assert details['target_status'] == 'skipped_due_to_failed_gates'
+    assert details['target_ok'] is None
+    assert details['target_failure_kind'] == 'gates_failed'
     assert details['command_failures'] == []
 
 
@@ -152,9 +152,9 @@ def test_collect_quality_evidence_marks_inconsistent_benchmark_evidence_invalid(
                 'execute_requested': True,
                 'required_quality_gates': ['gui_smoke'],
                 'executed_gate_results': {'gui_smoke': {'ok': False, 'failure_kind': 'environment_mismatch'}},
-                'pytest_targets_executed': False,
-                'pytest_targets_ok': True,
-                'pytest_targets_status': 'passed',
+                'executed_targets': False,
+                'target_ok': True,
+                'target_status': 'passed',
             },
         }
     ]
@@ -162,7 +162,7 @@ def test_collect_quality_evidence_marks_inconsistent_benchmark_evidence_invalid(
     records = mod._load_records(evidence_file, repo_root=REPO_ROOT)
     record = records[0]
     assert record.ok is False
-    assert any('cannot mark pytest targets ok' in item for item in record.details['integrity_errors'])
+    assert any('cannot mark benchmark targets ok' in item for item in record.details['integrity_errors'])
 
 
 def test_release_manifest_rejects_empty_record_sets() -> None:

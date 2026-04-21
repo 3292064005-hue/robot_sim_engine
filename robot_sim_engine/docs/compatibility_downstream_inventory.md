@@ -1,33 +1,21 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/governance/compatibility-policy.md
+last_reviewed: 2026-04-18
+---
 # Compatibility Downstream Inventory
 
-This document records the **audited downstream inventory** for retained compatibility surfaces in V7.2.
+> Legacy entry page. Canonical governance policy now lives in `docs/governance/compatibility-policy.md`.
 
-## Scope
+本入口页只保留摘要与跳转，不再重复维护完整字段、规则副本或实现细节。
 
-The source of truth is `configs/compatibility_downstream_inventory.yaml`.
+- canonical doc 是当前唯一 source of truth。
+- 需要字段级 contract、边界说明或演进策略时，请直接阅读 canonical 文档。
 
-Each surface records:
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改 canonical doc / 运行时真源，再执行 regeneration；不要在入口页维护长篇副本。
 
-- concrete in-repo downstream consumers that still exercise the compatibility path;
-- an explicit out-of-tree audit result (`audited_absent` or `confirmed`);
-- evidence paths used for that audit.
-
-## Current audit result
-
-As of **2026-04-14**, all retained compatibility surfaces have concrete in-repo downstream consumers recorded in `configs/compatibility_downstream_inventory.yaml`.
-
-Out-of-tree downstream inventory was audited against:
-
-- packaged entrypoints in `pyproject.toml`;
-- checked-in user-facing docs such as `README.md` and `docs/stable_surface_migration.md`;
-- compatibility governance docs in `docs/compatibility_support_boundary.md`.
-
-For this release, the audited result is **no confirmed out-of-tree compatibility-only consumer** for any retained compatibility surface.
-
-## Interpretation
-
-This is stronger than a pure support-boundary statement:
-
-1. retained compatibility surfaces still have concrete downstream callers that must be migrated before removal;
-2. the repository now carries an auditable record of those callers;
-3. out-of-tree consumers are not treated as "unknown" — they are explicitly audited and must be entered in the inventory before the verifier will accept them as confirmed.
+请跳转阅读：[`docs/governance/compatibility-policy.md`](governance/compatibility-policy.md)

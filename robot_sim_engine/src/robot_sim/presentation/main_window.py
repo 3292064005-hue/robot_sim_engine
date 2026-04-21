@@ -5,11 +5,10 @@ import os
 
 from robot_sim.app.container import AppContainer
 from robot_sim.presentation.assembly import build_presentation_assembly
-from robot_sim.presentation.legacy_aliases import MainWindowLegacyAliasMixin
 from robot_sim.presentation.main_window_actions import MainWindowActionMixin
 from robot_sim.presentation.main_window_tasks import MainWindowTaskMixin
 from robot_sim.presentation.main_window_ui import MainWindowUIMixin
-from robot_sim.presentation.runtime_bundles import RuntimeServiceBundle, TaskOrchestrationBundle, WorkflowFacadeBundle, WorkflowServiceBundle
+from robot_sim.presentation.runtime_bundles import RuntimeServiceBundle, TaskOrchestrationBundle, WorkflowServiceBundle
 
 try:
     from PySide6.QtWidgets import QApplication, QMainWindow
@@ -17,21 +16,17 @@ except Exception as exc:  # pragma: no cover
     raise RuntimeError('PySide6 is required to launch the GUI.') from exc
 
 
-class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin):  # pragma: no cover - GUI shell
+class MainWindow(QMainWindow, MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin):  # pragma: no cover - GUI shell
     """Top-level Qt window for the simulator UI.
 
     Canonical ownership now flows through grouped runtime bundles instead of mutating the
-    window instance with dozens of peer attributes. Read-only properties keep the legacy
-    façade/coordinator surface stable for mixins, tests, and limited compatibility shims.
+    window instance with dozens of peer attributes. Read-only properties expose only the
+    canonical runtime, workflow, and task-orchestration surfaces consumed by mixins and tests.
     """
 
     @property
     def runtime_services(self) -> RuntimeServiceBundle:
         return self.window_runtime.runtime_services
-
-    @property
-    def workflow_facades(self) -> WorkflowFacadeBundle | None:
-        return self.window_runtime._compatibility_facades()
 
     @property
     def workflow_services(self) -> WorkflowServiceBundle:
@@ -43,15 +38,21 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
 
     @property
     def runtime_facade(self):
+        """Return the canonical runtime facade used by UI actions and tests.
+
+        Returns:
+            RuntimeViewContract: Shared runtime projection facade owned by the window runtime bundle.
+        """
         return self.runtime_services.runtime_facade
 
     @property
     def metrics_service(self):
-        return self.runtime_services.metrics_service
+        """Return the canonical metrics service for compatibility with legacy GUI call sites.
 
-    @property
-    def window_cfg(self) -> dict[str, object]:
-        return self.runtime_services.window_cfg
+        Returns:
+            MetricsService: Metrics summarization service shared with the main controller.
+        """
+        return self.runtime_services.metrics_service
 
     @property
     def robot_workflow(self):
@@ -66,30 +67,6 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
         return self.workflow_services.export_workflow
 
     @property
-    def robot_facade(self):
-        return self.workflow_facades.robot_facade
-
-    @property
-    def solver_facade(self):
-        return self.workflow_facades.solver_facade
-
-    @property
-    def trajectory_facade(self):
-        return self.workflow_facades.trajectory_facade
-
-    @property
-    def playback_facade(self):
-        return self.workflow_facades.playback_facade
-
-    @property
-    def benchmark_facade(self):
-        return self.workflow_facades.benchmark_facade
-
-    @property
-    def export_facade(self):
-        return self.workflow_facades.export_facade
-
-    @property
     def threader(self):
         return self.task_orchestration.threader
 
@@ -100,38 +77,6 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
     @property
     def playback_render_scheduler(self):
         return self.task_orchestration.playback_render_scheduler
-
-    @property
-    def robot_coordinator(self):
-        return self.task_orchestration.robot_coordinator
-
-    @property
-    def ik_task_coordinator(self):
-        return self.task_orchestration.ik_task_coordinator
-
-    @property
-    def trajectory_task_coordinator(self):
-        return self.task_orchestration.trajectory_task_coordinator
-
-    @property
-    def benchmark_task_coordinator(self):
-        return self.task_orchestration.benchmark_task_coordinator
-
-    @property
-    def playback_task_coordinator(self):
-        return self.task_orchestration.playback_task_coordinator
-
-    @property
-    def export_task_coordinator(self):
-        return self.task_orchestration.export_task_coordinator
-
-    @property
-    def scene_coordinator(self):
-        return self.task_orchestration.scene_coordinator
-
-    @property
-    def status_coordinator(self):
-        return self.task_orchestration.status_coordinator
 
     def _should_auto_load_robot(self) -> bool:
         """Return whether the window should auto-load the default robot on startup.
@@ -174,13 +119,13 @@ class MainWindow(QMainWindow, MainWindowLegacyAliasMixin, MainWindowTaskMixin, M
         assembly = build_presentation_assembly(project_root, container=container, window_parent=self)
         self.controller = assembly.controller
         self.window_runtime = assembly.window_runtime
-        self.setWindowTitle(str(self.window_cfg.get('title', 'Robot Sim Engine')))
+        self.setWindowTitle(str(self.runtime_services.window_cfg.get('title', 'Robot Sim Engine')))
 
         self._build_ui()
         self._wire_signals()
         self._wire_task_signals()
-        self.playback_render_scheduler.flushed.connect(self.project_playback_frame)
+        self.task_orchestration.playback_render_scheduler.flushed.connect(self.project_playback_frame)
 
-        self.resize(int(self.window_cfg.get('width', 1680)), int(self.window_cfg.get('height', 980)))
-        if self.robot_workflow.robot_entries() and self._should_auto_load_robot():
+        self.resize(int(self.runtime_services.window_cfg.get('width', 1680)), int(self.runtime_services.window_cfg.get('height', 980)))
+        if self.workflow_services.robot_workflow.robot_entries() and self._should_auto_load_robot():
             self.on_load_robot()

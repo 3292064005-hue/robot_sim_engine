@@ -1,8 +1,7 @@
 plugins:
-  - id: research_demo_dls
+  - id: research_dls_solver
     kind: solver
-    factory: robot_sim.plugins.research_demo_solver:build_plugin
-    aliases: [research_demo]
+    factory: robot_sim.plugins.research_dls_solver_plugin:build_plugin
     enabled_profiles: [research]
     source: shipped_plugin
     api_version: v1
@@ -10,15 +9,15 @@ plugins:
     min_host_version: 0.7.0
     required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
     status: experimental
+    deployment_tier: experimental
     metadata:
       family: iterative
-      display_name: Research demo DLS solver
+      display_name: Research DLS solver
       verification_scope: registry_smoke
 
-  - id: research_demo_cartesian_planner
+  - id: research_cartesian_planner
     kind: planner
-    factory: robot_sim.plugins.research_demo_planner:build_plugin
-    aliases: [research_cartesian]
+    factory: robot_sim.plugins.research_cartesian_planner_plugin:build_plugin
     enabled_profiles: [research]
     source: shipped_plugin
     api_version: v1
@@ -26,15 +25,15 @@ plugins:
     min_host_version: 0.7.0
     required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
     status: experimental
+    deployment_tier: experimental
     metadata:
       family: cartesian
-      display_name: Research demo Cartesian planner
+      display_name: Research Cartesian planner
       verification_scope: registry_smoke
 
-  - id: research_demo_yaml_importer
+  - id: research_yaml_importer
     kind: importer
-    factory: robot_sim.plugins.research_demo_importer:build_plugin
-    aliases: [research_yaml]
+    factory: robot_sim.plugins.research_yaml_importer_plugin:build_plugin
     enabled_profiles: [research]
     source: shipped_plugin
     api_version: v1
@@ -42,9 +41,10 @@ plugins:
     min_host_version: 0.7.0
     required_host_capabilities: [profile:research, experimental_modules, plugin_status:experimental]
     status: experimental
+    deployment_tier: experimental
     metadata:
       family: config
-      display_name: Research demo YAML importer
+      display_name: Research YAML importer
       source_format: yaml
       fidelity: native
       verification_scope: registry_smoke

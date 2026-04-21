@@ -12,7 +12,7 @@ from robot_sim.infra.quality_contracts import write_quality_contract_files  # no
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description='Regenerate checked-in contract docs from runtime truth sources.')
+    parser = argparse.ArgumentParser(description='Regenerate canonical docs/generated contract docs and root-level entry pages from runtime truth sources.')
     parser.add_argument('--root', type=Path, default=PROJECT_ROOT, help='Repository root.')
     args = parser.parse_args()
     write_quality_contract_files(args.root)

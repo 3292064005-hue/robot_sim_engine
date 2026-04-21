@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from robot_sim.domain.enums import ReferenceFrame, TrajectoryMode
 from robot_sim.domain.types import FloatArray
+from robot_sim.model.execution_graph import ExecutionGraphDescriptor
 from robot_sim.model.ik_contracts import IKConstraintSummary, IKSeedPolicy, IKTaskMask
 from robot_sim.model.planner_specs import WaypointPlannerSpec
 from robot_sim.model.pose import Pose
@@ -42,6 +43,7 @@ class IKRequest:
     allow_approximate_solution: bool = False
     constraint_summary: IKConstraintSummary | None = None
     request_metadata: dict[str, object] = field(default_factory=dict)
+    execution_graph: ExecutionGraphDescriptor | None = None
 
     def __post_init__(self) -> None:
         if len(self.position_mask) != 3 or len(self.orientation_mask) != 3:
@@ -77,9 +79,9 @@ class TrajectoryRequest:
     """Trajectory planning request at the application boundary.
 
     Boundary behavior:
-        ``planning_scene`` is the canonical collision/scene input. ``collision_obstacles`` remains
-        only as a migration adapter so older callers can be normalized onto the planning-scene
-        contract without keeping a second validation implementation alive.
+        ``planning_scene`` is the canonical collision/scene input for validation and export.
+        ``pipeline_id`` selects a named execution pipeline while ``execution_graph`` carries
+        the explicit active-path-over-tree execution scope consumed by diagnostics.
     """
 
     q_start: FloatArray
@@ -94,9 +96,10 @@ class TrajectoryRequest:
     waypoint_graph: WaypointGraph | None = None
     max_velocity: float | None = None
     max_acceleration: float | None = None
-    collision_obstacles: tuple[object, ...] = ()
     planning_scene: object | None = None
     validation_layers: tuple[str, ...] | None = None
+    pipeline_id: str | None = None
+    execution_graph: ExecutionGraphDescriptor | None = None
 
     def to_waypoint_planner_spec(self) -> WaypointPlannerSpec:
         """Build a core-neutral waypoint planner spec from the request.

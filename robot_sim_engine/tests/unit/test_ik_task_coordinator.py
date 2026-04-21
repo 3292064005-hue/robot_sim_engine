@@ -23,7 +23,7 @@ class DummyThreader:
 class DummyWindow:
     def __init__(self):
         self.controller = SimpleNamespace(ik_uc=object(), state_store=DummyStore())
-        self.solver_facade = SimpleNamespace(ik_use_case=object())
+        self.motion_workflow = SimpleNamespace(ik_use_case=object())
         self.threader = DummyThreader()
         self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
         self._set_busy_calls = []
@@ -40,7 +40,7 @@ class DummyWindow:
 
 def test_ik_task_coordinator_starts_worker_and_patches_task_state():
     window = DummyWindow()
-    coordinator = IKTaskCoordinator(window, solver=window.solver_facade, threader=window.threader)
+    coordinator = IKTaskCoordinator(window, solver=window.motion_workflow, threader=window.threader)
     coordinator.run()
     assert window.threader.started['task_kind'] == 'ik'
     assert window.controller.state_store.patched['active_task_kind'] == 'ik'

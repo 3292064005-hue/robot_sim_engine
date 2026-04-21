@@ -16,14 +16,13 @@ def test_planar_yaml_import_populates_canonical_model(project_root):
     assert spec.canonical_model.source_format == 'yaml'
     assert spec.canonical_model.execution_adapter == 'canonical_dh_chain'
     assert spec.execution_rows == spec.canonical_model.execution_rows
-    assert spec.runtime_dh_rows == spec.execution_rows
     assert spec.runtime_joint_names == spec.canonical_model.joint_names
     assert spec.runtime_link_names == spec.canonical_model.link_names
     assert spec.execution_summary['execution_adapter'] == 'canonical_dh_chain'
     assert spec.execution_summary['execution_surface'] == 'canonical_model'
     assert spec.execution_summary['execution_row_count'] == spec.dof
     runtime_summary = spec.runtime_model.summary()
-    assert runtime_summary['semantic_family'] == 'serial_chain_execution'
+    assert runtime_summary['semantic_family'] == 'articulated_serial_tree'
     assert runtime_summary['source_surface'] == 'canonical_model'
     assert runtime_summary['execution_row_count'] == spec.dof
 

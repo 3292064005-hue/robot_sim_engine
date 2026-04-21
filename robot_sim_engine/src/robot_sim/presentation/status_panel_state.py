@@ -86,29 +86,26 @@ class RenderRuntimePanelState:
         alerts: Ordered per-capability alert projections.
         overall_severity: Aggregate severity used by the status-strip headline.
         summary_text: Human-readable aggregate summary shown in the render group header.
+        advice_summary: Human-readable operator guidance derived from runtime telemetry.
+        advice_rows: Per-capability strategy guidance projected into the UI.
     """
 
     alerts: tuple[RenderCapabilityAlertState, ...]
     overall_severity: str
     summary_text: str
+    advice_summary: str = 'Render 建议：无'
+    advice_rows: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def metric_payload(self) -> dict[str, str]:
         """Return compact metric text used by the status strip summary rows."""
-        return {alert.capability: alert.metric_text for alert in self.alerts}
+        payload = {alert.capability: alert.metric_text for alert in self.alerts}
+        payload['render_advice'] = self.advice_summary
+        return payload
 
     @property
     def detail_rows(self) -> dict[str, str]:
-        """Return per-capability detail text rendered inside the detailed render panel.
-
-        Returns:
-            dict[str, str]: Mapping keyed by capability id. The value is always non-empty and
-                safe for direct widget rendering.
-
-        Boundary behavior:
-            Detail rows stay separate from ``metric_payload`` so the compact status strip and the
-            multiline render diagnostics panel can evolve independently without contract drift.
-        """
+        """Return per-capability detail text rendered inside the detailed render panel."""
         return {alert.capability: alert.detail_text or alert.message or '运行正常' for alert in self.alerts}
 
     @property
@@ -149,6 +146,30 @@ def _render_summary(alerts: tuple[RenderCapabilityAlertState, ...]) -> tuple[str
     return severity, summary
 
 
+def _build_render_advice_projection(runtime_advice: Mapping[str, object] | None) -> tuple[str, dict[str, str]]:
+    advice = dict(runtime_advice or {})
+    recommendations = advice.get('recommendations', ()) or ()
+    if not recommendations:
+        return 'Render 建议：无', {}
+    rows: dict[str, str] = {}
+    labels: list[str] = []
+    for item in recommendations:
+        if not isinstance(item, Mapping):
+            continue
+        capability = str(item.get('capability', '') or '').strip()
+        action = str(item.get('action', '') or '').strip() or 'review_runtime'
+        rationale = str(item.get('rationale', '') or '').strip()
+        backend = str(item.get('backend', '') or '').strip()
+        label = _RENDER_TITLES.get(capability, capability or 'runtime')
+        detail_parts = [part for part in (backend, action, rationale) if part]
+        detail = ' / '.join(detail_parts) if detail_parts else action
+        if capability:
+            rows[capability] = detail
+        labels.append(f'{label}:{action}')
+    summary = 'Render 建议：' + ('；'.join(labels) if labels else '无')
+    return summary, rows
+
+
 def format_playback_metric(playback) -> str:
     """Format the compact playback metric shown in the status strip."""
     total_frames = int(getattr(playback, 'total_frames', 0) or 0)
@@ -157,7 +178,10 @@ def format_playback_metric(playback) -> str:
     return f"{'播放中' if bool(getattr(playback, 'is_playing', False)) else '就绪'} @ {float(getattr(playback, 'speed_multiplier', 1.0) or 1.0):.1f}x"
 
 
-def build_render_runtime_panel_state(render_runtime: RenderRuntimeState | Mapping[str, object]) -> RenderRuntimePanelState:
+def build_render_runtime_panel_state(
+    render_runtime: RenderRuntimeState | Mapping[str, object],
+    runtime_advice: Mapping[str, object] | None = None,
+) -> RenderRuntimePanelState:
     """Project structured render-runtime state into a typed status-panel model."""
     runtime = RenderRuntimeState.from_mapping(render_runtime)
     alerts = tuple(
@@ -165,12 +189,24 @@ def build_render_runtime_panel_state(render_runtime: RenderRuntimeState | Mappin
         for capability in (runtime.scene_3d, runtime.plots, runtime.screenshot)
     )
     severity, summary = _render_summary(alerts)
-    return RenderRuntimePanelState(alerts=alerts, overall_severity=severity, summary_text=summary)
+    advice_summary, advice_rows = _build_render_advice_projection(runtime_advice)
+    if advice_rows and severity == 'nominal':
+        severity = 'warning'
+    return RenderRuntimePanelState(
+        alerts=alerts,
+        overall_severity=severity,
+        summary_text=summary,
+        advice_summary=advice_summary,
+        advice_rows=advice_rows,
+    )
 
 
 def build_status_panel_projection(state: SessionState) -> StatusPanelProjection:
     """Build the status-panel projection from shared runtime session state."""
     return StatusPanelProjection(
         playback_text=format_playback_metric(state.playback),
-        render_runtime=build_render_runtime_panel_state(RenderRuntimeState.from_mapping(state.render_runtime)),
+        render_runtime=build_render_runtime_panel_state(
+            RenderRuntimeState.from_mapping(state.render_runtime),
+            state.render_runtime_advice,
+        ),
     )

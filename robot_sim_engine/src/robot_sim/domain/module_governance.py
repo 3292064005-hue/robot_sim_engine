@@ -53,32 +53,17 @@ COLLISION_PROMOTION_GATES: tuple[str, ...] = DEFAULT_PROMOTION_GATES + ('plannin
 WIDGET_PROMOTION_GATES: tuple[str, ...] = DEFAULT_PROMOTION_GATES + ('gui_smoke',)
 
 EXPERIMENTAL_MODULE_GOVERNANCE: dict[str, ModulePromotionPolicy] = {
-    'core.collision.capsule_backend': ModulePromotionPolicy(
-        owner='collision-runtime',
-        stable_ui_surface='planning_scene',
-        exit_criteria=(
-            'capsule backend must remain within the configured compatibility budget',
-            'collision backend contract tests must pass on clean headless mainline',
-            'planning-scene regression and validation baselines must stay reproducible',
-        ),
-        required_quality_gates=COLLISION_PROMOTION_GATES,
-        promotion_blockers=(
-            'backend is still profile-gated and not advertised on the stable capability surface by default',
-            'scene authority still defaults to AABB for stable runtime validation',
-        ),
-        notes=('promotion requires stable capsule fidelity claims in docs and export/session surfaces',),
-    ),
-    'presentation.widgets.collision_panel': ModulePromotionPolicy(
+    'presentation.experimental.widgets.collision_panel': ModulePromotionPolicy(
         owner='presentation-runtime',
         stable_ui_surface='main_window_ui',
         exit_criteria=(
-            'widget must mount through the stable main window builder without experimental aliases',
+            'widget must mount through the stable main window builder without namespace aliases',
             'task orchestration must remain on explicit coordinator dependency routes',
         ),
         required_quality_gates=WIDGET_PROMOTION_GATES,
         promotion_blockers=('stable UI intentionally hides the panel until promotion criteria are satisfied',),
     ),
-    'presentation.widgets.export_panel': ModulePromotionPolicy(
+    'presentation.experimental.widgets.export_panel': ModulePromotionPolicy(
         owner='presentation-runtime',
         stable_ui_surface='main_window_ui',
         exit_criteria=(
@@ -88,7 +73,7 @@ EXPERIMENTAL_MODULE_GOVERNANCE: dict[str, ModulePromotionPolicy] = {
         required_quality_gates=WIDGET_PROMOTION_GATES,
         promotion_blockers=('stable UI intentionally hides the panel until promotion criteria are satisfied',),
     ),
-    'presentation.widgets.scene_options_panel': ModulePromotionPolicy(
+    'presentation.experimental.widgets.scene_options_panel': ModulePromotionPolicy(
         owner='presentation-runtime',
         stable_ui_surface='main_window_ui',
         exit_criteria=(
@@ -97,27 +82,6 @@ EXPERIMENTAL_MODULE_GOVERNANCE: dict[str, ModulePromotionPolicy] = {
         ),
         required_quality_gates=WIDGET_PROMOTION_GATES,
         promotion_blockers=('stable UI intentionally hides the panel until promotion criteria are satisfied',),
-    ),
-    'presentation.experimental.widgets.collision_panel': ModulePromotionPolicy(
-        owner='presentation-runtime',
-        stable_ui_surface='main_window_ui',
-        exit_criteria=('legacy experimental namespace must be removed before stable exposure',),
-        required_quality_gates=WIDGET_PROMOTION_GATES,
-        promotion_blockers=('legacy experimental namespace retained only for migration compatibility',),
-    ),
-    'presentation.experimental.widgets.export_panel': ModulePromotionPolicy(
-        owner='presentation-runtime',
-        stable_ui_surface='main_window_ui',
-        exit_criteria=('legacy experimental namespace must be removed before stable exposure',),
-        required_quality_gates=WIDGET_PROMOTION_GATES,
-        promotion_blockers=('legacy experimental namespace retained only for migration compatibility',),
-    ),
-    'presentation.experimental.widgets.scene_options_panel': ModulePromotionPolicy(
-        owner='presentation-runtime',
-        stable_ui_surface='main_window_ui',
-        exit_criteria=('legacy experimental namespace must be removed before stable exposure',),
-        required_quality_gates=WIDGET_PROMOTION_GATES,
-        promotion_blockers=('legacy experimental namespace retained only for migration compatibility',),
     ),
     'render.picking': ModulePromotionPolicy(
         owner='render-runtime',

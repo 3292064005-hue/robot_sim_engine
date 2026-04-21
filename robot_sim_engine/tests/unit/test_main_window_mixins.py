@@ -22,6 +22,7 @@ from robot_sim.presentation.coordinators import (
 from robot_sim.presentation.main_window_actions import MainWindowActionMixin
 from robot_sim.presentation.main_window_tasks import MainWindowTaskMixin
 from robot_sim.presentation.main_window_ui import MainWindowUIMixin
+from robot_sim.presentation.runtime_bundles import RuntimeServiceBundle, WorkflowServiceBundle, TaskOrchestrationBundle
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.presentation.render_telemetry_state import build_render_telemetry_panel_state
 from robot_sim.presentation.status_panel_state import build_render_runtime_panel_state
@@ -442,9 +443,6 @@ class DummyController:
     def export_trajectory_bundle(self):
         return 'trajectory_bundle.npz'
 
-    def export_trajectory(self):
-        return 'trajectory_bundle.npz'
-
     def export_trajectory_metrics(self, _name, _metrics):
         return 'trajectory_metrics.json'
 
@@ -464,51 +462,62 @@ class DummyController:
 class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin):
     def __init__(self):
         self.controller = DummyController()
-        self.metrics_service = self.controller.metrics_service
-        self.runtime_facade = self.controller
-        self.robot_workflow = SimpleNamespace(
-            robot_entries=self.controller.robot_entries,
-            importer_entries=lambda: [],
-            load_robot=self.controller.load_robot,
-            import_robot=lambda source, importer_id=None: None,
-            save_current_robot=self.controller.save_current_robot,
-            run_fk=self.controller.run_fk,
+        self.runtime_services = RuntimeServiceBundle(
+            runtime_facade=self.controller,
+            metrics_service=self.controller.metrics_service,
+            window_cfg=self.controller.app_config['window'],
         )
-        self.motion_workflow = SimpleNamespace(
-            ik_use_case=self.controller.ik_uc,
-            trajectory_use_case=self.controller.traj_uc,
-            benchmark_use_case=self.controller.benchmark_uc,
-            playback_service=self.controller.playback_service,
-            build_ik_request=self.controller.build_ik_request,
-            apply_ik_result=self.controller.apply_ik_result,
-            solver_defaults=self.controller.solver_defaults,
-            build_trajectory_request=self.controller.build_trajectory_request,
-            apply_trajectory=self.controller.apply_trajectory,
-            trajectory_defaults=self.controller.trajectory_defaults,
-            set_playback_options=self.controller.set_playback_options,
-            next_playback_frame=self.controller.next_playback_frame,
-            set_playback_frame=self.controller.set_playback_frame,
-            ensure_playback_ready=lambda strict=True: None,
-            build_benchmark_config=self.controller.build_benchmark_config,
+        self.workflow_services = WorkflowServiceBundle(
+            robot_workflow=SimpleNamespace(
+                robot_entries=self.controller.robot_entries,
+                importer_entries=lambda: [],
+                load_robot=self.controller.load_robot,
+                import_robot=lambda source, importer_id=None: None,
+                save_current_robot=self.controller.save_current_robot,
+                run_fk=self.controller.run_fk,
+            ),
+            motion_workflow=SimpleNamespace(
+                ik_use_case=self.controller.ik_uc,
+                trajectory_use_case=self.controller.traj_uc,
+                benchmark_use_case=self.controller.benchmark_uc,
+                playback_service=self.controller.playback_service,
+                build_ik_request=self.controller.build_ik_request,
+                apply_ik_result=self.controller.apply_ik_result,
+                solver_defaults=self.controller.solver_defaults,
+                build_trajectory_request=self.controller.build_trajectory_request,
+                apply_trajectory=self.controller.apply_trajectory,
+                trajectory_defaults=self.controller.trajectory_defaults,
+                set_playback_options=self.controller.set_playback_options,
+                next_playback_frame=self.controller.next_playback_frame,
+                set_playback_frame=self.controller.set_playback_frame,
+                ensure_playback_ready=lambda strict=True: None,
+                build_benchmark_config=self.controller.build_benchmark_config,
+            ),
+            export_workflow=SimpleNamespace(
+                export_trajectory_bundle=self.controller.export_trajectory_bundle,
+                export_trajectory_metrics=self.controller.export_trajectory_metrics,
+                export_session=self.controller.export_session,
+                export_package=self.controller.export_package,
+                export_benchmark=self.controller.export_benchmark,
+                export_benchmark_cases_csv=self.controller.export_benchmark_cases_csv,
+            ),
         )
-        self.export_workflow = SimpleNamespace(
-            export_trajectory_bundle=self.controller.export_trajectory_bundle,
-            export_trajectory=self.controller.export_trajectory,
-            export_trajectory_metrics=self.controller.export_trajectory_metrics,
-            export_session=self.controller.export_session,
-            export_package=self.controller.export_package,
-            export_benchmark=self.controller.export_benchmark,
-            export_benchmark_cases_csv=self.controller.export_benchmark_cases_csv,
+        threader = DummyThreader()
+        playback_threader = DummyThreader()
+        self.task_orchestration = TaskOrchestrationBundle(
+            threader=threader,
+            playback_threader=playback_threader,
+            playback_render_scheduler=SimpleNamespace(schedule=lambda *a, **k: None, flushed=SimpleNamespace(connect=lambda *a, **k: None)),
+            robot_coordinator=None,
+            ik_task_coordinator=None,
+            trajectory_task_coordinator=None,
+            benchmark_task_coordinator=None,
+            playback_task_coordinator=None,
+            export_task_coordinator=None,
+            scene_coordinator=None,
+            status_coordinator=None,
         )
-        self.robot_facade = self.robot_workflow
-        self.solver_facade = self.motion_workflow
-        self.trajectory_facade = self.motion_workflow
-        self.playback_facade = self.motion_workflow
-        self.benchmark_facade = self.motion_workflow
-        self.export_facade = self.export_workflow
-        self.threader = DummyThreader()
-        self.playback_threader = DummyThreader()
-        self.window_cfg = self.controller.app_config['window']
+        self.window_cfg = self.runtime_services.window_cfg
         self.robot_panel = DummyRobotPanel()
         self.target_panel = DummyTargetPanel()
         self.solver_panel = DummySolverPanel()
@@ -520,14 +529,27 @@ class DummyWindow(MainWindowTaskMixin, MainWindowActionMixin, MainWindowUIMixin)
         self.diagnostics_panel = DummyDiagnosticsPanel()
         self.benchmark_panel = DummyBenchmarkPanel()
         self.plots_manager = DummyPlotsManager()
-        self.robot_coordinator = RobotCoordinator(self, robot=self.robot_workflow)
-        self.ik_task_coordinator = IKTaskCoordinator(self, solver=self.motion_workflow, threader=self.threader)
-        self.trajectory_task_coordinator = TrajectoryTaskCoordinator(self, trajectory=self.motion_workflow, threader=self.threader)
-        self.benchmark_task_coordinator = BenchmarkTaskCoordinator(self, runtime=self.runtime_facade, benchmark=self.motion_workflow, threader=self.threader)
-        self.playback_task_coordinator = PlaybackTaskCoordinator(self, runtime=self.runtime_facade, playback=self.motion_workflow, playback_threader=self.playback_threader)
-        self.export_task_coordinator = ExportTaskCoordinator(self, runtime=self.runtime_facade, export=self.export_workflow, threader=self.threader, metrics_service=self.metrics_service)
-        self.scene_coordinator = SceneCoordinator(self, runtime=self.runtime_facade, threader=self.threader)
-        self.status_coordinator = StatusCoordinator(self, runtime=self.runtime_facade)
+        robot_coordinator = RobotCoordinator(self, robot=self.workflow_services.robot_workflow)
+        ik_task_coordinator = IKTaskCoordinator(self, solver=self.workflow_services.motion_workflow, threader=self.task_orchestration.threader)
+        trajectory_task_coordinator = TrajectoryTaskCoordinator(self, trajectory=self.workflow_services.motion_workflow, threader=self.task_orchestration.threader)
+        benchmark_task_coordinator = BenchmarkTaskCoordinator(self, runtime=self.runtime_services.runtime_facade, benchmark=self.workflow_services.motion_workflow, threader=self.task_orchestration.threader)
+        playback_task_coordinator = PlaybackTaskCoordinator(self, runtime=self.runtime_services.runtime_facade, playback=self.workflow_services.motion_workflow, playback_threader=self.task_orchestration.playback_threader)
+        export_task_coordinator = ExportTaskCoordinator(self, runtime=self.runtime_services.runtime_facade, export=self.workflow_services.export_workflow, threader=self.task_orchestration.threader, metrics_service=self.runtime_services.metrics_service)
+        scene_coordinator = SceneCoordinator(self, runtime=self.runtime_services.runtime_facade, threader=self.task_orchestration.threader)
+        status_coordinator = StatusCoordinator(self, runtime=self.runtime_services.runtime_facade)
+        self.task_orchestration = TaskOrchestrationBundle(
+            threader=self.task_orchestration.threader,
+            playback_threader=self.task_orchestration.playback_threader,
+            playback_render_scheduler=self.task_orchestration.playback_render_scheduler,
+            robot_coordinator=robot_coordinator,
+            ik_task_coordinator=ik_task_coordinator,
+            trajectory_task_coordinator=trajectory_task_coordinator,
+            benchmark_task_coordinator=benchmark_task_coordinator,
+            playback_task_coordinator=playback_task_coordinator,
+            export_task_coordinator=export_task_coordinator,
+            scene_coordinator=scene_coordinator,
+            status_coordinator=status_coordinator,
+        )
 
     def setCentralWidget(self, widget):
         self.central = widget
@@ -647,7 +669,7 @@ def test_ui_mixin_helper_methods_and_signal_wiring(monkeypatch):
     window._wire_signals()
     window._wire_task_signals()
     assert hasattr(window, 'central')
-    assert window.threader.task_state_changed.connected
+    assert window.task_orchestration.threader.task_state_changed.connected
     assert window.robot_panel.load_button.clicked.connected
 
 
@@ -679,7 +701,7 @@ def test_action_mixin_robot_and_export_paths():
     window.on_capture_scene()
     window.on_add_scene_obstacle()
     window.on_clear_scene_obstacles()
-    window.on_export_trajectory()
+    window.on_export_trajectory_bundle()
     window.on_export_session()
     window.on_export_package()
     window.on_export_benchmark()
@@ -693,15 +715,15 @@ def test_action_mixin_robot_and_export_paths():
 def test_task_mixin_covers_ik_trajectory_benchmark_and_worker_terminal_paths():
     window = DummyWindow()
     window.on_run_ik()
-    assert window.threader.started['task_kind'] == 'ik'
+    assert window.task_orchestration.threader.started['task_kind'] == 'ik'
     window.on_cancel_ik()
-    assert window.threader.cancelled is True
+    assert window.task_orchestration.threader.cancelled is True
     log = SimpleNamespace(attempt_idx=0, iter_idx=0, pos_err_norm=1e-3, ori_err_norm=2e-3, cond_number=10.0, manipulability=0.1, dq_norm=0.2, effective_mode='dls', damping_lambda=0.1, elapsed_ms=1.0)
     window.on_ik_progress(log)
     result = SimpleNamespace(success=True, q_sol=np.array([0.3, 0.4]), message='ok', logs=[log])
     window.on_ik_finished(result)
     window.on_plan()
-    assert window.threader.started['task_kind'] == 'trajectory'
+    assert window.task_orchestration.threader.started['task_kind'] == 'trajectory'
     traj = SimpleNamespace(t=np.array([0.0, 1.0]), q=np.array([[0.0, 0.0], [1.0, 1.0]]), qd=np.zeros((2,2)), qdd=np.zeros((2,2)), ee_positions=np.array([[0,0,0],[1,0,0]]))
     window.on_trajectory_finished(traj)
     window.on_run_benchmark()
@@ -719,11 +741,11 @@ def test_action_and_playback_mixins_cover_playback_paths():
     traj = SimpleNamespace(t=np.array([0.0, 1.0]), q=np.array([[0.0, 0.0], [1.0, 1.0]]), qd=np.zeros((2,2)), qdd=np.zeros((2,2)))
     window.controller.state_store.patch(trajectory=traj, playback=PlaybackState(is_playing=False, frame_idx=0, total_frames=2, speed_multiplier=1.0, loop_enabled=False))
     window.on_play()
-    assert window.playback_threader.started['task_kind'] == 'playback'
+    assert window.task_orchestration.playback_threader.started['task_kind'] == 'playback'
     window.on_pause()
-    assert window.playback_threader.cancelled is True
+    assert window.task_orchestration.playback_threader.cancelled is True
     window.on_stop_playback()
-    assert window.playback_threader.stopped is True
+    assert window.task_orchestration.playback_threader.stopped is True
     window.on_step()
     window.on_seek_frame(1)
     window.on_playback_speed_changed(1.5)
@@ -741,7 +763,7 @@ def test_action_and_playback_mixins_cover_playback_paths():
 def test_render_runtime_state_is_projected_into_shared_state_and_status_metrics():
     window = DummyWindow()
     window.project_render_runtime_state(window._collect_render_runtime_state())
-    render_runtime = window.runtime_facade.state.render_runtime
+    render_runtime = window.runtime_services.runtime_facade.state.render_runtime
     assert render_runtime.scene_3d.status == 'degraded'
     assert render_runtime.plots.status == 'available'
     assert render_runtime.screenshot.backend == 'snapshot_renderer'
@@ -787,10 +809,10 @@ def test_status_panel_projection_subscription_tracks_shared_runtime_state():
 def test_render_runtime_projection_records_structured_telemetry_events():
     window = DummyWindow()
     window.project_render_runtime_state(window._collect_render_runtime_state(), source='ui_runtime_scan')
-    telemetry = tuple(window.runtime_facade.state.render_telemetry)
-    spans = tuple(window.runtime_facade.state.render_operation_spans)
-    counters = tuple(window.runtime_facade.state.render_sampling_counters)
-    backend_perf = tuple(window.runtime_facade.state.render_backend_performance)
+    telemetry = tuple(window.runtime_services.runtime_facade.state.render_telemetry)
+    spans = tuple(window.runtime_services.runtime_facade.state.render_operation_spans)
+    counters = tuple(window.runtime_services.runtime_facade.state.render_sampling_counters)
+    backend_perf = tuple(window.runtime_services.runtime_facade.state.render_backend_performance)
     assert len(telemetry) >= 1
     assert telemetry[-1].source == 'ui_runtime_scan'
     assert telemetry[-1].capability in {'scene_3d', 'screenshot'}

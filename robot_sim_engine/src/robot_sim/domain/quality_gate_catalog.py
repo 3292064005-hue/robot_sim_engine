@@ -23,6 +23,7 @@ class QualityGateDefinition:
     commands: tuple[tuple[str, ...], ...] = ()
     evidence_paths: tuple[str, ...] = ()
     environment: str = 'headless'
+    layer: str = 'runtime_contracts'
     metadata: dict[str, object] = field(default_factory=dict)
 
     def summary(self) -> dict[str, object]:
@@ -33,6 +34,7 @@ class QualityGateDefinition:
             'commands': [list(command) for command in self.commands],
             'evidence_paths': list(self.evidence_paths),
             'environment': str(self.environment or 'headless'),
+            'layer': str(self.layer or 'runtime_contracts'),
             'metadata': dict(self.metadata or {}),
         }
 
@@ -40,17 +42,18 @@ class QualityGateDefinition:
 QUALITY_GATE_CATALOG: dict[str, QualityGateDefinition] = {
     'runtime_contracts': QualityGateDefinition(
         gate_id='runtime_contracts',
-        description='Packaged-config staging plus canonical runtime baseline checks.',
+        layer='runtime_contracts',
+        description='Packaged-config staging plus canonical runtime contract checks.',
         commands=(
             ('python', 'scripts/verify_runtime_contracts.py', '--mode', 'headless', '--check-packaged-configs'),
             ('python', 'scripts/verify_compatibility_retirement.py'),
-            ('python', 'scripts/verify_compatibility_budget.py', '--scenario', 'clean_headless_mainline'),
             ('python', 'scripts/verify_perf_budget_config.py'),
         ),
         evidence_paths=('scripts/verify_runtime_contracts.py', 'scripts/verify_runtime_baseline.py', 'scripts/verify_compatibility_retirement.py', 'configs/release_environment.yaml', 'configs/compatibility_retirement.yaml', 'configs/compatibility_downstream_inventory.yaml', 'docs/compatibility_support_boundary.md', 'docs/compatibility_downstream_inventory.md'),
     ),
     'governance_evidence': QualityGateDefinition(
         gate_id='governance_evidence',
+        layer='governance_evidence',
         description='Executed governance and benchmark evidence artifacts.',
         commands=(
             ('python', 'scripts/verify_module_governance.py', '--execute-gates', '--evidence-out', 'artifacts/module_governance_evidence.json'),
@@ -60,18 +63,21 @@ QUALITY_GATE_CATALOG: dict[str, QualityGateDefinition] = {
     ),
     'quick_quality': QualityGateDefinition(
         gate_id='quick_quality',
+        layer='release_blockers',
         description='Tool-aware quick-quality validation with deterministic fallbacks for constrained environments.',
         commands=(( 'python', 'scripts/verify_quick_quality.py'),),
-        evidence_paths=('scripts/verify_quick_quality.py', 'scripts/verify_quality_contracts.py', 'docs/quality_gates.md'),
+        evidence_paths=('scripts/verify_quick_quality.py', 'scripts/verify_quality_contracts.py', 'docs/generated/quality_gates.md', 'docs/quality_gates.md'),
     ),
     'performance_smoke': QualityGateDefinition(
         gate_id='performance_smoke',
+        layer='runtime_contracts',
         description='Measured IK smoke performance budget.',
         commands=(( 'pytest', 'tests/performance/test_ik_smoke.py', '-q'),),
         evidence_paths=('tests/performance/test_ik_smoke.py', 'configs/perf_budgets.yaml'),
     ),
     'gui_smoke': QualityGateDefinition(
         gate_id='gui_smoke',
+        layer='release_blockers',
         description='Deterministic offscreen GUI smoke using real PySide6 when available and the repository-local Qt test shim otherwise.',
         commands=(( 'python', 'scripts/verify_gui_smoke.py'),),
         evidence_paths=('scripts/verify_gui_smoke.py', 'src/robot_sim/testing/qt_shims.py', 'tests/gui'),
@@ -79,48 +85,61 @@ QUALITY_GATE_CATALOG: dict[str, QualityGateDefinition] = {
     ),
     'headless_runtime_baseline': QualityGateDefinition(
         gate_id='headless_runtime_baseline',
+        layer='runtime_contracts',
         description='Canonical headless runtime baseline.',
         commands=(( 'python', 'scripts/verify_runtime_baseline.py', '--mode', 'headless'),),
         evidence_paths=('scripts/verify_runtime_baseline.py',),
     ),
     'unit_and_regression': QualityGateDefinition(
         gate_id='unit_and_regression',
+        layer='release_blockers',
         description='Core unit/regression validation surface.',
         commands=(( 'pytest', 'tests/unit', 'tests/regression', '-q'),),
         evidence_paths=('tests/unit', 'tests/regression'),
     ),
     'compatibility_budget': QualityGateDefinition(
         gate_id='compatibility_budget',
+        layer='release_blockers',
         description='Compatibility-budget regression contract.',
         commands=(( 'python', 'scripts/verify_compatibility_budget.py', '--scenario', 'clean_headless_mainline'),),
         evidence_paths=('scripts/verify_compatibility_budget.py', 'tests/unit/test_compatibility_matrix.py'),
     ),
     'docs_sync': QualityGateDefinition(
         gate_id='docs_sync',
-        description='Generated contract docs must match checked-in docs.',
-        commands=(( 'python', 'scripts/regenerate_quality_contracts.py'),),
-        evidence_paths=('scripts/regenerate_quality_contracts.py', 'docs/quality_gates.md', 'docs/module_status.md'),
+        layer='governance_evidence',
+        description='Generated contract docs plus semantic doc guards must match the checked-in docs surface.',
+        commands=(( 'python', 'scripts/regenerate_quality_contracts.py'), ('python', 'scripts/verify_docs_information_architecture.py')),
+        evidence_paths=('scripts/regenerate_quality_contracts.py', 'scripts/verify_docs_information_architecture.py', 'docs/generated/quality_gates.md', 'docs/generated/module_status.md', 'docs/quality_gates.md', 'docs/module_status.md', 'docs/governance/documentation-governance.md'),
     ),
     'planning_scene_regression': QualityGateDefinition(
         gate_id='planning_scene_regression',
+        layer='runtime_contracts',
         description='Planning-scene regression tests.',
         commands=(( 'pytest', 'tests/unit/test_planning_scene_v2.py', 'tests/unit/test_scene_authority_service.py', '-q'),),
         evidence_paths=('tests/unit/test_planning_scene_v2.py', 'tests/unit/test_scene_authority_service.py'),
     ),
     'collision_validation_matrix': QualityGateDefinition(
         gate_id='collision_validation_matrix',
+        layer='runtime_contracts',
         description='Collision validation coverage matrix.',
         commands=(( 'pytest', 'tests/unit/test_planning_scene_validation.py', 'tests/unit/test_scene_capability_surface.py', '-q'),),
         evidence_paths=('tests/unit/test_planning_scene_validation.py', 'tests/unit/test_scene_capability_surface.py'),
     ),
     'scene_capture_baseline': QualityGateDefinition(
         gate_id='scene_capture_baseline',
+        layer='runtime_contracts',
         description='Scene capture fallback/live capability baseline.',
         commands=(( 'pytest', 'tests/unit/test_scene_capture_support.py', 'tests/unit/test_scene_render_contracts.py', '-q'),),
         evidence_paths=('tests/unit/test_scene_capture_support.py', 'tests/unit/test_scene_render_contracts.py'),
     ),
 }
 
+
+
+def quality_gate_ids_for_layer(layer: str) -> tuple[str, ...]:
+    """Return the stable gate ids that belong to one declared gate layer."""
+    normalized = str(layer or '').strip()
+    return tuple(gate_id for gate_id, definition in QUALITY_GATE_CATALOG.items() if definition.layer == normalized)
 
 def quality_gate_definition(gate_id: str) -> QualityGateDefinition | None:
     """Return the registered gate definition for ``gate_id`` if one exists."""
@@ -163,4 +182,5 @@ __all__ = [
     'QualityGateDefinition',
     'ensure_quality_gates_registered',
     'quality_gate_definition',
+    'quality_gate_ids_for_layer',
 ]

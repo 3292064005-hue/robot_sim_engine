@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 from robot_sim.application.services.benchmark_service import BenchmarkService
 from robot_sim.model.benchmark_report import BenchmarkReport
+from robot_sim.model.execution_graph import ExecutionGraphDescriptor
 from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.model.solver_config import IKConfig
 
@@ -34,6 +35,7 @@ class RunBenchmarkUseCase:
         cancel_flag: Callable[[], bool] | None = None,
         progress_cb: Callable[[float, str, dict[str, object] | None], None] | None = None,
         correlation_id: str | None = None,
+        execution_graph: ExecutionGraphDescriptor | None = None,
     ) -> BenchmarkReport:
         """Execute a benchmark suite.
 
@@ -60,6 +62,7 @@ class RunBenchmarkUseCase:
             cancel_flag=cancel_flag,
             progress_cb=progress_cb,
             correlation_id=correlation_id,
+            execution_graph=execution_graph,
         )
         return BenchmarkReport(
             robot=str(payload['robot']),

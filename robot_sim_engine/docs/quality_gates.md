@@ -1,11 +1,17 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/generated/quality_gates.md
+last_reviewed: 2026-04-18
+---
 # Quality Gates
 
-- runtime contracts: `python scripts/verify_runtime_contracts.py --mode headless --check-packaged-configs` + `python scripts/verify_compatibility_retirement.py` + `python scripts/verify_compatibility_budget.py --scenario clean_headless_mainline` + `python scripts/verify_perf_budget_config.py` + `pytest tests/performance/test_ik_smoke.py -q`
-- governance evidence: `python scripts/verify_module_governance.py --execute-gates --evidence-out artifacts/module_governance_evidence.json` + `python scripts/verify_benchmark_matrix.py --execute-gates --execute --evidence-out artifacts/benchmark_matrix_evidence.json` + `python scripts/collect_quality_evidence.py --out artifacts/quality_evidence.json --markdown-out artifacts/quality_evidence.md --release-manifest-out artifacts/release_manifest.json --merge artifacts/module_governance_evidence.json artifacts/benchmark_matrix_evidence.json runtime_contracts compatibility_budget performance_smoke`; the aggregated manifest now derives `artifact_ready`, `environment_ready`, and `release_ready` separately and always evaluates the checked-in release/gui environment contracts
-- aggregated quality evidence rejects governance/benchmark artifacts that were not generated with their required `--execute-gates` execution contract.
-- aggregated quality evidence rejects artifacts whose source-tree fingerprint or tracked release-file count does not match the current repository checkout; the original repo_root is retained as provenance metadata but is not treated as a transport-stability requirement.
-- unit/regression: `pytest tests/unit tests/regression -q`
-- shipped behavior contracts: repo profiles must remain differentiable, coordinators must stay on explicit dependency injection paths, export/screenshot coordinators must stay on worker lifecycle routes, render degradation state must stay projected in SessionState.render_runtime through a typed status-panel subscription flow, clean bootstrap/headless mainline paths must stay within the configured compatibility budget, public plugin SDK examples must remain loader-compatible, render telemetry must remain recorded as bounded structured state transitions + operation spans + sampling counters + backend-specific performance telemetry, diagnostics widgets must consume structured telemetry log sections, scene authority summaries must expose declaration/validation/render geometry layers, and screenshot/importer fidelity baselines must stay reproducible from checked-in fixtures
-- full validation: `pytest --cov=src/robot_sim --cov-report=term-missing --cov-report=json:coverage.json -q` with `fail_under = 80` + `python scripts/verify_partition_coverage.py --coverage-json coverage.json`
-- gui smoke: `python scripts/verify_gui_smoke.py`; the gate prefers real `PySide6` and falls back to the repository-local Qt test shim only inside the verification process so deterministic offscreen smoke remains executable in constrained environments. Evidence must retain `runtime_kind`, `gui_real_runtime_ok`, and `gui_shim_runtime_ok` so release review can distinguish shim smoke from a real GUI baseline
-- contract regeneration: `python scripts/regenerate_quality_contracts.py` + `git diff --exit-code -- docs`
+本文件是稳定入口页。
+
+- canonical generated doc: `docs/generated/quality_gates.md`
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改运行时真源，再执行 regeneration；不要直接把契约内容手写回入口页。
+
+请跳转阅读：[`docs/generated/quality_gates.md`](generated/quality_gates.md)

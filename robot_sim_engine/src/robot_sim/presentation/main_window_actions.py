@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from robot_sim.presentation.state_events import PlaybackFrameProjectedEvent, PlaybackStateChangedEvent
+
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.presentation.view_contracts import MainWindowActionView
 
@@ -13,17 +15,17 @@ class MainWindowActionMixin:
 
     def on_load_robot(self: 'MainWindowActionView') -> None:
         """Entry point wired to the robot-load button."""
-        self.robot_coordinator.load_robot()
+        self.task_orchestration.robot_coordinator.load_robot()
 
 
     def on_save_robot(self: 'MainWindowActionView') -> None:
         """Entry point wired to the robot-save button."""
-        self.robot_coordinator.save_current_robot()
+        self.task_orchestration.robot_coordinator.save_current_robot()
 
 
     def on_import_robot(self: 'MainWindowActionView') -> None:
         """Entry point wired to the robot-import button."""
-        self.robot_coordinator.import_robot()
+        self.task_orchestration.robot_coordinator.import_robot()
 
 
     def on_fill_current_pose(self: 'MainWindowActionView') -> None:
@@ -50,17 +52,17 @@ class MainWindowActionMixin:
 
     def on_play(self: 'MainWindowActionView') -> None:
         """Entry point wired to the playback play button."""
-        self.playback_task_coordinator.play()
+        self.task_orchestration.playback_task_coordinator.play()
 
 
     def on_pause(self: 'MainWindowActionView') -> None:
         """Entry point wired to the playback pause button."""
-        self.playback_task_coordinator.pause()
+        self.task_orchestration.playback_task_coordinator.pause()
 
 
     def on_stop_playback(self: 'MainWindowActionView') -> None:
         """Entry point wired to the playback stop button."""
-        self.playback_task_coordinator.stop()
+        self.task_orchestration.playback_task_coordinator.stop()
 
 
     def on_step(self: 'MainWindowActionView') -> None:
@@ -99,7 +101,7 @@ class MainWindowActionMixin:
 
     def _schedule_playback_frame(self: 'MainWindowActionView', frame, *, live: bool = False, immediate: bool = False) -> None:
         """Schedule playback-frame projection through the coalescing render scheduler."""
-        scheduler = getattr(self, 'playback_render_scheduler', None)
+        scheduler = getattr(self.task_orchestration, 'playback_render_scheduler', None)
         if immediate or scheduler is None:
             self.project_playback_frame(frame, live=live)
             return
@@ -127,7 +129,7 @@ class MainWindowActionMixin:
         if getattr(frame, 'joint_positions', None) is None or getattr(frame, 'ee_position', None) is None:
             raise RuntimeError('playback frame missing cached geometry')
         self.scene_controller.update_playback_projection(frame.joint_positions, frame.ee_position, runtime.state.target_pose)
-        runtime.state_store.patch(q_current=np.asarray(frame.q, dtype=float).copy())
+        runtime.state_store.dispatch(PlaybackFrameProjectedEvent(q_current=np.asarray(frame.q, dtype=float).copy()))
         total = runtime.state.playback.total_frames
         self.playback_panel.set_frame(frame.frame_idx, total)
         if hasattr(self.plots_manager, 'set_cursor'):
@@ -143,7 +145,7 @@ class MainWindowActionMixin:
         """Project playback completion into the UI state."""
         runtime = self._runtime_ops()
         self._set_playback_running(False)
-        runtime.state_store.patch(playback=final_state.pause())
+        runtime.state_store.dispatch(PlaybackStateChangedEvent(playback=final_state.pause()))
         self.status_panel.append('播放完成')
         self.status_panel.set_metrics(playback=self._playback_status_text())
 
@@ -152,7 +154,7 @@ class MainWindowActionMixin:
         runtime = self._runtime_ops()
         self._set_playback_running(False)
         if runtime.state.playback.total_frames > 0:
-            runtime.state_store.patch(playback=runtime.state.playback.with_frame(runtime.state.playback.frame_idx).pause())
+            runtime.state_store.dispatch(PlaybackStateChangedEvent(playback=runtime.state.playback.with_frame(runtime.state.playback.frame_idx).pause()))
         self.status_panel.append('播放已停止')
         self.status_panel.set_metrics(playback=self._playback_status_text())
 
@@ -163,47 +165,42 @@ class MainWindowActionMixin:
 
     def on_fit_scene(self: 'MainWindowActionView') -> None:
         """Entry point wired to the scene-fit toolbar action."""
-        self.scene_coordinator.fit()
+        self.task_orchestration.scene_coordinator.fit()
 
 
     def on_clear_scene_path(self: 'MainWindowActionView') -> None:
         """Entry point wired to the scene clear-path toolbar action."""
-        self.scene_coordinator.clear_path()
+        self.task_orchestration.scene_coordinator.clear_path()
 
 
     def on_capture_scene(self: 'MainWindowActionView') -> None:
         """Entry point wired to the screenshot toolbar action."""
-        self.scene_coordinator.capture()
+        self.task_orchestration.scene_coordinator.capture()
 
     def on_add_scene_obstacle(self: 'MainWindowActionView') -> None:
         """Entry point wired to the scene-toolbar add-obstacle action."""
-        self.scene_coordinator.add_obstacle()
+        self.task_orchestration.scene_coordinator.add_obstacle()
 
     def on_clear_scene_obstacles(self: 'MainWindowActionView') -> None:
         """Entry point wired to the scene-toolbar clear-obstacles action."""
-        self.scene_coordinator.clear_obstacles()
+        self.task_orchestration.scene_coordinator.clear_obstacles()
 
 
     def on_export_trajectory_bundle(self: 'MainWindowActionView') -> None:
         """Entry point wired to the trajectory-bundle export button."""
-        self.export_task_coordinator.export_trajectory_bundle()
-
-    def on_export_trajectory(self: 'MainWindowActionView') -> None:
-        """Compatibility alias for the canonical trajectory-bundle export action."""
-        self.on_export_trajectory_bundle()
-
+        self.task_orchestration.export_task_coordinator.export_trajectory_bundle()
 
     def on_export_session(self: 'MainWindowActionView') -> None:
         """Entry point wired to the session-export button."""
-        self.export_task_coordinator.export_session()
+        self.task_orchestration.export_task_coordinator.export_session()
 
 
     def on_export_package(self: 'MainWindowActionView') -> None:
         """Entry point wired to the package-export button."""
-        self.export_task_coordinator.export_package()
+        self.task_orchestration.export_task_coordinator.export_package()
 
 
     def on_export_benchmark(self: 'MainWindowActionView') -> None:
         """Entry point wired to the benchmark-export button."""
-        self.export_task_coordinator.export_benchmark()
+        self.task_orchestration.export_task_coordinator.export_benchmark()
 

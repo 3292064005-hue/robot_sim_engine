@@ -12,8 +12,9 @@ from robot_sim.model.scene_geometry_authority import (
     default_scene_geometry_authority,
     summarize_scene_geometry_authority,
 )
+from robot_sim.model.scene_geometry_projection import declaration_geometry_from_aabb, project_declaration_geometry
 from robot_sim.model.scene_graph_authority import SceneGraphAuthority
-from robot_sim.model.scene_validation_surface import summarize_record_validation_surface, summarize_scene_validation_surface
+from robot_sim.model.scene_validation_surface import summarize_record_validation_surface, summarize_scene_validation_surface, summarize_scene_validation_projection, summarize_validation_projection
 
 _COLLISION_BACKEND_REGISTRY = default_collision_backend_registry()
 _COLLISION_BACKEND_FALLBACK = _COLLISION_BACKEND_REGISTRY.default_backend
@@ -40,8 +41,8 @@ def _normalize_scene_shapes(payload: object) -> list[str]:
     return []
 
 
-def _normalize_scene_object_sequence(objects: tuple['SceneObject', ...]) -> list[dict[str, object]]:
-    return [obj.summary() for obj in objects]
+def _normalize_scene_object_sequence(objects: tuple['SceneObject', ...], *, validation_backend: str) -> list[dict[str, object]]:
+    return [obj.summary(validation_backend=validation_backend) for obj in objects]
 
 
 def _stable_scene_object_metadata(metadata: dict[str, object]) -> dict[str, object]:
@@ -69,27 +70,61 @@ class SceneObject:
     geometry: AABB
     metadata: dict[str, object] = field(default_factory=dict)
 
-    def summary(self) -> dict[str, object]:
+    def __post_init__(self) -> None:
         metadata = dict(self.metadata or {})
-        validation_geometry = _scene_geometry_payload_from_metadata(
-            metadata,
-            'validation_geometry',
-            _scene_geometry_payload_from_metadata(metadata, 'resolved_geometry', _serialize_aabb(self.geometry)),
-        )
         declaration_geometry = _scene_geometry_payload_from_metadata(
             metadata,
             'declaration_geometry',
-            _scene_geometry_payload_from_metadata(metadata, 'declared_geometry', validation_geometry),
+            _scene_geometry_payload_from_metadata(metadata, 'declaration_geometry', declaration_geometry_from_aabb(self.geometry)),
         )
+        validation_backend = str(metadata.get('validation_backend', metadata.get('resolved_collision_backend', 'aabb')) or 'aabb')
+        projection = project_declaration_geometry(
+            declaration_geometry,
+            backend_id=validation_backend,
+            attached=bool('attach_link' in metadata),
+            fallback_geometry=self.geometry,
+        )
+        metadata.setdefault('declaration_geometry', dict(projection.declaration_geometry))
+        metadata.setdefault('validation_geometry', dict(projection.validation_geometry))
+        metadata.setdefault('render_geometry', dict(projection.render_geometry))
+        metadata.setdefault('validation_query_geometry', _serialize_aabb(projection.query_aabb))
+        metadata.setdefault('validation_backend', str(projection.validation_backend))
+        metadata.setdefault('validation_adapter_kind', str(projection.adapter_kind))
+        metadata.setdefault('validation_geometry_source', str(projection.validation_geometry_source))
+        metadata.setdefault('render_geometry_source', str(metadata.get('render_geometry_source', metadata.get('source', '')) or metadata.get('source', '')))
+        metadata.setdefault('declaration_geometry_source', str(metadata.get('declaration_geometry_source', metadata.get('source', '')) or metadata.get('source', '')))
+        object.__setattr__(self, 'metadata', metadata)
+
+    def summary(self, *, validation_backend: str | None = None) -> dict[str, object]:
+        metadata = dict(self.metadata or {})
+        declared_backend = str(validation_backend or metadata.get('validation_backend', metadata.get('resolved_collision_backend', 'aabb')) or 'aabb')
+        declaration_geometry = _scene_geometry_payload_from_metadata(
+            metadata,
+            'declaration_geometry',
+            _scene_geometry_payload_from_metadata(metadata, 'declaration_geometry', declaration_geometry_from_aabb(self.geometry)),
+        )
+        projection = project_declaration_geometry(
+            declaration_geometry,
+            backend_id=declared_backend,
+            attached=bool('attach_link' in metadata),
+            fallback_geometry=self.geometry,
+        )
+        validation_geometry = dict(projection.validation_geometry)
         render_geometry = _scene_geometry_payload_from_metadata(
             metadata,
             'render_geometry',
-            declaration_geometry,
+            dict(projection.render_geometry),
         )
-        validation_geometry_source = str(metadata.get('validation_geometry_source', metadata.get('resolved_geometry_source', '')) or '')
+        validation_geometry_source = str(metadata.get('validation_geometry_source', projection.validation_geometry_source) or projection.validation_geometry_source)
         validation_surface = summarize_record_validation_surface(
             validation_geometry_source=validation_geometry_source,
             validation_geometry=validation_geometry,
+            attached=bool('attach_link' in metadata),
+        )
+        validation_projection = summarize_validation_projection(
+            declaration_geometry=declaration_geometry,
+            validation_geometry=validation_geometry,
+            validation_geometry_source=validation_geometry_source,
             attached=bool('attach_link' in metadata),
         )
         return {
@@ -99,12 +134,13 @@ class SceneObject:
             'validation_geometry': validation_geometry,
             'render_geometry': render_geometry,
             'validation_surface': validation_surface,
-            # legacy aliases
-            'declared_geometry': declaration_geometry,
-            'resolved_geometry': validation_geometry,
-            'declaration_geometry_source': str(metadata.get('declaration_geometry_source', metadata.get('declared_geometry_source', metadata.get('source', ''))) or metadata.get('source', '')),
+            'validation_projection': validation_projection,
+            'declaration_geometry_source': str(metadata.get('declaration_geometry_source', metadata.get('source', '')) or metadata.get('source', '')),
             'validation_geometry_source': validation_geometry_source,
             'render_geometry_source': str(metadata.get('render_geometry_source', metadata.get('source', '')) or metadata.get('source', '')),
+            'validation_backend': str(projection.validation_backend),
+            'validation_adapter_kind': str(projection.adapter_kind),
+            'validation_query_geometry': _serialize_aabb(projection.query_aabb),
             **validation_surface,
         }
 
@@ -313,8 +349,48 @@ class PlanningScene:
             return self
         return self._spawn(attached_objects=remaining, revision=self.revision + 1)
 
+    def clone(self, *, planner_id: str = '', clone_reason: str = 'concurrent_snapshot') -> 'PlanningScene':
+        """Return a clone-marked scene preserving immutable geometry and revision state."""
+        metadata = dict(self.metadata or {})
+        clone_generation = int(metadata.get('clone_generation', 0) or 0) + 1
+        clone_token = f"scene:{int(self.revision)}:clone:{clone_generation}:{str(planner_id or 'anonymous')}"
+        concurrent_tokens = list(metadata.get('concurrent_snapshot_tokens', ()) or ())
+        concurrent_tokens.append(clone_token)
+        metadata.update(
+            {
+                'clone_generation': clone_generation,
+                'latest_clone_token': clone_token,
+                'latest_clone_reason': str(clone_reason or 'concurrent_snapshot'),
+                'latest_clone_planner_id': str(planner_id or ''),
+                'concurrent_snapshot_tokens': concurrent_tokens[-64:],
+                'environment_contract_version': 'v2',
+            }
+        )
+        return self._spawn(metadata=metadata, revision=self.revision)
+
+    def diff_replication_summary(self, previous: 'PlanningScene | None' = None) -> dict[str, object]:
+        """Return a stable diff-replication summary between two immutable scene revisions."""
+        baseline = previous or self
+        added_obstacles = sorted(set(self.obstacle_ids) - set(getattr(baseline, 'obstacle_ids', ()) or ()))
+        removed_obstacles = sorted(set(getattr(baseline, 'obstacle_ids', ()) or ()) - set(self.obstacle_ids))
+        added_attached = sorted(set(self.attached_object_ids) - set(getattr(baseline, 'attached_object_ids', ()) or ()))
+        removed_attached = sorted(set(getattr(baseline, 'attached_object_ids', ()) or ()) - set(self.attached_object_ids))
+        return {
+            'base_revision': int(getattr(baseline, 'revision', self.revision) or self.revision),
+            'target_revision': int(self.revision),
+            'added_obstacle_ids': added_obstacles,
+            'removed_obstacle_ids': removed_obstacles,
+            'added_attached_object_ids': added_attached,
+            'removed_attached_object_ids': removed_attached,
+            'obstacle_delta': int(len(added_obstacles) - len(removed_obstacles)),
+            'attached_object_delta': int(len(added_attached) - len(removed_attached)),
+            'change_count': int(len(added_obstacles) + len(removed_obstacles) + len(added_attached) + len(removed_attached)),
+            'scene_graph_diff': dict(self.metadata.get('scene_graph_diff', {}) or {}),
+        }
+
     def summary(self) -> dict[str, object]:
         geometry_authority = self.geometry_authority.summary()
+        validation_projection = summarize_scene_validation_projection([*(_normalize_scene_object_sequence(self.obstacles, validation_backend=self.collision_backend)), *(_normalize_scene_object_sequence(self.attached_objects, validation_backend=self.collision_backend))])
         collision_fidelity = summarize_collision_fidelity(
             collision_level=self.collision_level,
             collision_backend=self.collision_backend,
@@ -338,7 +414,6 @@ class PlanningScene:
             scene_authority=self.scene_authority,
             scene_geometry_contract=str(self.geometry_authority.scene_geometry_contract or 'declaration_validation_render'),
             attached_object_count=len(self.attached_objects),
-            adapter_applied=bool(self.metadata.get('legacy_obstacle_adapter_applied', False)),
             source=str(self.metadata.get('scene_source', 'planning_scene') or 'planning_scene'),
         )
         summary = {
@@ -372,20 +447,41 @@ class PlanningScene:
             'declaration_geometry_source': str(self.geometry_authority.declaration_geometry_source or ''),
             'validation_geometry_source': str(self.geometry_authority.validation_geometry_source or ''),
             'render_geometry_source': str(self.geometry_authority.render_geometry_source or ''),
-            # legacy aliases
-            'declared_geometry_source': str(self.geometry_authority.declared_geometry_source or ''),
-            'resolved_geometry_source': str(self.geometry_authority.resolved_geometry_source or ''),
             'capability_badges': capability_badges,
             'geometry_authority': geometry_authority,
+            'validation_projection': validation_projection,
             'scene_graph_authority': scene_graph_authority,
             'validation_surface': validation_surface,
             'scene_graph_diff': dict(self.metadata.get('scene_graph_diff', {}) or {}),
+            'last_scene_command': dict(self.metadata.get('last_scene_command', {}) or {}),
+            'scene_command_log_tail': [dict(item) for item in self.metadata.get('scene_command_log_tail', ()) or () if isinstance(item, dict)],
+            'scene_command_history': [dict(item) for item in self.metadata.get('scene_command_history', ()) or () if isinstance(item, dict)],
+            'scene_revision_history': [dict(item) for item in self.metadata.get('scene_revision_history', ()) or () if isinstance(item, dict)],
+            'replay_cursor': str(self.metadata.get('scene_replay_cursor', f'rev:{int(self.revision)}') or f'rev:{int(self.revision)}'),
+            'clone_token': str(self.metadata.get('latest_clone_token', '') or ''),
+            'concurrent_snapshot_tokens': [str(item) for item in self.metadata.get('concurrent_snapshot_tokens', ()) or ()],
+            'diff_replication': self.diff_replication_summary(),
+            'environment_contract': {
+                'version': str(self.metadata.get('environment_contract_version', 'v2') or 'v2'),
+                'supports_clone': True,
+                'supports_replay': True,
+                'supports_diff_replication': True,
+                'supports_concurrent_snapshots': True,
+            },
+            'log_policy': dict(self.metadata.get('scene_command_log_policy', {
+                'retention_model': 'bounded_tail_plus_history',
+                'intended_use': 'diagnostic_log_and_replay',
+                'supports_replay': True,
+                'supports_clone': True,
+                'supports_diff_replication': True,
+                'supports_concurrent_snapshots': True,
+            }) or {}),
             'runtime_model_summary': dict(self.metadata.get('runtime_model_summary', {}) or {}),
             'execution_summary': dict(self.metadata.get('execution_summary', {}) or {}),
             'source_model_summary': dict(self.metadata.get('source_model_summary', {}) or {}),
             'canonical_model_summary': self.metadata.get('canonical_model_summary'),
-            'obstacles': _normalize_scene_object_sequence(self.obstacles),
-            'attached_objects': _normalize_scene_object_sequence(self.attached_objects),
+            'obstacles': _normalize_scene_object_sequence(self.obstacles, validation_backend=self.collision_backend),
+            'attached_objects': _normalize_scene_object_sequence(self.attached_objects, validation_backend=self.collision_backend),
             'supported_scene_shapes': list(self.geometry_authority.supported_scene_shapes),
             'backend_metadata': {
                 key: value

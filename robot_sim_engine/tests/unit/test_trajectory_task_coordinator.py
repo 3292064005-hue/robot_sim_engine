@@ -23,7 +23,7 @@ class DummyThreader:
 class DummyWindow:
     def __init__(self):
         self.controller = SimpleNamespace(traj_uc=object(), state_store=DummyStore())
-        self.trajectory_facade = SimpleNamespace(trajectory_use_case=object())
+        self.motion_workflow = SimpleNamespace(trajectory_use_case=object())
         self.threader = DummyThreader()
         self.status_panel = SimpleNamespace(messages=[], append=lambda message: self.status_panel.messages.append(message))
         self._set_busy_calls = []
@@ -39,7 +39,7 @@ class DummyWindow:
 
 def test_trajectory_task_coordinator_starts_worker_and_patches_task_state():
     window = DummyWindow()
-    coordinator = TrajectoryTaskCoordinator(window, trajectory=window.trajectory_facade, threader=window.threader)
+    coordinator = TrajectoryTaskCoordinator(window, trajectory=window.motion_workflow, threader=window.threader)
     coordinator.run()
     assert window.threader.started['task_kind'] == 'trajectory'
     assert window.controller.state_store.patched['active_task_kind'] == 'trajectory'

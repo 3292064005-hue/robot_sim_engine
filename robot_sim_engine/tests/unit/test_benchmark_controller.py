@@ -28,3 +28,18 @@ def test_benchmark_controller_builds_config_and_runs(project_root):
     report = bench_ctrl.run_benchmark(config)
     assert config.mode.value == 'dls'
     assert report.num_cases >= 5
+
+
+def test_benchmark_controller_preserves_execution_graph(project_root):
+    state = StateStore(SessionState())
+    config_service = ConfigService(project_root / 'configs')
+    registry = RobotRegistry(project_root / 'configs' / 'robots')
+    spec = registry.load('planar_2dof')
+    fk = RunFKUseCase().execute(type('FKReq', (), {'spec': spec, 'q': spec.home_q.copy()})())
+    state.patch(robot_spec=spec, q_current=spec.home_q.copy(), fk_result=fk)
+    ik_uc = RunIKUseCase(DefaultSolverRegistry())
+    bench_uc = RunBenchmarkUseCase(BenchmarkService(ik_uc))
+    ik_ctrl = IKController(state, config_service.load_solver_config()['ik'], RunFKUseCase(), ik_uc)
+    bench_ctrl = BenchmarkController(state, bench_uc, ik_ctrl.build_ik_request)
+    report = bench_ctrl.run_benchmark(execution_graph={'target_links': [spec.runtime_link_names[-1]]})
+    assert report.metadata['execution_graph']['target_links'] == [spec.runtime_link_names[-1]]

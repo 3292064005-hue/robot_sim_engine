@@ -1,103 +1,17 @@
+---
+owner: docs
+audience: all
+status: entry-page
+source_of_truth: entry-point
+canonical_target: docs/generated/module_status.md
+last_reviewed: 2026-04-18
+---
 # Module Status
 
-## experimental
-- `core.collision.capsule_backend` (disabled_by_profile)
-  - owner: `collision-runtime`
-  - stable_ui_surface: `planning_scene`
-  - exit_criteria: `['capsule backend must remain within the configured compatibility budget', 'collision backend contract tests must pass on clean headless mainline', 'planning-scene regression and validation baselines must stay reproducible']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'planning_scene_regression', 'collision_validation_matrix']`
-  - promotion_blockers: `['backend is still profile-gated and not advertised on the stable capability surface by default', 'scene authority still defaults to AABB for stable runtime validation']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'planning_scene_regression', 'collision_validation_matrix']`
-  - promotion_ready: `False`
-  - notes: `['promotion requires stable capsule fidelity claims in docs and export/session surfaces']`
-- `presentation.experimental.widgets.collision_panel` (disabled_by_profile)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['legacy experimental namespace must be removed before stable exposure']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['legacy experimental namespace retained only for migration compatibility']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-- `presentation.experimental.widgets.export_panel` (disabled_by_profile)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['legacy experimental namespace must be removed before stable exposure']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['legacy experimental namespace retained only for migration compatibility']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-- `presentation.experimental.widgets.scene_options_panel` (disabled_by_profile)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['legacy experimental namespace must be removed before stable exposure']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['legacy experimental namespace retained only for migration compatibility']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-- `presentation.widgets.collision_panel` (deprecated_compatibility_alias)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['widget must mount through the stable main window builder without experimental aliases', 'task orchestration must remain on explicit coordinator dependency routes']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-  - compatibility_alias_target: `presentation.experimental.widgets.collision_panel`
-  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
-- `presentation.widgets.export_panel` (deprecated_compatibility_alias)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['export widget must project only through stable view contracts', 'background export worker lifecycle must remain intact under GUI smoke']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-  - compatibility_alias_target: `presentation.experimental.widgets.export_panel`
-  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
-- `presentation.widgets.scene_options_panel` (deprecated_compatibility_alias)
-  - owner: `presentation-runtime`
-  - stable_ui_surface: `main_window_ui`
-  - exit_criteria: `['scene options widget must consume typed scene authority summaries only', 'GUI smoke and planning-scene regressions must remain green']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_blockers: `['stable UI intentionally hides the panel until promotion criteria are satisfied']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke']`
-  - promotion_ready: `False`
-  - compatibility_alias_target: `presentation.experimental.widgets.scene_options_panel`
-  - notes: `['stable import path exists only as a deprecated compatibility alias and is not a promoted stable widget surface']`
-- `render.experimental.picking` (disabled_by_profile)
-  - owner: `render-runtime`
-  - stable_ui_surface: `scene_3d_widget`
-  - exit_criteria: `['legacy experimental namespace must be removed before stable exposure']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_blockers: `['legacy experimental namespace retained only for compatibility']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_ready: `False`
-- `render.experimental.plot_sync` (disabled_by_profile)
-  - owner: `render-runtime`
-  - stable_ui_surface: `scene_3d_widget`
-  - exit_criteria: `['legacy experimental namespace must be removed before stable exposure']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_blockers: `['legacy experimental namespace retained only for compatibility']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_ready: `False`
-- `render.picking` (disabled_by_profile)
-  - owner: `render-runtime`
-  - stable_ui_surface: `scene_3d_widget`
-  - exit_criteria: `['picking must expose provenance-aware diagnostics in render runtime state', 'GUI smoke must verify picking does not degrade screenshot fallback semantics']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_blockers: `['stable render pipeline still defaults to placeholder/snapshot fallback when live picking is unavailable']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_ready: `False`
-- `render.plot_sync` (disabled_by_profile)
-  - owner: `render-runtime`
-  - stable_ui_surface: `scene_3d_widget`
-  - exit_criteria: `['plot sync must not bypass typed render telemetry projections', 'GUI smoke must validate sync lifecycle under offscreen Qt runtime']`
-  - required_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_blockers: `['plot sync remains disabled outside experimental profiles']`
-  - missing_quality_gates: `['headless_runtime_baseline', 'unit_and_regression', 'compatibility_budget', 'docs_sync', 'gui_smoke', 'scene_capture_baseline']`
-  - promotion_ready: `False`
+本文件是稳定入口页。
 
-## stable
-- `application.importers.urdf_model_importer` (enabled)
-- `application.importers.urdf_skeleton_importer` (enabled)
-- `core.collision.scene` (enabled)
+- canonical generated doc: `docs/generated/module_status.md`
+- regeneration source: `python scripts/regenerate_quality_contracts.py`
+- editing policy: 请优先修改运行时真源，再执行 regeneration；不要直接把契约内容手写回入口页。
+
+请跳转阅读：[`docs/generated/module_status.md`](generated/module_status.md)

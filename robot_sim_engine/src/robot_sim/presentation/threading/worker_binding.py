@@ -5,7 +5,6 @@ import logging
 from dataclasses import dataclass
 from typing import Callable
 
-from robot_sim.application.workers.legacy_lifecycle import LegacyWorkerLifecycleAdapter
 from robot_sim.application.workers.task_events import WorkerCancelledEvent, WorkerFailedEvent, WorkerFinishedEvent
 from robot_sim.presentation.threading.task_handle import TaskHandle
 
@@ -15,28 +14,16 @@ _LOG = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class WorkerSignalSurface:
-    """Explicit description of the worker lifecycle signal surface.
+    """Explicit description of the canonical worker lifecycle signal surface."""
 
-    The orchestrator treats structured events as the primary lifecycle protocol,
-    while selectively preserving legacy signals for compatibility callbacks and
-    older workers that still emit the historical payload surface.
-    """
-
-    structured_failed: object | None
-    structured_finished: object | None
-    structured_cancelled: object | None
-    structured_progress: object | None
-    legacy_failed: object | None
-    legacy_finished: object | None
-    legacy_cancelled: object | None
-    legacy_progress: object | None
+    failed: object | None
+    finished: object | None
+    cancelled: object | None
+    progress: object | None
 
 
 class WorkerBindingService:
     """Bind worker/thread signals while keeping orchestration callbacks explicit."""
-
-    def __init__(self) -> None:
-        self._legacy_adapter = LegacyWorkerLifecycleAdapter()
 
     def apply_worker_identity(self, worker, task: TaskHandle) -> None:
         """Populate worker identity attributes when they are available.
@@ -49,7 +36,7 @@ class WorkerBindingService:
             None: Mutates worker attributes in place.
 
         Raises:
-            None: Missing identity attributes are ignored for compatibility.
+            None: Missing identity attributes are ignored.
         """
         if getattr(worker, 'task_id', None) is not None:
             worker.task_id = task.task_id
@@ -59,10 +46,10 @@ class WorkerBindingService:
             worker.correlation_id = task.correlation_id or task.task_id
 
     def inspect_surface(self, worker) -> WorkerSignalSurface:
-        """Return the explicit lifecycle signal surface exposed by ``worker``.
+        """Return the canonical lifecycle signal surface exposed by ``worker``.
 
         Args:
-            worker: Worker instance exposing structured and/or legacy lifecycle signals.
+            worker: Worker instance exposing structured lifecycle signals.
 
         Returns:
             WorkerSignalSurface: Stable view of the available signal endpoints.
@@ -71,15 +58,35 @@ class WorkerBindingService:
             None: Missing signals simply map to ``None``.
         """
         return WorkerSignalSurface(
-            structured_failed=getattr(worker, 'failed_event', None),
-            structured_finished=getattr(worker, 'finished_event', None),
-            structured_cancelled=getattr(worker, 'cancelled_event', None),
-            structured_progress=getattr(worker, 'progress_event', None),
-            legacy_failed=getattr(worker, 'failed', None),
-            legacy_finished=getattr(worker, 'finished', None),
-            legacy_cancelled=getattr(worker, 'cancelled', None),
-            legacy_progress=getattr(worker, 'progress', None),
+            failed=getattr(worker, 'failed_event', None),
+            finished=getattr(worker, 'finished_event', None),
+            cancelled=getattr(worker, 'cancelled_event', None),
+            progress=getattr(worker, 'progress_event', None),
         )
+
+    @staticmethod
+    def _coerce_progress_payload(event: object) -> object:
+        """Project a structured progress event onto the simple callback payload.
+
+        Args:
+            event: Structured progress event emitted by a worker.
+
+        Returns:
+            object: The canonical payload projected for ``on_progress`` callbacks.
+
+        Raises:
+            None: Unsupported payload shapes fall back to the event itself.
+
+        Boundary behavior:
+            When the structured payload contains only ``{'value': ...}``, the
+            single value is unwrapped for the simple progress callback surface.
+        """
+        payload = getattr(event, 'payload', None)
+        if isinstance(payload, dict) and 'value' in payload and len(payload) == 1:
+            return payload['value']
+        if payload is not None:
+            return payload
+        return event
 
     def bind(
         self,
@@ -99,23 +106,19 @@ class WorkerBindingService:
         failed_event_callback: Callable[[WorkerFailedEvent], None],
         finished_event_callback: Callable[[WorkerFinishedEvent], None],
         cancelled_event_callback: Callable[[WorkerCancelledEvent], None],
-        failed_callback: Callable[[str], None],
-        finished_callback: Callable[[object], None],
-        cancelled_callback: Callable[[], None],
         queued_callback: Callable[[], None],
         cleanup_callback: Callable[[], None],
-        legacy_progress_adapter: Callable[[object], object] | None = None,
     ) -> None:
         """Bind worker lifecycle signals to orchestrator callbacks.
 
         Args:
-            worker: Background worker exposing the legacy or structured signal set.
+            worker: Background worker exposing the canonical structured signal set.
             thread: Dedicated worker thread.
             on_started: Optional external start callback.
-            on_progress: Optional external progress callback.
-            on_finished: Optional external success callback receiving the legacy payload surface.
-            on_failed: Optional external failure callback receiving the legacy message surface.
-            on_cancelled: Optional external cancellation callback receiving the legacy no-arg surface.
+            on_progress: Optional external simple progress callback.
+            on_finished: Optional external simple success callback receiving ``event.payload``.
+            on_failed: Optional external simple failure callback receiving ``event.message``.
+            on_cancelled: Optional external simple cancellation callback.
             on_finished_event: Optional external structured success callback.
             on_failed_event: Optional external structured failure callback.
             on_cancelled_event: Optional external structured cancellation callback.
@@ -124,18 +127,14 @@ class WorkerBindingService:
             failed_event_callback: Internal callback for structured failure events.
             finished_event_callback: Internal callback for structured success events.
             cancelled_event_callback: Internal callback for structured cancellation events.
-            failed_callback: Internal callback for legacy failures.
-            finished_callback: Internal callback for legacy success payloads.
-            cancelled_callback: Internal callback for legacy cancellations.
             queued_callback: Internal callback invoked when the worker starts running.
             cleanup_callback: Cleanup callback invoked after thread shutdown.
-            legacy_progress_adapter: Optional adapter translating structured events to legacy progress payloads.
 
         Returns:
             None: Mutates Qt signal bindings in place.
 
         Raises:
-            None: Binding is side-effect only.
+            TypeError: When the worker does not expose the canonical structured terminal signals.
         """
         try:
             worker.moveToThread(thread)
@@ -145,71 +144,44 @@ class WorkerBindingService:
         worker.started.connect(queued_callback)
         surface = self.inspect_surface(worker)
 
-        if surface.structured_failed is not None:
-            surface.structured_failed.connect(failed_event_callback)
-            if on_failed_event is not None:
-                surface.structured_failed.connect(on_failed_event)
-        elif surface.legacy_failed is not None:
-            surface.legacy_failed.connect(failed_callback)
+        missing = [
+            name
+            for name, signal in {
+                'finished_event': surface.finished,
+                'failed_event': surface.failed,
+                'cancelled_event': surface.cancelled,
+                'progress_event': surface.progress,
+            }.items()
+            if signal is None
+        ]
+        if missing:
+            raise TypeError(f'worker is missing canonical lifecycle signals: {", ".join(missing)}')
 
-        if surface.structured_finished is not None:
-            surface.structured_finished.connect(finished_event_callback)
-            if on_finished_event is not None:
-                surface.structured_finished.connect(on_finished_event)
-        elif surface.legacy_finished is not None:
-            surface.legacy_finished.connect(finished_callback)
+        surface.failed.connect(failed_event_callback)
+        if on_failed_event is not None:
+            surface.failed.connect(on_failed_event)
 
-        if surface.structured_cancelled is not None:
-            surface.structured_cancelled.connect(cancelled_event_callback)
-            if on_cancelled_event is not None:
-                surface.structured_cancelled.connect(on_cancelled_event)
-        elif surface.legacy_cancelled is not None:
-            surface.legacy_cancelled.connect(cancelled_callback)
+        surface.finished.connect(finished_event_callback)
+        if on_finished_event is not None:
+            surface.finished.connect(on_finished_event)
 
-        if surface.structured_progress is not None:
-            surface.structured_progress.connect(progress_event_callback)
+        surface.cancelled.connect(cancelled_event_callback)
+        if on_cancelled_event is not None:
+            surface.cancelled.connect(on_cancelled_event)
 
-        adapter = legacy_progress_adapter or self._legacy_adapter.coerce_legacy_progress
+        surface.progress.connect(progress_event_callback)
+
         if on_progress is not None:
-            progress_state = {'suppress_legacy': False, 'last_structured': None}
-
-            def _forward_structured(event) -> None:
-                payload = adapter(event)
-                progress_state['suppress_legacy'] = True
-                progress_state['last_structured'] = payload
-                on_progress(payload)
-
-            def _forward_legacy(payload) -> None:
-                if progress_state['suppress_legacy'] and self._legacy_matches_structured(payload, progress_state['last_structured']):
-                    progress_state['suppress_legacy'] = False
-                    progress_state['last_structured'] = None
-                    return
-                progress_state['suppress_legacy'] = False
-                progress_state['last_structured'] = None
-                on_progress(payload)
-
-            if surface.structured_progress is not None:
-                surface.structured_progress.connect(_forward_structured)
-            if surface.legacy_progress is not None:
-                surface.legacy_progress.connect(_forward_legacy)
+            surface.progress.connect(lambda event: on_progress(self._coerce_progress_payload(event)))
 
         if on_started is not None:
             worker.started.connect(on_started)
         if on_finished is not None:
-            if surface.structured_finished is not None:
-                surface.structured_finished.connect(lambda event: on_finished(getattr(event, 'payload', event)))
-            elif surface.legacy_finished is not None:
-                surface.legacy_finished.connect(on_finished)
+            surface.finished.connect(lambda event: on_finished(getattr(event, 'payload', event)))
         if on_failed is not None:
-            if surface.structured_failed is not None:
-                surface.structured_failed.connect(lambda event: on_failed(getattr(event, 'message', str(event))))
-            elif surface.legacy_failed is not None:
-                surface.legacy_failed.connect(on_failed)
+            surface.failed.connect(lambda event: on_failed(getattr(event, 'message', str(event))))
         if on_cancelled is not None:
-            if surface.structured_cancelled is not None:
-                surface.structured_cancelled.connect(lambda _event: on_cancelled())
-            elif surface.legacy_cancelled is not None:
-                surface.legacy_cancelled.connect(on_cancelled)
+            surface.cancelled.connect(lambda _event: on_cancelled())
         if hasattr(worker, 'state_changed'):
             worker.state_changed.connect(state_changed_callback)
 
@@ -221,20 +193,9 @@ class WorkerBindingService:
             terminal_state['quit_requested'] = True
             thread.quit()
 
-        if surface.structured_finished is not None:
-            surface.structured_finished.connect(lambda _event: _quit_thread_once())
-        elif surface.legacy_finished is not None:
-            surface.legacy_finished.connect(lambda _payload: _quit_thread_once())
-
-        if surface.structured_failed is not None:
-            surface.structured_failed.connect(lambda _event: _quit_thread_once())
-        elif surface.legacy_failed is not None:
-            surface.legacy_failed.connect(lambda _message: _quit_thread_once())
-
-        if surface.structured_cancelled is not None:
-            surface.structured_cancelled.connect(lambda _event: _quit_thread_once())
-        elif surface.legacy_cancelled is not None:
-            surface.legacy_cancelled.connect(lambda: _quit_thread_once())
+        surface.finished.connect(lambda _event: _quit_thread_once())
+        surface.failed.connect(lambda _event: _quit_thread_once())
+        surface.cancelled.connect(lambda _event: _quit_thread_once())
 
         def _safe_cleanup() -> None:
             """Run cleanup defensively when the worker thread finishes.
@@ -250,13 +211,3 @@ class WorkerBindingService:
         thread.finished.connect(worker.deleteLater)
         thread.finished.connect(thread.deleteLater)
         thread.finished.connect(_safe_cleanup)
-
-    @staticmethod
-    def _legacy_matches_structured(legacy_payload, structured_payload) -> bool:
-        """Return whether a legacy progress payload mirrors the preceding structured payload."""
-        if legacy_payload is structured_payload:
-            return True
-        try:
-            return bool(legacy_payload == structured_payload)
-        except (TypeError, ValueError):
-            return False

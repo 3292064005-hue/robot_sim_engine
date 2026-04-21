@@ -13,7 +13,7 @@ def test_plugin_loader_merges_manifest_chain_and_detects_duplicates(tmp_path):
         'plugins:\n'
         '  - id: demo_solver\n'
         '    kind: solver\n'
-        '    factory: robot_sim.plugins.research_demo_solver:build_plugin\n'
+        '    factory: robot_sim.plugins.research_dls_solver_plugin:build_plugin\n'
         '    enabled_profiles: [research]\n',
         encoding='utf-8',
     )
@@ -27,7 +27,7 @@ def test_plugin_loader_merges_manifest_chain_and_detects_duplicates(tmp_path):
         'plugins:\n'
         '  - id: demo_solver\n'
         '    kind: solver\n'
-        '    factory: robot_sim.plugins.research_demo_solver:build_plugin\n',
+        '    factory: robot_sim.plugins.research_dls_solver_plugin:build_plugin\n',
         encoding='utf-8',
     )
     duplicate_loader = PluginLoader((base_manifest, profile_manifest, duplicate_manifest), policy=RuntimeFeaturePolicy(active_profile='research', plugin_discovery_enabled=True))

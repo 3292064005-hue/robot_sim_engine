@@ -137,7 +137,7 @@ def iter_exception_catch_sites(project_root: str | Path | None = None) -> tuple[
         tree = ast.parse(path.read_text(encoding='utf-8'))
         visitor = _ExceptionCatchVisitor()
         visitor.visit(tree)
-        rel_path = str(path.relative_to(root))
+        rel_path = path.relative_to(root).as_posix()
         for site in visitor.sites:
             sites.append(
                 ExceptionCatchSite(

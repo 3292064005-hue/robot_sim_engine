@@ -22,7 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover
 class RobotSpec:
     """Canonical robot specification used by the runtime.
 
-    ``dh_rows`` remains the persisted compatibility payload, but runtime execution now resolves
+    ``dh_rows`` remains the persisted serial-projection payload, but runtime execution now resolves
     through an explicit runtime model projection first when a canonical model is present. This keeps
     importers, persistence, diagnostics, and planning-scene generation anchored to one structured
     source of truth while the current solver surface still consumes a serial DH-like adapter chain.
@@ -166,15 +166,6 @@ class RobotSpec:
         return self.runtime_model.execution_rows
 
     @property
-    def runtime_dh_rows(self) -> tuple[DHRow, ...]:
-        """Compatibility alias for older callers that still expect ``runtime_dh_rows``.
-
-        New runtime code should consume :attr:`execution_rows` directly so execution
-        semantics are not described in terms of the legacy DH adapter payload.
-        """
-        return self.execution_rows
-
-    @property
     def label(self) -> str:
         return self.display_name or self.name
 
@@ -209,7 +200,7 @@ class RobotSpec:
 
         Returns:
             dict[str, object]: Stable execution metadata consumed by runtime asset builders,
-                diagnostics, persistence, and compatibility surfaces.
+                diagnostics, persistence, and export-facing summaries.
 
         Boundary behavior:
             Older specs that predate explicit execution metadata still resolve a consistent
@@ -226,10 +217,14 @@ class RobotSpec:
         runtime_model = self.runtime_model
         summary.setdefault('execution_adapter', runtime_model.execution_adapter)
         summary.setdefault('execution_surface', runtime_model.source_surface)
+        summary.setdefault('primary_execution_surface', 'articulated_model')
         summary['execution_row_count'] = int(runtime_model.dof)
         summary['runtime_semantic_family'] = runtime_model.semantic_family
         summary['runtime_source_format'] = runtime_model.source_format
         summary['runtime_fidelity'] = runtime_model.fidelity
+        summary['execution_contract_version'] = str(runtime_model.summary().get('execution_contract_version', 'v2'))
+        summary['execution_layers'] = dict(runtime_model.execution_layers)
+        summary['articulated_topology'] = dict(self.articulated_model.topology_summary)
         return summary
 
     @property

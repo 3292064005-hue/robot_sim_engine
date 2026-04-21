@@ -108,11 +108,11 @@ class ThreadOrchestrator(ThreadOrchestratorStateMixin, QObject):  # pragma: no c
         """Start a worker under the configured orchestration policy.
 
         Args:
-            worker: Worker instance exposing the legacy/structured signal set.
+            worker: Worker instance exposing the canonical structured lifecycle signals.
             on_progress: Optional external progress callback.
-            on_finished: Optional external finished callback receiving the legacy payload surface.
-            on_failed: Optional external failure callback receiving the legacy message surface.
-            on_cancelled: Optional external cancellation callback receiving the legacy no-arg surface.
+            on_finished: Optional external finished callback receiving ``event.payload``.
+            on_failed: Optional external failure callback receiving ``event.message``.
+            on_cancelled: Optional external cancellation callback projected from the structured cancellation event.
             on_finished_event: Optional external structured success callback.
             on_failed_event: Optional external structured failure callback.
             on_cancelled_event: Optional external structured cancellation callback.
@@ -235,9 +235,6 @@ class ThreadOrchestrator(ThreadOrchestratorStateMixin, QObject):  # pragma: no c
             failed_event_callback=_guard_event(self._handle_failed_event),
             finished_event_callback=_guard_event(self._handle_finished_event),
             cancelled_event_callback=_guard_event(self._handle_cancelled_event),
-            failed_callback=_guard_simple(self._handle_failed),
-            finished_callback=_guard_simple(self._handle_finished),
-            cancelled_callback=_guard_simple(self._handle_cancelled),
             queued_callback=_guard_simple(lambda: self._set_state(TaskState.RUNNING, message='running')),
             cleanup_callback=lambda bound_thread=thread, bound_task_id=task.task_id: self._cleanup(
                 expected_thread=bound_thread,

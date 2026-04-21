@@ -12,7 +12,7 @@ def test_plugin_loader_gates_required_host_capabilities(tmp_path: Path) -> None:
         'plugins:\n'
         '  - id: gated_solver\n'
         '    kind: solver\n'
-        '    factory: robot_sim.plugins.research_demo_solver:build_plugin\n'
+        '    factory: robot_sim.plugins.research_dls_solver_plugin:build_plugin\n'
         '    source: shipped_plugin\n'
         '    enabled_profiles: [research]\n'
         '    required_host_capabilities: [profile:research, experimental_modules]\n',

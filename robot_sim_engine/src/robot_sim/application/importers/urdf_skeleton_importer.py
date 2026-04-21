@@ -18,8 +18,8 @@ class URDFSkeletonRobotImporter:
     """Approximate URDF importer.
 
     This importer intentionally extracts a DH-like serial skeleton from URDF
-    joint origins. It is a bounded-fidelity fallback kept for compatibility when
-    callers explicitly request the legacy skeleton-only semantics.
+    joint origins. It is a bounded-fidelity approximate importer for demos and
+    constrained serial benchmarking, not a full URDF tree importer.
     """
 
     importer_id = 'urdf_skeleton'
@@ -155,6 +155,3 @@ class URDFSkeletonRobotImporter:
             metadata={'source_format': 'urdf', 'import_semantics': 'skeleton'},
             source_model_summary=source_model_summary,
         )
-
-
-URDFRobotImporter = URDFSkeletonRobotImporter
