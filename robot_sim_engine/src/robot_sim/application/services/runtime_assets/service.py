@@ -56,9 +56,38 @@ class RobotRuntimeAssetService:
         *,
         robot_geometry: RobotGeometry | None = None,
         collision_geometry: RobotGeometry | None = None,
+        scene_materialization_revision_key: str | None = None,
     ) -> RobotRuntimeAssets:
-        """Derive runtime geometry and planning-scene state for one robot specification."""
-        cache_key = self._cache_key(spec, robot_geometry=robot_geometry, collision_geometry=collision_geometry)
+        """Derive runtime geometry and planning-scene materialization assets.
+
+        Args:
+            spec: Robot specification used to derive kinematics and baseline geometry.
+            robot_geometry: Optional visual/runtime geometry override.
+            collision_geometry: Optional collision-geometry override.
+            scene_materialization_revision_key: Optional session scene materialization revision.
+                When a caller/session scene is being planned, validated, or exported, this key is
+                included in the runtime cache key so materialized diagnostics cannot be reused
+                across incompatible scene revisions. Omit it for legacy baseline-only requests.
+
+        Returns:
+            RobotRuntimeAssets: Runtime geometry, baseline planning scene, and materialization
+            summary tagged with the scene materialization cache partition.
+
+        Raises:
+            ValueError: Propagated from geometry projection or planning-scene construction.
+
+        Boundary behavior:
+            The cached assets still represent baseline runtime materialization. Session scene truth
+            is resolved by ``SceneSessionAuthority`` at the application boundary; the revision key
+            partitions materialization/cache diagnostics without silently replacing caller scenes.
+        """
+        normalized_scene_revision_key = str(scene_materialization_revision_key or 'baseline_spec_scene:rev:0')
+        cache_key = self._cache_key(
+            spec,
+            robot_geometry=robot_geometry,
+            collision_geometry=collision_geometry,
+            scene_materialization_revision_key=normalized_scene_revision_key,
+        )
         cached = self._cache_store.get(cache_key)
         if cached is not None:
             return cached.assets
@@ -86,6 +115,8 @@ class RobotRuntimeAssetService:
                 'runtime_model_summary': dict(kinematic_surface.runtime_model_summary),
                 'articulated_model_summary': dict(kinematic_surface.articulated_model_summary),
                 'execution_summary': dict(kinematic_surface.execution_summary),
+                'scene_materialization_revision_key': normalized_scene_revision_key,
+                'runtime_cache_key': cache_key,
             },
         )
         self._cache_store.put(cache_key, assets)
@@ -156,6 +187,7 @@ class RobotRuntimeAssetService:
         *,
         robot_geometry: RobotGeometry | None,
         collision_geometry: RobotGeometry | None,
+        scene_materialization_revision_key: str,
     ) -> str:
         payload = {
             'spec_name': spec.name,
@@ -179,6 +211,7 @@ class RobotRuntimeAssetService:
             'source_model_summary': dict(spec.source_model_summary or {}),
             'robot_geometry_override': serialize_robot_geometry(robot_geometry),
             'collision_geometry_override': serialize_robot_geometry(collision_geometry),
+            'scene_materialization_revision_key': str(scene_materialization_revision_key or 'baseline_spec_scene:rev:0'),
         }
         digest = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest()
         return f"{spec.name}:{digest}"

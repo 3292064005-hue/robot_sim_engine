@@ -246,6 +246,52 @@ class ExportService:
                 scene_fidelity=planning_scene_summary.get('scene_fidelity', getattr(state.planning_scene, 'geometry_source', 'generated')),
             )
         validation_surface_summary = {} if planning_scene_summary is None else dict(planning_scene_summary.get('validation_surface', {}) or {})
+        trajectory_validation_caps = (
+            {}
+            if state.trajectory is None
+            else dict(state.trajectory.metadata.get('validation_capabilities', {}) or {})
+        )
+        trajectory_collision_summary = (
+            {}
+            if state.trajectory is None
+            else dict(state.trajectory.typed_feasibility.collision_summary or {})
+        )
+        collision_broad_phase_executed = bool(
+            trajectory_validation_caps.get('collision_broad_phase', False) or trajectory_collision_summary
+        )
+        scene_validation_precision = str(
+            trajectory_validation_caps.get(
+                'scene_validation_precision',
+                validation_surface_summary.get('scene_validation_precision', ''),
+            )
+            or ''
+        )
+        validation_capabilities = {
+            'layers': list(trajectory_validation_caps.get('layers', ()) or ()),
+            'joint_limits': bool(trajectory_validation_caps.get('joint_limits', False)),
+            'goal_validation': bool(trajectory_validation_caps.get('goal_validation', trajectory_validation_caps.get('goal_metrics', False))),
+            'goal_metrics': bool(trajectory_validation_caps.get('goal_metrics', trajectory_validation_caps.get('goal_validation', False))),
+            'timing_validation': bool(trajectory_validation_caps.get('timing_validation', trajectory_validation_caps.get('timing', False))),
+            'timing': bool(trajectory_validation_caps.get('timing', trajectory_validation_caps.get('timing_validation', False))),
+            'path_metrics': bool(trajectory_validation_caps.get('path_metrics', False)),
+            'collision_broad_phase': collision_broad_phase_executed,
+            'collision_backend': None if planning_scene_summary is None else str(planning_scene_summary.get('collision_backend', 'aabb')),
+            'collision_precision': scene_validation_precision or 'none',
+            'continuous_collision': False,
+            'mesh_collision': False,
+            'attached_object_validation': bool(collision_broad_phase_executed and planning_scene_summary is not None and planning_scene_summary.get('attached_object_count', 0)),
+            'allowed_collision_matrix': bool(collision_broad_phase_executed and planning_scene_summary is not None and planning_scene_summary.get('collision_filter_pair_count', 0)),
+            'scene_validation_mode': str(
+                trajectory_validation_caps.get(
+                    'scene_validation_mode',
+                    validation_surface_summary.get('scene_validation_mode', 'none' if not collision_broad_phase_executed else 'broad_phase'),
+                )
+                or 'none'
+            ),
+            'scene_validation_precision': scene_validation_precision or 'none',
+            'scene_validation_effective': collision_broad_phase_executed,
+            'warning': '' if collision_broad_phase_executed else 'collision_validation_not_executed_or_not_recorded',
+        }
         scene_fidelity_summary = {
             'collision_backend': None if planning_scene_summary is None else str(planning_collision_summary.get('collision_backend', planning_scene_summary.get('collision_backend', 'aabb'))),
             'collision_level': None if planning_scene_summary is None else str(planning_collision_summary.get('collision_level', planning_scene_summary.get('collision_level', 'aabb'))),
@@ -263,6 +309,7 @@ class ExportService:
             'scene_validation_precision': None if planning_scene_summary is None else str(validation_surface_summary.get('scene_validation_precision', '')),
             'scene_geometry_contract': None if planning_scene_summary is None else str(planning_scene_summary.get('scene_geometry_contract') or dict(imported_package_summary.get('geometry_model', {}) if imported_package_summary else {}).get('geometry_contract', '')),
             'stable_surface_version': None if planning_scene_summary is None else str(planning_scene_summary.get('stable_surface_version', '')),
+            'validation_capabilities': validation_capabilities,
         }
         capability_schema = build_runtime_capability_schema(
             execution_summary=None if state.robot_spec is None else dict(state.robot_spec.execution_summary or {}),
@@ -374,6 +421,7 @@ class ExportService:
             'render_runtime_advice': runtime_advice,
             'capability_matrix': dict(getattr(state, 'capability_matrix', {}) or {}),
             'capability_schema': capability_schema,
+            'validation_capabilities': validation_capabilities,
             'module_statuses': dict(getattr(state, 'module_statuses', {}) or {}),
             'render_telemetry': render_telemetry_payload,
         }

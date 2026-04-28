@@ -54,7 +54,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.model.benchmark_report import BenchmarkReport
     from robot_sim.model.robot_spec import RobotSpec
     from robot_sim.model.trajectory import JointTrajectory
-    from robot_sim.presentation.controllers.robot_controller import RobotController
     from robot_sim.presentation.facades import RuntimeFacade
     from robot_sim.presentation.state_store import StateStore
 

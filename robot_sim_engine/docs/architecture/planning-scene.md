@@ -57,3 +57,25 @@ last_reviewed: 2026-04-20
   - `degradation_policy`
   - `capability_contract_version`
 - 这使 UI/diagnostics/export 可以区分“当前稳定承诺”和“未来 promotion 目标”，避免把 capsule / mesh 等能力伪装成已经稳定闭环。
+
+## Scene truth and runtime materialization boundary
+
+The planning scene has three distinct roles:
+
+| Layer | Responsibility |
+| --- | --- |
+| `BaselinePlanningScene` | Robot-spec and geometry-derived default scene. |
+| `SessionPlanningScene` | Caller or GUI session truth used by plan, validate, and export-session. |
+| `MaterializedPlanningScene` | Runtime projection used by collision/render backends and capability summaries. |
+
+Application façade behavior:
+
+- `SceneSessionAuthority` is the explicit resolver for session scene truth versus runtime materialization.
+- Explicit caller/session scenes always win and are labeled `caller_scene`.
+- Rebuilt runtime-asset scenes are fallback materializations and are labeled `runtime_default_scene`.
+- Each resolved boundary emits `scene_truth_layer`, `materialization_source`, and `scene_materialization_revision_key` so exports and tests can prove which scene was consumed.
+- `RobotRuntimeAssetService.build_assets()` accepts `scene_materialization_revision_key` and includes it in the runtime asset cache key. The key is content-addressed: `SceneSessionAuthority.revision_key()` hashes replay-relevant scene content, including obstacles, attached objects, allowed collision pairs, backend, geometry source, and revision. This partitions materialization diagnostics by caller/session scene content while keeping session scene truth owned by `SceneSessionAuthority`.
+- Runtime asset cache invalidation does not itself persist scene edits or make edited obstacles canonical.
+- Export-session serializes the session planning-scene truth; materialization metadata remains diagnostic context.
+
+This boundary keeps GUI scene edits, headless scene payloads, validation, and export-session replay aligned without deleting the baseline-scene fallback used by legacy no-scene requests.

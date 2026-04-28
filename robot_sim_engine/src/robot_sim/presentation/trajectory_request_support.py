@@ -91,6 +91,7 @@ def build_motion_trajectory_request(
     common_kwargs = {
         'spec': state.robot_spec,
         'planning_scene': state.planning_scene,
+        'planning_scene_source': 'caller_scene' if state.planning_scene is not None else '',
         'validation_layers': resolved_validation_layers,
         'planner_id': None if planner_id in (None, '') else str(planner_id),
         'pipeline_id': str(default_pipeline_id or 'default') if pipeline_id in (None, '') else str(pipeline_id),

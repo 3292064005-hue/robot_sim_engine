@@ -247,6 +247,7 @@ def _run_urdf_skeleton_obstacle_case(repo_root: Path) -> BenchmarkRuntimeCaseRes
             validation_layers=('timing', 'limits', 'collision', 'goal_metrics', 'path_metrics'),
             pipeline_id=None,
             execution_graph=execution_graph,
+            planning_scene=scene,
         )
         validation = workflow.validate_trajectory(
             spec,
@@ -254,6 +255,7 @@ def _run_urdf_skeleton_obstacle_case(repo_root: Path) -> BenchmarkRuntimeCaseRes
             target_pose=None,
             q_goal=np.asarray(spec.q_mid(), dtype=float),
             validation_layers=('timing', 'limits', 'collision', 'goal_metrics', 'path_metrics'),
+            planning_scene=scene,
         )
         if not validation.feasible:
             raise RuntimeError(f'urdf_skeleton runtime case produced infeasible trajectory: {validation.reasons!r}')
@@ -262,9 +264,8 @@ def _run_urdf_skeleton_obstacle_case(repo_root: Path) -> BenchmarkRuntimeCaseRes
             q_current=np.asarray(spec.home_q, dtype=float),
             trajectory=trajectory,
             benchmark_report=benchmark_report,
+            planning_scene=scene,
         )
-        session_state.planning_scene = scene
-        session_state.scene_summary = scene.summary()
         session_path = _save_session_snapshot(container, name='urdf_skeleton_single_box_session.json', state=session_state)
         return BenchmarkRuntimeCaseResult(
             case_id='runtime_case:urdf_skeleton.obstacle_single_box.ik_planar_default_suite.snapshot_capture',
@@ -314,6 +315,7 @@ def _run_urdf_model_dense_trajectory_case(repo_root: Path) -> BenchmarkRuntimeCa
             validation_layers=('timing', 'limits', 'collision', 'goal_metrics', 'path_metrics'),
             pipeline_id=None,
             execution_graph=execution_graph,
+            planning_scene=scene,
         )
         validation = workflow.validate_trajectory(
             spec,
@@ -321,6 +323,7 @@ def _run_urdf_model_dense_trajectory_case(repo_root: Path) -> BenchmarkRuntimeCa
             target_pose=None,
             q_goal=q_goal,
             validation_layers=('timing', 'limits', 'collision', 'goal_metrics', 'path_metrics'),
+            planning_scene=scene,
         )
         if not validation.feasible:
             raise RuntimeError(f'urdf_model runtime case produced infeasible trajectory: {validation.reasons!r}')
@@ -328,9 +331,8 @@ def _run_urdf_model_dense_trajectory_case(repo_root: Path) -> BenchmarkRuntimeCa
             spec,
             q_current=q_goal,
             trajectory=trajectory,
+            planning_scene=scene,
         )
-        session_state.planning_scene = scene
-        session_state.scene_summary = scene.summary()
         session_path = _save_session_snapshot(container, name='urdf_model_dense_session.json', state=session_state)
         bootstrap_bundle = container.bootstrap_bundle
         bundle_path = bootstrap_bundle.workflow_facade.export_package(

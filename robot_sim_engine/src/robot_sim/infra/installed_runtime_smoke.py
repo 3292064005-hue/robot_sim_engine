@@ -4,8 +4,9 @@ from pathlib import Path
 import tempfile
 
 from robot_sim.app.bootstrap import bootstrap
-from robot_sim.presentation.controllers.robot_controller import RobotController
+from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
 from robot_sim.presentation.state_store import StateStore
+from robot_sim.presentation.workflow_services import RobotWorkflowService
 
 
 _SAMPLE_YAML = """\
@@ -35,18 +36,26 @@ def run_installed_runtime_smoke() -> dict[str, str]:
 
     Boundary behavior:
         The smoke test intentionally uses the public bootstrap/container surface plus the
-        presentation-level ``RobotController`` to verify the same installed-wheel write path
-        used by the stable import/save workflow. Temporary source files are cleaned up by the
-        surrounding temporary directory context manager.
+        canonical ``RobotWorkflowService`` to verify the same installed-wheel write path used by
+        the stable import/save workflow. Temporary source files are cleaned up by the surrounding
+        temporary directory context manager.
     """
     context = bootstrap(startup_mode='headless')
     project_root = context.project_root
     container = context.container
     bootstrap_bundle = container.bootstrap_bundle
-    controller = RobotController(
-        StateStore(),
-        bootstrap_bundle.registries.robot_registry,
+    state_store = StateStore()
+    runtime_projection = RuntimeProjectionService(
+        state_store,
         bootstrap_bundle.workflows.fk_uc,
+        runtime_asset_service=bootstrap_bundle.services.runtime_asset_service,
+    )
+    robot_workflow = RobotWorkflowService(
+        registry=bootstrap_bundle.registries.robot_registry,
+        fk_uc=bootstrap_bundle.workflows.fk_uc,
+        state_store=state_store,
+        runtime_projection_service=runtime_projection,
+        importer_registry=bootstrap_bundle.registries.importer_registry,
         import_robot_uc=bootstrap_bundle.workflows.import_robot_uc,
         application_workflow=bootstrap_bundle.workflow_facade,
     )
@@ -62,8 +71,8 @@ def run_installed_runtime_smoke() -> dict[str, str]:
     with tempfile.TemporaryDirectory(prefix='robot-smoke-') as tmpdir:
         source_path = Path(tmpdir) / 'smoke_robot.yaml'
         source_path.write_text(_SAMPLE_YAML, encoding='utf-8')
-        result = controller.import_robot(str(source_path), importer_id='yaml')
-        saved_copy = controller.save_current_robot(name='smoke_saved_robot')
+        result = robot_workflow.import_robot(str(source_path), importer_id='yaml')
+        saved_copy = robot_workflow.save_current_robot(name='smoke_saved_robot')
 
     imported_path = result.persisted_path.resolve()
     saved_copy = Path(saved_copy).resolve()

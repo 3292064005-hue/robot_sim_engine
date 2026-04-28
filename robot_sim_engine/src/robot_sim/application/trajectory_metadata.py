@@ -51,7 +51,7 @@ def resolve_planner_metadata(metadata: dict[str, object] | None = None) -> dict[
     return resolved
 
 
-def build_planner_metadata(*, planner_id: str, goal_source: str, cache_status: object = 'none', mode: str | None = None, metadata: dict[str, object] | None = None, scene_revision: int | None = None, validation_stage: str | None = None, correlation_id: str | None = None, has_complete_fk: bool = False, has_partial_fk: bool = False) -> dict[str, object]:
+def build_planner_metadata(*, planner_id: str, goal_source: str, cache_status: object = 'none', mode: str | None = None, metadata: dict[str, object] | None = None, scene_revision: int | None = None, validation_stage: str | None = None, correlation_id: str | None = None, planning_scene_source: str | None = None, has_complete_fk: bool = False, has_partial_fk: bool = False) -> dict[str, object]:
     payload = dict(metadata or {})
     canonical_planner_id = str(planner_id)
     canonical_goal_source = str(goal_source)
@@ -71,4 +71,6 @@ def build_planner_metadata(*, planner_id: str, goal_source: str, cache_status: o
         payload['scene_revision'] = int(scene_revision)
     if validation_stage is not None and str(validation_stage):
         payload['validation_stage'] = str(validation_stage)
+    if planning_scene_source is not None and str(planning_scene_source):
+        payload['planning_scene_source'] = str(planning_scene_source)
     return payload

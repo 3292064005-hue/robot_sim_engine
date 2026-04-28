@@ -76,6 +76,59 @@ class ValidateTrajectoryUseCase:
             raise ValueError(f'{name} must be {ndim}D')
         return array
 
+    @staticmethod
+    def _validation_capabilities(active_layers: tuple[str, ...], planning_scene) -> dict[str, object]:
+        """Project validation-layer capability flags into diagnostics/export metadata.
+
+        Args:
+            active_layers: Normalized validation-layer ids selected for this request.
+            planning_scene: Optional planning scene consumed by collision validation.
+
+        Returns:
+            dict[str, object]: Stable capability summary for GUI/headless/export consumers.
+
+        Raises:
+            None: The projection only reads already-validated layer and scene metadata.
+
+        Boundary behavior:
+            The flags are descriptive and do not promote unsupported mesh or continuous
+            collision validation to stable support. Fast paths that omit collision validation
+            are explicitly marked through ``warning``.
+        """
+        layer_set = set(active_layers)
+        scene_summary = planning_scene.summary() if hasattr(planning_scene, 'summary') else {}
+        collision_fidelity = dict(scene_summary.get('collision_fidelity', {}) or {})
+        validation_surface = dict(scene_summary.get('validation_surface', {}) or {})
+        collision_enabled = 'collision' in layer_set and planning_scene is not None
+        scene_mode = str(validation_surface.get('scene_validation_mode', 'broad_phase' if collision_enabled else 'none') or 'none')
+        scene_precision = str(
+            validation_surface.get(
+                'scene_validation_precision',
+                collision_fidelity.get('precision', 'none') if collision_fidelity else 'none',
+            )
+            or 'none'
+        )
+        return {
+            'layers': list(active_layers),
+            'joint_limits': 'limits' in layer_set,
+            'goal_validation': 'goal_metrics' in layer_set,
+            'goal_metrics': 'goal_metrics' in layer_set,
+            'timing_validation': 'timing' in layer_set,
+            'timing': 'timing' in layer_set,
+            'path_metrics': 'path_metrics' in layer_set,
+            'collision_broad_phase': bool(collision_enabled),
+            'collision_backend': str(getattr(planning_scene, 'collision_backend', 'none') if planning_scene is not None else 'none'),
+            'collision_precision': scene_precision,
+            'continuous_collision': False,
+            'mesh_collision': False,
+            'attached_object_validation': bool(collision_enabled and getattr(planning_scene, 'attached_object_ids', ())),
+            'allowed_collision_matrix': bool(collision_enabled and getattr(planning_scene, 'allowed_collision_pairs', ())),
+            'scene_validation_mode': scene_mode,
+            'scene_validation_precision': scene_precision,
+            'scene_validation_effective': bool(collision_enabled),
+            'warning': '' if collision_enabled else 'collision_validation_not_executed',
+        }
+
     def execute(
         self,
         trajectory: JointTrajectory,
@@ -84,6 +137,7 @@ class ValidateTrajectoryUseCase:
         spec=None,
         q_goal=None,
         planning_scene=None,
+        planning_scene_source: str | None = None,
         validation_layers: tuple[str, ...] | list[str] | None = None,
     ) -> TrajectoryDiagnosticsReport:
         """Validate a trajectory and return diagnostics.
@@ -94,6 +148,7 @@ class ValidateTrajectoryUseCase:
             spec: Optional robot specification used for FK fallback.
             q_goal: Optional goal joint vector used to recover target pose.
             planning_scene: Optional planning scene used for collision checks.
+            planning_scene_source: Stable caller/runtime source label projected into diagnostics.
 
         Returns:
             Structured trajectory diagnostics report.
@@ -198,7 +253,7 @@ class ValidateTrajectoryUseCase:
             scene_authority=str(collision_summary.get('scene_authority', getattr(planning_scene, 'scene_authority', 'none') if planning_scene is not None else 'none')),
             scene_geometry_contract=str(collision_summary.get('scene_geometry_contract', getattr(getattr(planning_scene, 'geometry_authority', None), 'scene_geometry_contract', 'none') if planning_scene is not None else 'none')),
             attached_object_count=int(getattr(planning_scene, 'attached_object_ids', ()) and len(getattr(planning_scene, 'attached_object_ids', ())) or 0) if planning_scene is not None else 0,
-            source=str(collision_summary.get('scene_source', 'planning_scene' if planning_scene is not None else 'none')),
+            source=str(collision_summary.get('scene_source', planning_scene_source or ('planning_scene' if planning_scene is not None else 'none'))),
         ) if collision_summary else {
             'scene_source': 'none',
             'scene_validation_effective': False,
@@ -226,6 +281,8 @@ class ValidateTrajectoryUseCase:
             'validation_layers': list(active_layers),
             'cache_reuse_policy': 'retime_preserves_geometry',
             'scene_validation_summary': dict(scene_validation_summary),
+            'planning_scene_source': str(planning_scene_source or ('planning_scene' if planning_scene is not None else 'none')),
+            'validation_capabilities': self._validation_capabilities(active_layers, planning_scene),
         }
         if planning_scene is not None:
             metadata['scene_revision'] = int(getattr(planning_scene, 'revision', 0))

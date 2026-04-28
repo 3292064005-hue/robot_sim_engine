@@ -92,6 +92,7 @@ class ValidateTrajectoryStage:
             spec=req.spec,
             q_goal=req.q_goal,
             planning_scene=req.planning_scene,
+            planning_scene_source=req.planning_scene_source,
             validation_layers=validation_layers,
         )
 

@@ -1,0 +1,14 @@
+robot: planar_2dof
+mode: joint_space
+q_start: [0.0, 0.0]
+q_goal: [0.4, -0.3]
+duration: 2.0
+dt: 0.05
+planning_scene:
+  version: v1
+  obstacles:
+    - object_id: demo_box
+      shape: box
+      center: [0.45, 0.0, 0.0]
+      size: [0.12, 0.12, 0.12]
+      replace_existing: true

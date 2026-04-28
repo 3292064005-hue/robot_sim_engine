@@ -54,7 +54,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.model.benchmark_report import BenchmarkReport
     from robot_sim.model.robot_spec import RobotSpec
     from robot_sim.model.trajectory import JointTrajectory
-    from robot_sim.presentation.controllers.robot_controller import RobotController
     from robot_sim.presentation.facades import RuntimeFacade
     from robot_sim.presentation.state_store import StateStore
 
@@ -262,7 +261,23 @@ class MotionWorkflowService(MotionWorkflowContract):
         """Execute trajectory planning and project playback/cache state."""
         request = self.build_trajectory_request(**kwargs)
         workflow = self._application_workflow_or_raise()
-        result = workflow.plan_trajectory(request.spec, q_start=request.q_start, q_goal=request.q_goal, duration=request.duration, dt=request.dt, mode=request.mode, target_pose=request.target_pose, ik_config=request.ik_config, planner_id=request.planner_id, max_velocity=request.max_velocity, max_acceleration=request.max_acceleration, validation_layers=request.validation_layers, pipeline_id=request.pipeline_id, execution_graph=request.execution_graph)
+        result = workflow.plan_trajectory(
+            request.spec,
+            q_start=request.q_start,
+            q_goal=request.q_goal,
+            duration=request.duration,
+            dt=request.dt,
+            mode=request.mode,
+            target_pose=request.target_pose,
+            ik_config=request.ik_config,
+            planner_id=request.planner_id,
+            max_velocity=request.max_velocity,
+            max_acceleration=request.max_acceleration,
+            validation_layers=request.validation_layers,
+            pipeline_id=request.pipeline_id,
+            execution_graph=request.execution_graph,
+            planning_scene=request.planning_scene,
+        )
         self.apply_trajectory(result)
         return result
 

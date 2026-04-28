@@ -10,6 +10,8 @@ from robot_sim.model.robot_spec import RobotSpec
 from robot_sim.model.session_state import SessionState
 from robot_sim.model.trajectory import JointTrajectory
 from robot_sim.model.benchmark_report import BenchmarkReport
+from robot_sim.application.services.scene_session_authority import SceneSessionAuthority
+from robot_sim.core.collision.scene import PlanningScene
 
 from .import_resolution import ResolvedImportBundle
 
@@ -26,21 +28,59 @@ def build_session_state(
     benchmark_report: BenchmarkReport | None = None,
     robot_geometry: RobotGeometry | None = None,
     collision_geometry: RobotGeometry | None = None,
+    planning_scene=None,
 ) -> SessionState:
-    """Construct one canonical session snapshot from runtime/application inputs."""
+    """Construct one canonical session snapshot from runtime/application inputs.
+
+    Args:
+        owner: Application façade providing FK and runtime asset materialization.
+        spec: Robot specification used for FK and baseline materialization.
+        q_current: Current joint vector.
+        trajectory: Optional active trajectory snapshot.
+        benchmark_report: Optional benchmark result snapshot.
+        robot_geometry: Optional visual/runtime geometry projection.
+        collision_geometry: Optional collision geometry projection.
+        planning_scene: Optional caller/session scene truth. When supplied it is exported as
+            the session planning scene instead of a rebuilt runtime baseline.
+
+    Returns:
+        SessionState: Canonical session state for export/session persistence.
+
+    Raises:
+        ValueError: Propagated from FK/runtime projection when numeric inputs are invalid.
+
+    Boundary behavior:
+        Runtime assets remain materialization inputs for geometry fields. They no longer override
+        an explicit caller scene, which preserves GUI/headless scene edits during export-session.
+    """
     q_vector = np.asarray(q_current, dtype=float).copy()
     fk_result = owner.run_fk(spec, q_vector)
+    if planning_scene is not None and not isinstance(planning_scene, PlanningScene):
+        raise ValueError('planning_scene must be a PlanningScene instance or None')
+    scene_materialization_revision_key = (
+        SceneSessionAuthority.revision_key(planning_scene, source='caller_scene')
+        if planning_scene is not None
+        else None
+    )
     assets = owner.runtime_asset_service.build_assets(
         spec,
         robot_geometry=robot_geometry,
         collision_geometry=collision_geometry,
+        scene_materialization_revision_key=scene_materialization_revision_key,
     )
+    scene_resolution = SceneSessionAuthority.resolve(
+        planning_scene=planning_scene,
+        fallback_scene=assets.planning_scene,
+    )
+    resolved_scene = scene_resolution.scene
+    scene_summary = dict(resolved_scene.summary()) if hasattr(resolved_scene, 'summary') else dict(assets.scene_summary)
+    scene_summary.update(scene_resolution.summary_patch())
     state = SessionState(
         robot_spec=spec,
         q_current=q_vector,
         fk_result=fk_result,
-        planning_scene=assets.planning_scene,
-        scene_summary=dict(assets.scene_summary),
+        planning_scene=resolved_scene,
+        scene_summary=scene_summary,
         robot_geometry=assets.robot_geometry,
         collision_geometry=assets.collision_geometry,
     )

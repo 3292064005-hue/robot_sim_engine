@@ -1,0 +1,14 @@
+robot: planar_2dof
+q_goal: [0.4, -0.3]
+validation_layers: [timing, limits, goal_metrics, collision]
+trajectory:
+  t: [0.0, 1.0]
+  q: [[0.0, 0.0], [0.4, -0.3]]
+  qd: [[0.0, 0.0], [0.0, 0.0]]
+  qdd: [[0.0, 0.0], [0.0, 0.0]]
+planning_scene:
+  obstacles:
+    - object_id: validate_box
+      center: [0.45, 0.0, 0.0]
+      size: [0.12, 0.12, 0.12]
+      replace_existing: true

@@ -9,6 +9,8 @@ import numpy as np
 from robot_sim.application.dto import FKRequest
 from robot_sim.application.request_builders import build_ik_request, build_trajectory_request
 from robot_sim.application.services.runtime_asset_service import RobotRuntimeAssetService
+from robot_sim.application.services.scene_session_authority import SceneSessionAuthority
+from robot_sim.core.collision.scene import PlanningScene
 from robot_sim.application.use_cases.validate_trajectory import ValidateTrajectoryUseCase
 from robot_sim.model.execution_graph import ExecutionGraphDescriptor
 from robot_sim.model.pose import Pose
@@ -120,6 +122,32 @@ class ApplicationWorkflowFacade:
         )
         return self.workflows.ik_uc.execute(request)
 
+    @staticmethod
+    def _planning_scene_input(planning_scene, fallback_scene) -> tuple[PlanningScene | None, str]:
+        """Resolve the canonical planning scene for one application workflow call.
+
+        Args:
+            planning_scene: Caller/session scene supplied by GUI, headless, or session replay.
+            fallback_scene: Baseline runtime scene produced from the robot specification.
+
+        Returns:
+            tuple[object | None, str]: The scene to pass into request/validation boundaries and
+            a stable source label. ``caller_scene`` is always preferred when supplied; otherwise
+            the runtime-derived baseline is used.
+
+        Raises:
+            ValueError: If a caller or fallback scene is not a ``PlanningScene`` instance.
+
+        Boundary behavior:
+            The runtime asset cache is a materialization source, not the session scene truth. This
+            method therefore never lets a rebuilt asset scene override an explicit caller scene.
+        """
+        resolution = SceneSessionAuthority.resolve(
+            planning_scene=planning_scene,
+            fallback_scene=fallback_scene,
+        )
+        return resolution.scene, resolution.source
+
     def plan_trajectory(
         self,
         spec: RobotSpec,
@@ -139,12 +167,22 @@ class ApplicationWorkflowFacade:
         execution_graph: ExecutionGraphDescriptor,
         robot_geometry: RobotGeometry | None = None,
         collision_geometry: RobotGeometry | None = None,
+        planning_scene=None,
     ) -> JointTrajectory:
+        if planning_scene is not None and not isinstance(planning_scene, PlanningScene):
+            raise ValueError('planning_scene must be a PlanningScene instance or None')
+        scene_materialization_revision_key = (
+            SceneSessionAuthority.revision_key(planning_scene, source='caller_scene')
+            if planning_scene is not None
+            else None
+        )
         assets = self.runtime_asset_service.build_assets(
             spec,
             robot_geometry=robot_geometry,
             collision_geometry=collision_geometry,
+            scene_materialization_revision_key=scene_materialization_revision_key,
         )
+        resolved_scene, planning_scene_source = self._planning_scene_input(planning_scene, assets.planning_scene)
         request = build_trajectory_request(
             q_start=np.asarray(q_start, dtype=float),
             q_goal=None if q_goal is None else np.asarray(q_goal, dtype=float),
@@ -157,7 +195,8 @@ class ApplicationWorkflowFacade:
             planner_id=planner_id,
             max_velocity=max_velocity,
             max_acceleration=max_acceleration,
-            planning_scene=assets.planning_scene,
+            planning_scene=resolved_scene,
+            planning_scene_source=planning_scene_source,
             validation_layers=validation_layers,
             pipeline_id=pipeline_id,
             execution_graph=execution_graph,
@@ -174,19 +213,30 @@ class ApplicationWorkflowFacade:
         validation_layers: tuple[str, ...] | None,
         robot_geometry: RobotGeometry | None = None,
         collision_geometry: RobotGeometry | None = None,
+        planning_scene=None,
     ):
+        if planning_scene is not None and not isinstance(planning_scene, PlanningScene):
+            raise ValueError('planning_scene must be a PlanningScene instance or None')
+        scene_materialization_revision_key = (
+            SceneSessionAuthority.revision_key(planning_scene, source='caller_scene')
+            if planning_scene is not None
+            else None
+        )
         assets = self.runtime_asset_service.build_assets(
             spec,
             robot_geometry=robot_geometry,
             collision_geometry=collision_geometry,
+            scene_materialization_revision_key=scene_materialization_revision_key,
         )
+        resolved_scene, planning_scene_source = self._planning_scene_input(planning_scene, assets.planning_scene)
         normalized_q_goal = None if q_goal is None else np.asarray(q_goal, dtype=float)
         return self.validate_uc.execute(
             trajectory,
             target_pose=target_pose,
             spec=spec,
             q_goal=normalized_q_goal,
-            planning_scene=assets.planning_scene,
+            planning_scene=resolved_scene,
+            planning_scene_source=planning_scene_source,
             validation_layers=validation_layers,
         )
 
@@ -236,6 +286,7 @@ class ApplicationWorkflowFacade:
         benchmark_report: BenchmarkReport | None = None,
         robot_geometry: RobotGeometry | None = None,
         collision_geometry: RobotGeometry | None = None,
+        planning_scene=None,
     ) -> SessionState:
         return build_session_state_projection(
             self,
@@ -245,6 +296,7 @@ class ApplicationWorkflowFacade:
             benchmark_report=benchmark_report,
             robot_geometry=robot_geometry,
             collision_geometry=collision_geometry,
+            planning_scene=planning_scene,
         )
 
     def imported_robot_result_from_loaded(

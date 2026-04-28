@@ -9,6 +9,18 @@ class AABB:
     minimum: np.ndarray
     maximum: np.ndarray
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, 'minimum', np.asarray(self.minimum, dtype=float))
+        object.__setattr__(self, 'maximum', np.asarray(self.maximum, dtype=float))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AABB):
+            return NotImplemented
+        return bool(np.array_equal(self.minimum, other.minimum) and np.array_equal(self.maximum, other.maximum))
+
+    def __hash__(self) -> int:
+        return hash((tuple(float(value) for value in self.minimum), tuple(float(value) for value in self.maximum)))
+
     def intersects(self, other: 'AABB') -> bool:
         return bool(np.all(self.maximum >= other.minimum) and np.all(other.maximum >= self.minimum))
 

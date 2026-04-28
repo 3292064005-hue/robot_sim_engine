@@ -1,26 +1,30 @@
 from __future__ import annotations
 
-from dataclasses import replace
-from pathlib import Path
-
 import numpy as np
 
 from robot_sim.application.services.robot_registry import RobotRegistry
 from robot_sim.application.use_cases.run_fk import RunFKUseCase
-from robot_sim.model.imported_robot_result import ImportedRobotResult
-from robot_sim.model.robot_spec import RobotSpec
+from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
 from robot_sim.presentation.state_store import StateStore
+from robot_sim.presentation.workflow_services import RobotWorkflowService
 
 from typing import TYPE_CHECKING
-from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
-from robot_sim.presentation.state_events import FKProjectedEvent, WarningProjectedEvent
-from robot_sim.presentation.validators.input_validator import InputValidator
 
 if TYPE_CHECKING:  # pragma: no cover
     from robot_sim.app.workflow_facade import ApplicationWorkflowFacade
 
 
 class RobotController:
+    """Legacy compatibility adapter for robot workflow operations.
+
+    New presentation startup paths must depend on ``RobotWorkflowService`` directly. This class is
+    kept only for downstream imports and compatibility tests; it does not own robot-editing,
+    import, FK, or runtime-projection business logic. All public methods delegate to the canonical
+    workflow service so no second source of truth can diverge from the active presentation graph.
+    """
+
+    LEGACY_SURFACE_ID = 'robot_controller_compat_adapter_v2'
+
     def __init__(
         self,
         state_store: StateStore,
@@ -32,299 +36,67 @@ class RobotController:
         runtime_asset_service=None,
         application_workflow: 'ApplicationWorkflowFacade | None' = None,
     ) -> None:
+        """Create a legacy robot-controller adapter.
+
+        Args:
+            state_store: Presentation state store shared with the canonical workflow.
+            registry: Robot registry used by save/load operations.
+            fk_uc: FK use case used by runtime projection.
+            import_robot_uc: Retained for historical constructor compatibility.
+            runtime_projection_service: Optional canonical runtime projector. A service is created
+                only for compatibility callers that instantiate this adapter directly.
+            runtime_asset_service: Optional runtime-asset service used when creating a projection
+                service for direct compatibility callers.
+            application_workflow: Required for import/load/FK operations that cross into the
+                application layer.
+
+        Returns:
+            None: Stores only an adapter-owned workflow reference.
+
+        Raises:
+            None: Runtime configuration errors are raised by delegated workflow calls.
+
+        Boundary behavior:
+            This adapter is intentionally excluded from the active startup graph. Direct callers get
+            the same behavior as the canonical workflow service, including scene/runtime projection
+            semantics, because every operation delegates to ``RobotWorkflowService``.
+        """
         self._state_store = state_store
-        self._registry = registry
-        self._fk_uc = fk_uc
-        self._import_robot_uc = import_robot_uc
-        self._application_workflow = application_workflow
-        self._runtime_projection_service = runtime_projection_service or RuntimeProjectionService(
+        runtime_projection = runtime_projection_service or RuntimeProjectionService(
             state_store,
             fk_uc,
             runtime_asset_service=runtime_asset_service,
         )
-
-    def _load_spec_into_runtime(
-        self,
-        spec: RobotSpec,
-        *,
-        robot_geometry=None,
-        collision_geometry=None,
-    ):
-        """Load one robot specification into the presentation runtime.
-
-        Args:
-            spec: Canonical robot specification to project into runtime state.
-            robot_geometry: Optional importer/runtime visual geometry bundle.
-            collision_geometry: Optional importer/runtime collision geometry bundle.
-
-        Returns:
-            FKResult: FK projection at the robot home configuration.
-
-        Raises:
-            ValueError: Propagates FK request validation errors.
-
-        Boundary behavior:
-            Runtime geometry and planning-scene state are derived from one canonical asset
-            service so validation/export/render share the same scene authority.
-        """
-        load_result = self._runtime_projection_service.load_robot_spec(
-            spec,
-            robot_geometry=robot_geometry,
-            collision_geometry=collision_geometry,
+        self._workflow = RobotWorkflowService(
+            registry=registry,
+            fk_uc=fk_uc,
+            state_store=state_store,
+            runtime_projection_service=runtime_projection,
+            importer_registry=None,
+            import_robot_uc=import_robot_uc,
+            application_workflow=application_workflow,
         )
-        return load_result.fk_result
-
-    def _application_workflow_or_raise(self):
-        if self._application_workflow is None:
-            raise RuntimeError('application workflow facade is not configured')
-        return self._application_workflow
 
     def load_robot(self, name: str):
-        spec = self._application_workflow_or_raise().load_robot_spec(name)
-        return self._load_spec_into_runtime(spec)
+        """Delegate robot loading to the canonical workflow service."""
+        return self._workflow.load_robot(name)
 
-    def _editor_mutates_runtime_model(self, existing_spec: RobotSpec, rows) -> bool:
-        if tuple(rows) == tuple(existing_spec.dh_rows):
-            return False
-        return bool(existing_spec.has_structured_model or existing_spec.has_canonical_model or existing_spec.kinematic_source in {'urdf_model', 'urdf_skeleton'})
-
-    def _fork_runtime_metadata(self, existing_spec: RobotSpec, *, execution_row_count: int) -> tuple[dict[str, object], dict[str, object]]:
-        metadata = dict(existing_spec.metadata or {})
-        warnings = [str(item) for item in metadata.get('warnings', ()) or ()]
-        fork_warning = (
-            'Robot editor modified DH rows derived from an imported structured/source model; '
-            'runtime now follows the edited DH configuration and no longer claims source-model fidelity.'
-        )
-        if fork_warning not in warnings:
-            warnings.append(fork_warning)
-        original_source = str(existing_spec.model_source or existing_spec.kinematic_source or 'unknown')
-        metadata.update({
-            'model_source': 'edited_runtime_dh',
-            'import_fidelity': 'edited_runtime_dh',
-            'import_semantics': 'edited_runtime_dh',
-            'geometry_available': False,
-            'collision_model': 'generated_proxy',
-            'geometry_ref': '',
-            'collision_geometry_ref': '',
-            'serialized_robot_geometry': None,
-            'serialized_collision_geometry': None,
-            'warnings': warnings,
-            'notes': (
-                'Structured/imported source semantics were invalidated after DH edits. '
-                'Runtime execution and scene projection now follow the edited DH configuration.'
-            ),
-            'source_model_retained': False,
-            'source_model_invalidated': True,
-            'forked_from_model_source': original_source,
-            'canonical_model_summary': None,
-            'execution_adapter': 'robot_spec_execution_rows',
-            'execution_surface': 'robot_spec',
-            'execution_row_count': int(execution_row_count),
-            'execution_summary': {
-                'execution_adapter': 'robot_spec_execution_rows',
-                'execution_surface': 'robot_spec',
-                'execution_row_count': int(execution_row_count),
-            },
-        })
-        source_model_summary = {
-            'forked_runtime_model': True,
-            'forked_from_model_source': original_source,
-            'joint_count': int(len(existing_spec.dh_rows)),
-            'link_count': int(max(len(existing_spec.runtime_link_names), len(existing_spec.dh_rows) + 1)),
-            'has_visual': False,
-            'has_collision': False,
-        }
-        return metadata, source_model_summary
-
-    def build_robot_from_editor(self, existing_spec: RobotSpec | None, rows, home_q) -> RobotSpec:
-        """Build a persisted robot specification from editor rows/home state.
-
-        Args:
-            existing_spec: Currently loaded robot specification.
-            rows: Edited DH rows from the UI table.
-            home_q: Edited home-joint vector.
-
-        Returns:
-            RobotSpec: New immutable robot specification.
-
-        Raises:
-            RuntimeError: If no robot is currently loaded.
-            ValueError: If the editor payload fails validation.
-
-        Boundary behavior:
-            Editing DH rows on top of an imported structured model forks runtime semantics:
-            structured/source-model metadata is cleared so persistence/export paths do not
-            falsely claim URDF/source fidelity after manual DH edits.
-        """
-        if existing_spec is None:
-            raise RuntimeError('robot not loaded')
-        home_q_array = np.asarray(home_q, dtype=float)
-        home_q_array = InputValidator.validate_home_q(rows, home_q_array)
-        rows_tuple = tuple(rows)
-        metadata = dict(existing_spec.metadata)
-        joint_names = existing_spec.joint_names
-        link_names = existing_spec.link_names
-        joint_types = existing_spec.joint_types
-        joint_axes = existing_spec.joint_axes
-        joint_limits = existing_spec.joint_limits
-        structured_joints = existing_spec.structured_joints
-        structured_links = existing_spec.structured_links
-        kinematic_source = existing_spec.kinematic_source
-        geometry_bundle_ref = existing_spec.geometry_bundle_ref
-        collision_bundle_ref = existing_spec.collision_bundle_ref
-        source_model_summary = dict(existing_spec.source_model_summary)
-        canonical_model = existing_spec.canonical_model
-
-        if self._editor_mutates_runtime_model(existing_spec, rows_tuple):
-            metadata, source_model_summary = self._fork_runtime_metadata(existing_spec, execution_row_count=len(rows_tuple))
-            structured_joints = ()
-            structured_links = ()
-            kinematic_source = 'dh_config'
-            geometry_bundle_ref = ''
-            collision_bundle_ref = ''
-            canonical_model = None
-
-        return RobotSpec(
-            name=existing_spec.name,
-            dh_rows=rows_tuple,
-            base_T=existing_spec.base_T,
-            tool_T=existing_spec.tool_T,
-            home_q=home_q_array,
-            display_name=existing_spec.display_name,
-            description=existing_spec.description,
-            metadata=metadata,
-            joint_names=joint_names,
-            link_names=link_names,
-            joint_types=joint_types,
-            joint_axes=joint_axes,
-            joint_limits=joint_limits,
-            structured_joints=structured_joints,
-            structured_links=structured_links,
-            kinematic_source=kinematic_source,
-            geometry_bundle_ref=geometry_bundle_ref,
-            collision_bundle_ref=collision_bundle_ref,
-            source_model_summary=source_model_summary,
-            canonical_model=canonical_model,
-        )
-
-
-    @staticmethod
-    def _normalized_persisted_name(path: Path, requested_name: str | None, existing_spec: RobotSpec) -> tuple[str, str | None]:
-        """Return the canonical runtime/spec identity after a save or save-as operation.
-
-        Args:
-            path: Persisted registry path returned by ``RobotRegistry.save``.
-            requested_name: Optional user-requested save target name.
-            existing_spec: Spec being persisted.
-
-        Returns:
-            tuple[str, Optional[str]]: New canonical ``spec.name`` and optional display label.
-
-        Boundary behavior:
-            When no explicit name is requested, the existing runtime identity is preserved.
-            Save-as operations adopt the written file stem immediately so runtime state and
-            on-disk identity never diverge.
-        """
-        persisted_name = str(path.stem)
-        requested = str(requested_name or '').strip()
-        if not requested:
-            return existing_spec.name, existing_spec.display_name
-        display_name = requested
-        if existing_spec.display_name not in (None, '', existing_spec.name, requested):
-            display_name = existing_spec.display_name
-        return persisted_name, display_name
+    def build_robot_from_editor(self, existing_spec, rows, home_q):
+        """Delegate editor-to-spec conversion to the canonical workflow service."""
+        return self._workflow.build_robot_from_editor(existing_spec, rows, home_q)
 
     def save_current_robot(self, rows=None, home_q=None, name: str | None = None):
-        spec = self._state_store.state.robot_spec
-        if spec is None:
-            raise RuntimeError('robot not loaded')
-        if rows is not None or home_q is not None:
-            rows_in = rows if rows is not None else spec.dh_rows
-            home_q_in = home_q if home_q is not None else spec.home_q
-            spec = self.build_robot_from_editor(rows=rows_in, home_q=home_q_in, existing_spec=spec)
-            path = self._registry.save(spec, name=name)
-            persisted_name, display_name = self._normalized_persisted_name(path, name, spec)
-            spec = replace(spec, name=persisted_name, display_name=display_name)
-            self._load_spec_into_runtime(spec)
-            return path
-        path = self._registry.save(spec, name=name)
-        persisted_name, display_name = self._normalized_persisted_name(path, name, spec)
-        if persisted_name != spec.name or display_name != spec.display_name:
-            self._load_spec_into_runtime(replace(spec, name=persisted_name, display_name=display_name))
-        return path
+        """Delegate robot persistence to the canonical workflow service."""
+        return self._workflow.save_current_robot(rows=rows, home_q=home_q, name=name)
 
-    def import_robot(
-        self,
-        source: str,
-        importer_id: str | None = None,
-        *,
-        persist: bool = True,
-    ) -> ImportedRobotResult:
-        """Import an external robot config and optionally persist it into the registry.
-
-        Args:
-            source: User-selected robot source path (YAML / URDF / plugin importer input).
-            importer_id: Optional importer override selected from the UI.
-            persist: When ``True`` the normalized import is written into the registry before
-                runtime projection. When ``False`` the import is staged transiently and must
-                be saved later through :meth:`save_current_robot`.
-
-        Returns:
-            ImportedRobotResult: Structured import result containing the resolved runtime
-                identity, FK projection, and bounded warning metadata.
-
-        Raises:
-            RuntimeError: If the controller was not configured with an import use case.
-            FileNotFoundError: If the selected source path does not exist.
-            Exception: Propagates importer parsing/validation errors.
-
-        Boundary behavior:
-            The controller always normalizes the imported spec to a deterministic runtime name.
-            Persisted imports become immediately reloadable through ``RobotRegistry.load``;
-            staged imports keep the same collision-free identity but defer disk writes until a
-            later save/publish operation.
-        """
-        workflow = self._application_workflow_or_raise()
-        resolved = workflow.resolve_import(source, importer_id=importer_id, persist=persist)
-        fk = self._load_spec_into_runtime(
-            resolved.spec,
-            robot_geometry=resolved.robot_geometry,
-            collision_geometry=resolved.collision_geometry,
-        )
-        loaded_spec = self._state_store.state.robot_spec
-        metadata = dict(getattr(loaded_spec, 'metadata', {}) or {})
-        warnings = tuple(str(item) for item in metadata.get('warnings', ()) or ())
-        if warnings:
-            self._state_store.dispatch(WarningProjectedEvent(message=' | '.join(warnings), code='import_warnings'))
-        return workflow.imported_robot_result_from_loaded(
-            resolved,
-            fk_result=fk,
-            loaded_spec=loaded_spec,
-        )
+    def import_robot(self, source: str, importer_id: str | None = None, *, persist: bool = True):
+        """Delegate import/projection to the canonical workflow service."""
+        return self._workflow.import_robot(source, importer_id=importer_id, persist=persist)
 
     def run_fk(self, q=None):
-        spec = self._state_store.state.robot_spec
-        q_current = self._state_store.state.q_current if q is None else np.asarray(q, dtype=float)
-        if spec is None or q_current is None:
-            raise RuntimeError('robot not loaded')
-        q_current = InputValidator.validate_joint_vector(spec, q_current, clamp=False)
-        workflow = self._application_workflow_or_raise()
-        fk = workflow.run_fk(spec, q_current)
-        self._state_store.dispatch(
-            FKProjectedEvent(
-                q_current=q_current.copy(),
-                fk_result=fk,
-                scene_revision=self._state_store.state.scene_revision + 1,
-            )
-        )
-        return fk
+        """Delegate FK execution to the canonical workflow service."""
+        return self._workflow.run_fk(q)
 
     def sample_ee_positions(self, q_samples) -> np.ndarray:
-        spec = self._state_store.state.robot_spec
-        if spec is None:
-            raise RuntimeError('robot not loaded')
-        pts = []
-        for q in np.asarray(q_samples, dtype=float):
-            fk = self._application_workflow_or_raise().run_fk(spec, np.asarray(q, dtype=float))
-            pts.append(np.asarray(fk.ee_pose.p, dtype=float))
-        return np.asarray(pts, dtype=float)
+        """Delegate batch FK sampling to the canonical workflow service."""
+        return self._workflow.sample_ee_positions(q_samples)

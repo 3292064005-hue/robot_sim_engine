@@ -6,7 +6,6 @@ from robot_sim.app.container import build_container
 from robot_sim.app.headless_api import HeadlessWorkflowService
 from robot_sim.model.session_state import SessionState
 from robot_sim.model.trajectory import JointTrajectory
-from robot_sim.presentation.controllers.robot_controller import RobotController
 from robot_sim.presentation.controllers.trajectory_controller import TrajectoryController
 from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
 from robot_sim.presentation.state_store import StateStore
@@ -17,15 +16,6 @@ def _build_robot_workflow(project_root):
     container = build_container(project_root)
     state_store = StateStore(SessionState())
     runtime_projection = RuntimeProjectionService(state_store, container.fk_uc)
-    editor_controller = RobotController(
-        state_store,
-        container.robot_registry,
-        container.fk_uc,
-        import_robot_uc=container.import_robot_uc,
-        runtime_projection_service=runtime_projection,
-        runtime_asset_service=container.runtime_asset_service,
-        application_workflow=container.workflow_facade,
-    )
     workflow = RobotWorkflowService(
         registry=container.robot_registry,
         fk_uc=container.fk_uc,
@@ -33,7 +23,6 @@ def _build_robot_workflow(project_root):
         runtime_projection_service=runtime_projection,
         importer_registry=container.importer_registry,
         import_robot_uc=container.import_robot_uc,
-        editor_controller=editor_controller,
         application_workflow=container.workflow_facade,
     )
     return container, state_store, workflow

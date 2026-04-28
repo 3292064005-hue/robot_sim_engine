@@ -7,8 +7,8 @@ from robot_sim.application.services.runtime_asset_service import RobotRuntimeAss
 from robot_sim.application.services.render_runtime_advisor import RenderAdviceThresholds, RenderRuntimeAdvisor
 from robot_sim.model.session_state import SessionState
 from robot_sim.presentation.controllers.diagnostics_controller import DiagnosticsController
-from robot_sim.presentation.controllers.robot_controller import RobotController
 from robot_sim.presentation.facades import RuntimeFacade
+from robot_sim.presentation.runtime_projection_service import RuntimeProjectionService
 from robot_sim.presentation.state_store import StateStore
 from robot_sim.presentation.workflow_services import ExportWorkflowService, MotionWorkflowService, RobotWorkflowService
 
@@ -78,22 +78,18 @@ def build_presentation_collaborators(bundle: PresentationBootstrapBundle) -> Pre
         capability_service=bundle.services.capability_service,
         module_status_service=bundle.services.module_status_service,
     )
-    editor_controller = RobotController(
+    runtime_projection_service = RuntimeProjectionService(
         state_store,
-        bundle.registries.robot_registry,
         bundle.use_cases.fk_uc,
-        import_robot_uc=bundle.use_cases.import_robot_uc,
         runtime_asset_service=runtime_asset_service,
-        application_workflow=bundle.services.workflow_facade,
     )
     robot_workflow = RobotWorkflowService(
         registry=bundle.registries.robot_registry,
         fk_uc=bundle.use_cases.fk_uc,
         state_store=state_store,
-        runtime_projection_service=editor_controller._runtime_projection_service,
+        runtime_projection_service=runtime_projection_service,
         importer_registry=bundle.registries.importer_registry,
         import_robot_uc=bundle.use_cases.import_robot_uc,
-        editor_controller=editor_controller,
         application_workflow=bundle.services.workflow_facade,
     )
     motion_workflow = MotionWorkflowService(

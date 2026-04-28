@@ -97,6 +97,7 @@ class TrajectoryRequest:
     max_velocity: float | None = None
     max_acceleration: float | None = None
     planning_scene: object | None = None
+    planning_scene_source: str = ''
     validation_layers: tuple[str, ...] | None = None
     pipeline_id: str | None = None
     execution_graph: ExecutionGraphDescriptor | None = None

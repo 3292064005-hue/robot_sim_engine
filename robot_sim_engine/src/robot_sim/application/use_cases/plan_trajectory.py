@@ -104,6 +104,7 @@ class PlanTrajectoryUseCase:
             metadata=dict(traj.metadata),
             scene_revision=pipeline_result.scene_revision,
             validation_stage=pipeline_result.validation_stage,
+            planning_scene_source=str(req.planning_scene_source or ''),
             correlation_id=correlation_id,
             has_complete_fk=bool(traj.ee_positions is not None and traj.joint_positions is not None and traj.ee_rotations is not None),
             has_partial_fk=bool(traj.ee_positions is not None or traj.joint_positions is not None or traj.ee_rotations is not None),
@@ -115,6 +116,9 @@ class PlanTrajectoryUseCase:
         metadata['retiming_applied'] = bool(metadata.get('retimed', False))
         metadata.setdefault('retimer_id', 'builtin_scaling')
         metadata.setdefault('pipeline_id', pipeline_result.pipeline_id)
+        metadata.setdefault('planning_scene_source', str(req.planning_scene_source or ''))
+        if 'validation_capabilities' in diagnostics.metadata:
+            metadata['validation_capabilities'] = dict(diagnostics.metadata.get('validation_capabilities', {}) or {})
         if req.max_velocity is not None:
             metadata['requested_max_velocity'] = float(req.max_velocity)
         if req.max_acceleration is not None:

@@ -16,6 +16,7 @@ from robot_sim.application.request_builders import (
     normalize_validation_layers,
 )
 from robot_sim.app.headless_request_adapter import HeadlessRequestContractAdapter
+from robot_sim.app.headless_scene_adapter import build_planning_scene_from_request, request_has_scene_payload
 from robot_sim.app.workflow_facade import ApplicationWorkflowFacade
 from robot_sim.domain.enums import TrajectoryMode
 from robot_sim.model.benchmark_report import BenchmarkReport
@@ -116,6 +117,36 @@ class HeadlessWorkflowService:
             'execution_graph': execution_graph.summary(),
         }
 
+    def _planning_scene_from_request(self, spec: RobotSpec, request: Mapping[str, object], *, planner_id: str = ''):
+        """Build an optional caller scene from a headless command request.
+
+        Args:
+            spec: Resolved robot specification used to construct the fallback scene base.
+            request: Headless command payload.
+            planner_id: Optional planner id recorded into scene diagnostics.
+
+        Returns:
+            PlanningScene | None: Explicit caller scene, or ``None`` for legacy no-scene requests.
+
+        Raises:
+            HeadlessRequestError: If a scene payload is present but malformed.
+
+        Boundary behavior:
+            Absence of scene fields preserves the previous headless behavior. Presence of any
+            scene field fails closed and produces a caller-owned scene that the application façade
+            must prefer over rebuilt runtime assets.
+        """
+        if not request_has_scene_payload(request):
+            return None
+        baseline_scene = self._application_workflow.runtime_asset_service.build_assets(spec).planning_scene
+        return build_planning_scene_from_request(
+            request,
+            baseline_scene=baseline_scene,
+            error_factory=HeadlessRequestError,
+            source='headless_payload',
+            planner_id=planner_id,
+        )
+
     def plan_trajectory(self, request: Mapping[str, object]) -> dict[str, object]:
         spec = self._resolve_spec(request)
         q_start = self._joint_vector(request.get('q_start'), spec=spec, field='q_start', default=spec.home_q)
@@ -156,6 +187,7 @@ class HeadlessWorkflowService:
                 q_goal = self._joint_vector(spec.q_mid(), spec=spec, field='q_goal', default=spec.home_q)
         validation_layers = normalize_validation_layers(request.get('validation_layers'), error_factory=HeadlessRequestError)
         execution_graph = build_execution_graph_descriptor(spec, request.get('execution_graph'), error_factory=HeadlessRequestError)
+        planning_scene = self._planning_scene_from_request(spec, request, planner_id=planner_id or '')
         traj = self._application_workflow.plan_trajectory(
             spec,
             q_start=q_start,
@@ -171,6 +203,7 @@ class HeadlessWorkflowService:
             validation_layers=validation_layers,
             pipeline_id=pipeline_id,
             execution_graph=execution_graph,
+            planning_scene=planning_scene,
         )
         return self._trajectory_payload(traj)
 
@@ -182,12 +215,14 @@ class HeadlessWorkflowService:
             target_pose = build_pose_from_mapping(dict(request['target']), error_factory=HeadlessRequestError)
         q_goal = None if request.get('q_goal') is None else self._joint_vector(request.get('q_goal'), spec=spec, field='q_goal', default=spec.home_q)
         validation_layers = normalize_validation_layers(request.get('validation_layers'), error_factory=HeadlessRequestError)
+        planning_scene = self._planning_scene_from_request(spec, request)
         report = self._application_workflow.validate_trajectory(
             spec,
             trajectory,
             target_pose=target_pose,
             q_goal=q_goal,
             validation_layers=validation_layers,
+            planning_scene=planning_scene,
         )
         return report.as_dict() if hasattr(report, 'as_dict') else dict(report.__dict__)
 
@@ -223,11 +258,13 @@ class HeadlessWorkflowService:
                 metadata=dict(payload.get('metadata', {}) or {}),
                 comparison=dict(payload.get('comparison', {}) or {}),
             )
+        planning_scene = self._planning_scene_from_request(spec, request)
         state = self._application_workflow.build_session_state(
             spec,
             q_current=q_current,
             trajectory=trajectory,
             benchmark_report=benchmark_report,
+            planning_scene=planning_scene,
         )
         name = str(request.get('name', 'headless_session.json') or 'headless_session.json')
         path = self._application_workflow.export_session(
